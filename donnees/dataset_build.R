@@ -539,6 +539,7 @@ rm(g,i,df,file_names,opto)
   
   
   # on modifie bac : on met "NON" dans la colonne germi pour dire que ça a pas germe et on ajoute une ligne avec l'individu qui le remplace 
+  c <- 1 # compteur utile dans le if des genotypes inconnus
   
   for (i in 1:nrow(correc)){
     ind <- correc[i,"ind"]
@@ -552,10 +553,17 @@ rm(g,i,df,file_names,opto)
     }
     
     # Si on ne sait pas quel genotype a ete seme (les NA dans correc), on change juste le nom du genotype en INCONNU
+    
     if (is.na(correc[ind , "grain"]) == TRUE){
       bac[ind,"geno"] <- "INCONNU"
+      bac[ind,"grain"] <- c
+      c <- c+1
     }
   }
+
+  rm(c)
+# On actualise les rownames
+row.names(bac) <- paste0(bac$geno , "_" , bac$grain)
   
   rm(ind , new_ind , i)
   # ça c'etait pour toutes les donnees surlignees en orange sur le papier sans annotations roses (sauf pour la boite 12 où c'est pris en compte malgre les annotations roses).
