@@ -72,7 +72,7 @@ calcul_H2 <- function(i , don){
   mod <- lmer(i ~ (1|geno) , data = don)
   Vg <- VarCorr(mod)$geno[1]
   Vr <- (sigma(mod))^2
-  Vg/(Vg + Vr/12)
+  Vg/(Vg + Vr)
 }
 
 apply(X = opto[,3:7] , MARGIN = 2 , FUN = calcul_H2 , don = opto)
@@ -153,8 +153,9 @@ save(res , file = "models_opto")
 
 
 
-rm(i,j,tmp)
+rm(i,j,tmp,res)
 
+load("models_opto")
 
 ggplot(res %>% filter(var == "Longueur" & score == "R2") , aes(x = nlv , y = y1)) + geom_point() + labs(title = "R2 pour la Longueur" , x = "nlv" , y = "R2") + facet_wrap(~traitement)
 
