@@ -1,51 +1,126 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
-
 library(shiny)
 
-# Define UI for application that draws a histogram
 ui <- fluidPage(
-
-    # Application title
-    titlePanel("Old Faithful Geyser Data"),
-
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
-        ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-           plotOutput("distPlot")
-        )
+  
+  # parametres
+  fluidRow( # faire une ligne de parametres
+    
+    column(6 , "Parametres de la parcelle" ,
+           sliderInput("coef","Coefficient de changement de surface" , min = 0.1 , max = 1 , step = 0.05 , value = 1),
+           sliderInput("grainepi","Nombre de grains par épi" , min = 20 , max = 90 , step = 1 , value = 70),
+           sliderInput("epiplante","Nombre d'épis par plante" , min = 1 , max = 5 , step = 1 , value = 2),
+           sliderInput("dens","Nombre de plantes par m2" , min = 200 , max = 400 , step = 50 , value = 300)
+           ),
+    
+    column(6 , "Variances",
+           sliderInput("gen","Sigma_G" , min = 0 , max = 1 , step = 0.1 , value = 1),
+           sliderInput("inter","Sigma_inter_epi" , min = 0 , max = 1 , step = 0.1 , value = 1),
+           sliderInput("intra","Sigma_intra_epi" , min = 0 , max = 1 , step = 0.1 , value = 1),
+           sliderInput("env","Sigma_E" , min = 0 , max = 1 , step = 0.1 , value = 1)
+           )
+    ),
+  
+  fluidRow(
+    
+    column(6 , "Sélection grain à grain",
+           textOutput("Hg"),
+           textOutput("ig"),
+           textOutput("Sg"),
+           textOutput("Rg")
+           ),
+    
+    column(6 , "Sélection epi par epi",
+           textOutput("He"),
+           textOutput("ie"),
+           textOutput("Se"),
+           textOutput("Re")
     )
+  )
 )
 
-# Define server logic required to draw a histogram
-server <- function(input, output) {
-
-    output$distPlot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
-
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white',
-             xlab = 'Waiting time to next eruption (in mins)',
-             main = 'Histogram of waiting times')
-    })
+server <- function(input, output, session) {
+  
+  vg <- reactive(input$gen)
+  ve <- reactive(input$env)
+  vinter <- reactive(input$inter)
+  vintra <- reactive(input$intra)
+  red  <- reactive(input$coef)
+  nb_grain_epi <- reactive(input$grainepi)
+  nb_epi_plante <- reactive(input$epiplante)
+  dens <- reactive(input$dens)
+  
+  vp <- reactive(vg() + ve() + vinter() + vintra())
+  sigma_p <- reactive(sqrt(vp()))
+  
+  # Calcul de la proportion de grain/epis gardés
+  p <- reactive(red() / (nb_grain_epi() * nb_epi_plante()))
+  
+  
+  # Modelisation grain a grain 
+  grains <- reactive(
+    rnorm(n = nb_grain_epi() * nb_epi_plante() * dens() , mean = 0 , sd = sigma_p()))
+  
+  seuil_grains <- reactive(
+    qnorm(p = 1 - p() , mean = 0 , sd = sigma_p()))
+  
+  grains_sel_grains <- reactive(
+    grains()[which(grains() > seuil_grains())])
+  
+  S_grains <- reactive(
+    mean(grains_sel_grains()))
+  
+  i_grains <- reactive(
+    S_grains()/sigma_p())
+  
+  h2_grains <- reactive(
+    vg()/vp())
+  
+  R_grains <- reactive(
+    h2_grains() * i_grains() * sigma_p())
+  
+  
+  # Modelisation epi par epi
+  
+  sigma_inter <- reactive(
+    sqrt(vinter()))
+  
+  sigma_intra <- reactive(
+    sqrt(vintra()))
+  
+  epis <- reactive(
+    rnorm(n = nb_epi_plante() * dens() , mean = 0 , sd = sigma_inter()))
+  
+  seuil_epis <- reactive(
+    qnorm(p = 1 - p() , mean = 0 , sd = sigma_inter()))
+  
+  epis_sel <- reactive(
+    epis()[which(epis() > seuil_epis())])
+  
+  grains_sel_epis <- reactive(
+    as.vector(sapply(epis_sel() , FUN = rnorm , n = nb_grain_epi() , sd = sigma_intra())) )
+  
+  S_epis <- reactive(
+    mean(grains_sel_epis()))
+  
+  i_epis <- reactive(
+    S_epis() / sigma_p())
+  
+  h2_epis <- reactive(
+    vg()/(vg() + ve() + vinter() + vintra()/nb_grain_epi()))
+  
+  R_epis <- reactive(
+    h2_epis() * i_epis() * sigma_p())
+  
+  output$Hg <- renderText({paste0("H2 = " , round(h2_grains() , 2))})
+  output$ig <- renderText({paste0("i = " , round(i_grains() , 2))})
+  output$Sg <- renderText({paste0("S = " , round(S_grains() , 2))})
+  output$Rg <- renderText({paste0("R = " , round(R_grains() , 2))})
+  
+  
+  output$He <- renderText({paste0("H2 = " , round(h2_epis() , 2))})
+  output$ie <- renderText({paste0("i = " , round(i_epis() , 2))})
+  output$Se <- renderText({paste0("S = " , round(S_epis() , 2))})
+  output$Re <- renderText({paste0("R = " , round(R_epis() , 2))})
 }
 
-# Run the application 
-shinyApp(ui = ui, server = server)
+shinyApp(ui, server)
