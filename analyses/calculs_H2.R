@@ -93,15 +93,14 @@ opto <- opto %>% select("geno" , "grain" , "Longueur" , "Largeur" , "Perimetre" 
 
 apply(X = opto[,3:7] , MARGIN = 2 , FUN = calcul_H2 , don = opto)
 
-rm(opto)
-
 
 
 # variance du grain
-vgrain <- opto %>% group_by(geno) %>% summarise(vs = sd(Surface))
+opto$vgrain <- ifelse(opto$grain <= 6 , "1" , "bis")
+vg <- opto %>% group_by(geno,vgrain) %>% summarise(vs = sd(Surface))
 
 # ne peut pas marcher car 1 seul variance par génotype
-calcul_H2(i = vgrain$vs , don = vgrain)
+calcul_H2(i = vg$vs , don = vg)
 
 # H2 des spectres ---------------------------------------------------------
 
