@@ -6,7 +6,9 @@ ui <- fluidPage(
   fluidRow( # faire une ligne de parametres
     
     column(6 , "Parametres de la parcelle" ,
-           sliderInput("coef","Coefficient de changement de surface" , min = 0.1 , max = 1 , step = 0.05 , value = 1),
+           numericInput("coef","Coefficient de changement de surface" , value = 0.5 , step = 0.0001),
+           
+          # sliderInput("coef","Coefficient de changement de surface" , min = 0 , max = 1 , step = 0.001 , value = 1),
            sliderInput("grainepi","Nombre de grains par épi" , min = 20 , max = 90 , step = 1 , value = 70),
            sliderInput("epiplante","Nombre d'épis par plante" , min = 1 , max = 5 , step = 1 , value = 2),
            sliderInput("dens","Nombre de plantes par m2" , min = 200 , max = 400 , step = 50 , value = 300)
@@ -34,6 +36,11 @@ ui <- fluidPage(
            textOutput("ie"),
            textOutput("Se"),
            textOutput("Re")
+    ),
+    
+    fluidRow(
+      column(12 , "P%" , 
+             textOutput("p"))
     )
   )
 )
@@ -121,6 +128,7 @@ server <- function(input, output, session) {
   output$ie <- renderText({paste0("i = " , round(i_epis() , 2))})
   output$Se <- renderText({paste0("S = " , round(S_epis() , 2))})
   output$Re <- renderText({paste0("R = " , round(R_epis() , 2))})
+  output$p <- renderText({paste0("P% = " , round(p()*100 , 6))})
 }
 
 shinyApp(ui, server)
