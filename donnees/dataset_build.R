@@ -1,6 +1,7 @@
 rm(list = ls())
 
-setwd("~/Stage/donnees")
+# setwd("~/Stage/donnees")
+setwd("~/Documents/INRA/SelPhen_2023/Stage_CBienvenu_2023/donnees/")
 
 library(nirsextra)
 library(tidyverse)
@@ -227,17 +228,17 @@ rm(list = ls())
 rm(list=ls())
 
 # recuperation de tous les noms
-file_names <- list.files(path = "C:/Users/bienvenu/Documents/Stage/donnees/data_brute/SelPhen_2023_Optoagri")
+file_names <- list.files(path = "./data_brute/SelPhen_2023_Optoagri")
 
 # Initialisation du tableau
-opto <- read.table(file = "C:/Users/bienvenu/Documents/Stage/donnees/data_brute/SelPhen_2023_Optoagri/2022-11-02_141909_0101_Mecarnot_JRL_1/2022-11-02_141909_0101_Mecarnot_JRL_1_METRO.dat" , header = T , sep = "\t" , dec = ",")
+opto <- read.table(file = "./data_brute/SelPhen_2023_Optoagri/2022-11-02_141909_0101_Mecarnot_JRL_1/2022-11-02_141909_0101_Mecarnot_JRL_1_METRO.dat" , header = T , sep = "\t" , dec = ",",fileEncoding="latin1")
 
 opto$geno <- "JRL_1"
 
 
 # Remplissage du tableau
 for (i in file_names[2:61]){
-  df <- read.table(file = paste0("C:/Users/bienvenu/Documents/Stage/donnees/data_brute/SelPhen_2023_Optoagri/" , i , "/" , i , "_METRO.dat") , header = T , sep = "\t" , dec = ",")
+  df <- read.table(file = paste0("./data_brute/SelPhen_2023_Optoagri/" , i , "/" , i , "_METRO.dat") , header = T , sep = "\t" , dec = ",",fileEncoding="latin1")
   
   df$geno <- strsplit(i , split = "t_")[[1]][2]
   
