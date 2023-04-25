@@ -15,10 +15,10 @@ ui <- fluidPage(
            ),
     
     column(6 , "Variances",
-           sliderInput("gen","Sigma_G" , min = 0 , max = 1 , step = 0.1 , value = 1),
-           sliderInput("inter","Sigma_inter_epi" , min = 0 , max = 1 , step = 0.1 , value = 1),
-           sliderInput("intra","Sigma_intra_epi" , min = 0 , max = 1 , step = 0.1 , value = 1),
-           sliderInput("env","Sigma_E" , min = 0 , max = 1 , step = 0.1 , value = 1)
+           sliderInput("gen","V_G" , min = 0 , max = 1 , step = 0.1 , value = 1),
+           sliderInput("inter","V_inter_epi" , min = 0 , max = 1 , step = 0.1 , value = 1),
+           sliderInput("intra","V_intra_epi" , min = 0 , max = 1 , step = 0.1 , value = 1),
+           sliderInput("env","V_pos" , min = 0 , max = 1 , step = 0.1 , value = 1)
            )
     ),
   
@@ -87,18 +87,19 @@ server <- function(input, output, session) {
   
   
   # Modelisation epi par epi
-  
-  sigma_inter <- reactive(
-    sqrt(vinter()))
-  
+
   sigma_intra <- reactive(
     sqrt(vintra()))
   
+  sigma_epi <- reactive(
+    sqrt(vg() + ve() + vinter() )
+  )
+  
   epis <- reactive(
-    rnorm(n = nb_epi_plante() * dens() , mean = 0 , sd = sigma_inter()))
+    rnorm(n = nb_epi_plante() * dens() , mean = 0 , sd = sigma_epi() ))
   
   seuil_epis <- reactive(
-    qnorm(p = 1 - p() , mean = 0 , sd = sigma_inter()))
+    qnorm(p = 1 - p() , mean = 0 , sd = sigma_epi() ))
   
   epis_sel <- reactive(
     epis()[which(epis() > seuil_epis())])
