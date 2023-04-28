@@ -1,3 +1,5 @@
+rm(list = ls())
+
 library(ggplot2)
 library(tidyverse)
 
@@ -6,19 +8,72 @@ i_p <- function(p){
   exp(- qnorm(1-p)^2 / 2) / (p * sqrt(2*pi) )
 }
 
-i_p(1)
-i_p(0.5)
-i_p(0.07)
-i_p(0.26)
-i_p(0.3)
-i_p(0.6)
-
-
-
 
 i <- sapply(seq(0.01,1,0.01) , FUN = i_p)
 
 plot(x = seq(0.01,1,0.01) , y = i)
+rm(i)
+
+
+# Error function
+
+erf <- function(x) {2 * pnorm(x * sqrt(2)) - 1}
+
+erfc <- function(x) {2 * pnorm(x * sqrt(2), lower = FALSE)}
+
+
+tronc_epi <- function(x , mue , se , si , a){
+  -((exp(-((mue-x)^2/(2*(se^2+si^2))))*(se^2*sqrt(1/se^2+1/si^2)*si^2+se^2*sqrt(1/se^2+1/si^2)*si^2*erf((mue*si^2+se^2*x)/(sqrt(2)*se^2*sqrt(1/se^2+1/si^2)*si^2))-((mue*si^2+se^2*x)*erf(sqrt((mue*si^2+se^2*x)^2/(se^2*si^2*(se^2+si^2)))/sqrt(2)))/sqrt((mue*si^2+se^2*x)^2/(se^2*si^2*(se^2+si^2)))+((mue*si^2-a*(se^2+si^2)+se^2*x)*erf(sqrt((mue*si^2-a*(se^2+si^2)+se^2*x)^2/(se^2*si^2*(se^2+si^2)))/sqrt(2)))/(sqrt((mue*si^2-a*(se^2+si^2)+se^2*x)^2/(se^2*si^2*(se^2+si^2))))))/(sqrt(2*pi)*se*si*(se^2+si^2)*(-2+erfc((-a+mue)/(sqrt(2)*se)))))
+}
+
+# fonction exacte troncation epi ------------------------------------------
+{
+mu_epi <- 6
+s_epi <- 1
+s_intra <- 1
+seuil <- 8
+
+abs <- seq(mu_epi-5 , mu_epi + 10 * s_epi , 0.1)
+
+dist_epi <- sapply(abs , FUN = dnorm , mean = mu_epi , sd = s_epi)
+
+dist_grain <- sapply(abs , FUN = tronc_epi , 
+                     a = seuil,
+                     mue = mu_epi,
+                     se = s_epi,
+                     si = s_intra)
+
+dist_epi <- as.data.frame(dist_epi) %>% rename("Y" = "dist_epi") %>% mutate(distribution = "EPI" , X = abs)
+
+don <- as.data.frame(dist_grain) %>% rename("Y" = "dist_grain") %>% mutate(distribution = "GRAINS" , X = abs) %>% rbind(dist_epi) %>% na.omit()
+
+
+
+p <- ggplot(data = don , aes(x = X , y = Y , col = distribution )) + geom_line() + geom_vline(xintercept = seuil)
+
+# est-ce que tron epi est bien une fonction de densitÃ© : 
+
+I <- integrate(tronc_epi , lower = -Inf , upper = Inf ,
+          a = seuil,
+          mue = mu_epi,
+          se = s_epi,
+          si = s_intra)
+# Oui Ã§a s'intÃ¨gre en 1
+
+
+# Est-ce que c'est une densitÃ© normale ?
+# tirage dans la loi :
+tab <- subset(don , distribution == "GRAINS" , select = c("X","Y"))
+
+tirage <- c()
+for (i in 1:nrow(tab)){
+  tirage <- c(tirage , rep(tab[i,1] , round(tab[i,2] * 1000)) )
+}
+
+qqnorm(tirage)
+print(p)
+I
+}
 
 
 
@@ -43,7 +98,7 @@ ggplot() +
 
 
 
-# calcul intégrale par méthode numérique ----------------------------------
+# calcul int?grale par m?thode num?rique ----------------------------------
 
 
 integ <- function(t,ix,s,mue,sigma_e,sigma_i){
@@ -87,4 +142,5 @@ ggplot(data = don , aes(x = X , y = Y , col = distribution )) + geom_line() + ge
 }
 
  qqnorm(dist_grain)
+ 
  
