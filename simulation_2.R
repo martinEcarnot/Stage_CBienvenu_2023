@@ -1,20 +1,19 @@
 rm(list=ls())
 
-
+library(ggplot2)
 
 # parametres --------------------------------------------------------------
 
 mu <- 5
 s_g <- 1
 s_inter <- 1
-s_intra <- 1
+s_intra <- 1.5
 s_pos <- 1
-seuil <- 11  # seuil de troncation
 
-S <- 10000  #surface initiale
-r <- 0.5  #coefficient de réduction de la surface
+surf <- 100  #surface initiale
+r <- 0.1  #coefficient de réduction de la surface
 
-NG_E <- 70  #nb grains par epi
+NG_E <- 50  #nb grains par epi
 NE_P <- 3  #nb epi par plante
 d <- 300  # densite de plantation
 
@@ -44,16 +43,16 @@ tronc_epi <- function(x , mu , s_epi , s_intra , seuil){
 }
 
 
-maxi <- function(){
-  x <- seuil
-  y <- seuil + 0.01
+maxi <- function(a){
+  x <- a
+  y <- a + 0.01
   
-  if (is.nan(tronc_epi(x = x , mu = mu , s_epi = s_epi , s_intra = s_intra , seuil = seuil)) == T){
+  if (is.nan(tronc_epi(x = x , mu = mu , s_epi = s_epi , s_intra = s_intra , seuil = a)) == T){
     x <- y
     y <- y+0.01
   }
   
-  while (tronc_epi(x = x , mu = mu , s_epi = s_epi , s_intra = s_intra , seuil = seuil) < tronc_epi(x = y , mu = mu , s_epi = s_epi , s_intra = s_intra , seuil = seuil)){
+  while (tronc_epi(x = x , mu = mu , s_epi = s_epi , s_intra = s_intra , seuil = a) < tronc_epi(x = y , mu = mu , s_epi = s_epi , s_intra = s_intra , seuil = a)){
     x <- y
     y <- y + 0.01
   }
@@ -65,8 +64,9 @@ maxi <- function(){
 
 
 # Selection grain a grain -------------------------------------------------
-
 p <- r/(NG_E * NE_P)
+
+a <- qnorm(p = 1-p , mean = mu , sd = s_p)
 
 i <- i_p(p)
 
@@ -80,22 +80,45 @@ R <- H2*S
 
 
 # Selection epi par epi ---------------------------------------------------
+a_epi <- qnorm(p = 1-p , mean = mu , sd = s_epi)
 
-NE_O <- 1
+S_epi <- maxi(a = a_epi) - mu
 
-S_epi <- maxi()
-
-i_epi <- S/s_p
+i_epi <- S_epi/s_p
 
 H2_epi <- s_g^2 / (s_g^2 + s_inter^2 + s_pos^2 + s_intra^2/NG_E)
 
-R_epi <- H2/S
+R_epi <- H2_epi*S_epi
 
-NE_O <- p * NE_P
+NE_O <- p * NE_P * d * surf
 
-
+NE <- NE_P * d * surf
 
 # resultats ---------------------------------------------------------------
+
+# distributions des grains et des épis
+x <- seq(mu - 3.5 * s_p , mu + 3.5 * s_p , 0.1)
+
+don <- data.frame(abs = rep(x,2) , 
+                  ord =c(dnorm(x = x , mean = mu , s_p) , dnorm(x = x , mean = mu , sd = s_epi)) ,
+                  Distribution = c(rep("Tous les grains" , length(x)) , rep("Moyenne des épis" , length(x))))
+
+ggplot(data = don , aes(x = abs , y = ord , col = Distribution)) + geom_line() + geom_vline(xintercept = mu) + labs(x = "Phenotype du grain" , y = "Densité de probabilité") + geom_vline(xintercept = a , col = "blue") + geom_vline(xintercept = a_epi , col = "red")
+
+
+# Distribution des grains sélectionnés
+abs_g <- seq(a , mu + 4 * s_p , 0.1)
+abs_e <- seq(S_epi + mu - 2 * s_intra , S_epi + mu + 2 * s_intra , 0.1)
+
+don2 <- data.frame(abs = c(abs_g , abs_e) ,
+                   ord = c(dnorm(x = abs_g , mean = mu , sd = s_p) / (1-pnorm(q = a , mean = mu , sd = s_p)) , tronc_epi(x = abs_e , mu = mu , s_epi = s_epi , s_intra = s_intra , seuil = a_epi)) ,
+                   Distribution = c(rep("Sélection sur grain" , length(abs_g)) , rep("Sélection sur épi" , length(abs_e))))
+
+
+
+ggplot(data = don2 , aes(x = abs , y = ord , col = Distribution)) + geom_line() + geom_vline(xintercept = a , col = "blue") + geom_vline(xintercept = a_epi , col = "red")
+
+
 
 data.frame(row.names = c("grains" , "epis") , 
            H2 = c(H2,H2_epi),
@@ -103,4 +126,8 @@ data.frame(row.names = c("grains" , "epis") ,
            S = c(S,S_epi),
            R = c(R,R_epi))
 
-paste("Nombre d'épis a observer =" , NE_O)
+paste("Nombre d'épis a sélectionner =" , round(NE_O))
+
+paste("Nombre d'épis dans la parcelle =" , round(NE))
+
+paste("Rapport R_epi/R =" , round(R_epi/R , 2))
