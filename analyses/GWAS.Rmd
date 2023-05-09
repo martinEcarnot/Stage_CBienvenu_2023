@@ -1,0 +1,149 @@
+---
+title: "Untitled"
+output: html_document
+date: "2023-05-09"
+---
+
+This R chunk is used to set up some options.
+-->
+```{r setup, include=FALSE}
+rm(list=ls())
+
+setwd("~/Stage/Analyses")
+
+
+if(! "params" %in% ls())
+  params <- list(root.dir=NULL)
+suppressPackageStartupMessages(library(knitr))
+opts_chunk$set(echo=TRUE, warning=TRUE, message=TRUE, cache=FALSE,
+               fig.align="center", root.dir=params$root.dir)
+opts_knit$set(progress=TRUE, verbose=TRUE)
+
+
+```
+
+
+## Overview
+
+Required packages:
+```{r required_packages, include = FALSE}
+
+options(repos = list(CRAN="http://cran.rstudio.com/"))
+
+# pour le serveur meso
+.libPaths( c( .libPaths(), "/nfs/work/agap_id-bin/img/R/4.1.0/lib") )
+    
+instPkgs <- installed.packages()[,"Package"]
+for(pkg in c("lme4", "MM4LMM", "Matrix", "sommer", "stringr", "rbenchmark", "qqman", "tidyverse")){
+  if(! pkg %in% instPkgs)
+    install.packages(pkg)
+  suppressPackageStartupMessages(library(pkg, character.only=TRUE))
+}
+if(! "rutilstimflutre" %in% instPkgs){
+  if(! "devtools" %in% instPkgs)
+    install.packages("devtools")
+  suppressPackageStartupMessages(library(devtools))
+  install_github("timflutre/rutilstimflutre")
+}
+suppressPackageStartupMessages(library(rutilstimflutre))
+
+```
+
+##Kinship matrix
+```{r, include = FALSE}
+## Sub-sampling the genotypic file
+genos_sbst <- genos[which(row.names(genos)%in%unique(c(phenos$geno_focal,phenos$geno_neighbor))),]
+
+dim(genos_sbst)
+
+## Computing the kinship matrix
+A_vr <- estimGenRel(X=genos_sbst, relationships="additive", method="vanraden1")
+kappa(A_vr)
+
+## Making the kinship matrix positive definite
+A_vr <- Matrix::nearPD(A_vr)$mat
+A_vr <- as.matrix(A_vr)
+hist(A_vr)
+
+kappa(A_vr)
+```
+
+
+lire les snps
+```{r}
+f<- "SG_EPO_complet.Rdata"
+
+tools::md5sum(f)
+load(f)
+
+dim(SG)
+rownames(SG)
+m<-strsplit(row.names(SG),"_")
+noms<-sapply(m,"[", 2)
+rownames(SG)<-noms
+
+# on ne conserve que les génotypes présents dans le fichier phéno
+liste <- levels(as.factor(phenos$geno_focal))
+
+liste2<-match(liste, noms)
+liste2<-liste2[which(!is.na(liste2))]
+SG<-SG[liste2,]
+
+dim(SG)
+
+# on ne conserve que les SNP de la carte
+liste <- match(rownames(map), colnames(SG))
+
+SG<-SG[,liste]
+dim(SG)
+noms<-rownames(SG)
+SG <- apply(SG, 2 , function(x){ x<-as.numeric(x)})
+rownames(SG)<-noms
+
+# pour l'instant on peut ne garder que les snp sans donnees manquantes
+
+liste<-apply(SG, 2, function(x) {sum(is.na(x))})
+liste<-which(liste==0)
+SG<-SG[,liste]
+dim(SG)
+
+# genos <- as.matriread.csv(f, row.names=1))
+genos<-SG
+dim(genos)
+
+str(genos)
+genos[1:3, 1:6]
+rm(SG)
+```
+
+```{r load_map, include = FALSE}
+f<-"Map_EPO_07_09_2021.csv"
+
+tools::md5sum(f)
+map <- read.csv(f, row.names=1)
+str(map)
+names(map)
+head(map)
+dim(map)
+liste<-which(map$Chr.Svevo_original!=map$Chr.DR.Svevo_seriation)
+
+map$chr<-map$Chr.Svevo_original
+map$pos<-map$Svevo_original_Start
+
+map$chr[liste]<-map$Chr.DR.Svevo_seriation[liste]
+map$pos[liste]<-map$Svevo_seriation_Start[liste]
+
+# rownames=snpnames chr pos
+rownames(map)<-map[,1]
+map<-map[,c("chr","pos")]
+
+#Recodage des numéros de chromosomes dans map
+library(dplyr)
+map <- map%>% mutate(chr = recode(chr,
+              '1A' = 1, '2A' = 2, '3A' = 3, '4A' = 4, '5A' = 5, '6A' = 6, '7A' = 7,
+              '1B' = 8, '2B' = 9, '3B' = 10, '4B' = 11, '5B' = 12, '6B' = 13, '7B' = 14,
+              'Un' = 15))
+head(map)
+dim(map)
+```
+
