@@ -22,14 +22,22 @@ lignes <- row.names(spectres$brutes) %>% strsplit(split = "_") %>% sapply("[",1)
 
 lignes <- lignes[! lignes %in% setdiff(lignes,row.names(SG))]
 
-geno <- SG[lignes,] %>% apply(MARGIN = 1 , FUN = as.numeric)
+geno <- SG[lignes,] %>% as.data.frame() %>% apply(MARGIN = 1 , FUN = as.numeric) #la fonction apply avec margin = 1 sort une transposée
+
+# verification que geno et SG contiennent la même info au même endroit 
+# a <- t(geno) == SG[lignes,]
+# unique(a[1,])
+# ok
+
+row.names(geno) <- colnames(SG)
+
+colnames(geno) <- lignes
 
 rm(SG)
 
-geno <- t(geno) %>% na.omit()
+geno <- geno %>% na.omit()
 
-
-# Tout est dans le même ordre normalement
+# Tout est dans le bon ordre normalement
 
 # Filters on genomic data and computation of kinship matrix ---------------
 
@@ -98,13 +106,13 @@ for (i in 1:nrow(design)){
 
 
 
-# variances de chaque longueur d'onde
+# variances de chaque longueur d'onde (TRES TRES TRES LONG)
 GenomicVariance <- ResidualVariance <- rep(NA, nrow(spec))
 
 for (i in 1:nrow(spec)) {
   print(i)
   
-  mod4 <- mixed.solve(y = spec[i,], K = matA1 , Z = design)
+  mod4 <- mixed.solve(y = spec[,i], K = matA1 , Z = design)
   GenomicVariance[i] <- mod4$Vu
   ResidualVariance[i] <- mod4$Ve
   rm(mod4)
@@ -121,18 +129,22 @@ polygon(c(400, seq(400, 2498, by=2), 2498), c(0, PropGenomicVariance, 0), col = 
 polygon(c(400, seq(400, 2498, by=2), 2498), c(100, PropGenomicVariance, 100), col = "dodgerblue4")
 legend(2500, 90, c("Residual", "Genomic"), lty = 0, bty = "n", fill = c("dodgerblue4", "brown1"), cex=1)
 
-rm(spec, GenomicVariance, ResidualVariance, PropGenomicVariance)
+rm(g,GenomicVariance,i,j,PropGenomicVariance,ResidualVariance,design,spec)
 
-####################################################################################
-####################################################################################
-# V/ Genomic and Phenomic predictions (within environment cross validations)
-####################################################################################
-####################################################################################
+
+
+# phenomique a proprement parler ------------------------------------------
+
+rm(list = ls())
+load("../donnees/spectres")
+load("../donnees/opto")
+
+
 
 # Here we use GBLUP but of course you could use any GS model
 
-spct <- spectra$norm_der2$NIRS          # Choose a pretreatment
-spct2 <- scale(t(spct), center=T, scale=T) # scale absorbance at each wavelength (predictor)
+spct <- spectres$brutes         # Choose a pretreatment
+spct2 <- scale(spct, center=T, scale=T) # scale absorbance at each wavelength (predictor)
 matH <- tcrossprod(spct2)/ncol(spct2)     # Compute the hyperspectral similarity matrix
 
 Nenvt=8   # Number of environments
