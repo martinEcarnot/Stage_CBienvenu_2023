@@ -40,17 +40,18 @@ maxi <- function(a , m , s_e , s_i){
 # appli -------------------------------------------------------------------
 
 
+# user interface ----------------------------------------------------------
+
 ui <- fluidPage(
   
   # parametres
   fluidRow( # faire une ligne de parametres
     
-    column(4 , "Parametres de la parcelle" ,
+    column(4 , "Parametres de sélection" ,
 
            #numericInput("coef","Coefficient de changement de surface" , value = 0.5 , step = 0.0001),
            sliderInput("coef","Coefficient de changement de surface" , min = 0.01 , max = 1 , step = 0.01 , value = 0.5),
-           sliderInput("surface","Surface initiale" , min = 1 , max = 10000 , step = 1 , value = 100),
-           sliderInput("dens","Nombre de plantes par m2" , min = 200 , max = 400 , step = 50 , value = 300)
+           sliderInput("epiobs","Nombre d'épis observés" , min = 200 , max = 5000 , step = 1 , value = 500)
            ),
     
     column(4 , "Paramètres des plantes",
@@ -70,8 +71,7 @@ ui <- fluidPage(
     
     column(4 , "Faisabilité",
            textOutput("p"),
-           textOutput("epi_s"),
-           textOutput("epi_o")
+           textOutput("epi_s")
     ),
     column(4 , "Sélection",
            tableOutput("table")
@@ -88,6 +88,13 @@ ui <- fluidPage(
            plotOutput("trunc"))
   )
 )
+
+
+
+
+
+# server function ---------------------------------------------------------
+
 
 server <- function(input, output, session) {
   
@@ -108,10 +115,10 @@ server <- function(input, output, session) {
   red  <- reactive(input$coef)
   NG_E <- reactive(input$grainepi)
   NE_P <- reactive(input$epiplante)
-  d <- reactive(input$dens)
-  surf <- reactive(input$surface)
+  NE_O <- reactive(input$epiobs)
   
   mu <- 0
+  
 
   # Calcul de la proportion de grain/epis gardés
   p <- reactive(red() / (NG_E() * NE_P()))
@@ -154,10 +161,7 @@ server <- function(input, output, session) {
     H2e() * Se()  )
   
   NE_S <- reactive(           # Nombre d'épis sélectionnés
-    p() * NE_P() * d() * surf()  )
-  
-  NE_O <- reactive(           # nombre d'épis dans la parcelle
-    NE_P() * d() * surf()  )
+    p() * NE_O() )
       
   
   
@@ -215,7 +219,6 @@ server <- function(input, output, session) {
   
   output$p <- renderText({paste0("P% = " , round(p()*100 , 6))})
   output$epi_s <- renderText({paste0("Nombre d'épis à sélectionner = " , round(NE_S()))})
-  output$epi_o <- renderText({paste0("Nombre d'épis dans la parcelle = " , round(NE_O()))})
   
   output$distrib <- renderPlot({p1()})
   output$trunc <- renderPlot({p2()})
