@@ -19,26 +19,6 @@ tronc_epi <- function(x , mu , s_epi , s_intra , seuil){
 }
 
 
-maxi <- function(a , m , s_e , s_i){
-  x <- a
-  y <- a + 0.01
-  
-  if (is.nan(tronc_epi(x = x , mu = m , s_epi = s_e , s_intra = s_i , seuil = a)) == T){
-    x <- y
-    y <- y+0.01
-  }
-  
-  while (tronc_epi(x = x , mu = m , s_epi = s_e , s_intra = s_i , seuil = a) < tronc_epi(x = y , mu = m , s_epi = s_e , s_intra = s_i , seuil = a)){
-    x <- y
-    y <- y + 0.01
-  }
-  
-  (x+y)/2
-}
-
-
-# appli -------------------------------------------------------------------
-
 
 # user interface ----------------------------------------------------------
 
@@ -149,7 +129,7 @@ server <- function(input, output, session) {
     qnorm(p = 1-p() , mean = mu , sd = sepi())  )
   
   Se <- reactive(
-    maxi(a = ae() , m = mu , s_e = sepi() , s_i = sintra())  )
+    ig() * sepi()  )
   
   ie <- reactive(
     Se() / sp()  )

@@ -1,64 +1,135 @@
 rm(list=ls())
 
+library(ggplot2)
 
-# Paramètres
+# fonctions ---------------------------------------------------------------
 
-sigma_g <- 1
-sigma_e <- 2
-sigma_inter <- 0.5
-sigma_intra <- 0.3
-red  <- 0.9
-nb_grain_epi <- 70
-nb_epi_plante <- 2
-dens <- 300
+i_p <- function(p){
+  exp(- qnorm(1-p)^2 / 2) / (p * sqrt(2*pi) )
+}
 
-sigma_p <- sigma_g + sigma_e + sigma_inter + sigma_intra
+simulation <- function(mu , vg , vinter , vintra , vpos , r , NG_E , NE_P , NE_O){
+  
+  # calculs utiles
+  s_epi <- sqrt(vg + vinter + vpos)
+  s_intra <- sqrt(vintra)
+  vp <- vintra + vg + vinter + vpos
+  s_p <- sqrt(vp)
+  p <- r/(NG_E * NE_P)
+  
+  # Selection grain a grain 
+  ig <- i_p(p)
+  H2g <- vg / vp
+  Sg <- ig * s_p
+  Rg <- H2g*Sg
+  
+  # Selection epi par epi 
+  Se <- ig*s_epi
+  ie <- Se/s_p
+  H2e <- vg / (vg + vinter + vpos + vintra/NG_E)
+  Re <- H2e*Se
+  NE_S <- NE_O * p
+  
 
-# Calcul de pourcentage de grains gardés
-p <- red/(nb_grain_epi * nb_epi_plante)
+  
+  # resultats
+  data.frame(mu=mu, vg=vg, vinter=vinter , vintra=vintra , vpos=vpos , r=r , NG_E=NG_E , NE_P=NE_P , NE_O=NE_O , p=p ,
+             H2g=H2g , ig=ig , Sg=Sg , Rg=Rg ,
+             H2e=H2e , ie=ie , Se=Se , Re=Re)
+  
 
-# Modelisation grain a grain ----------------------------------------------
+}
 
-# calcul du i correspondant
-grains <- rnorm(n = nb_grain_epi * nb_epi_plante * dens , 
-                mean = 0 , 
-                sd = sigma_p)
-
-seuil_grains <- qnorm(p = 1 - p , 
-               mean = 0 , 
-               sd = sigma_p)
-
-grains_sel_grains <- grains[which(grains > seuil_grains)]
-
-S_grains <- mean(grains_sel_grains)
-
-i_grains <- S_grains/sigma_p
-
-h2_grains <- sigma_g^2/sigma_p^2
-
-R_grains <- h2_grains*i_grains*sigma_p
+# round(
+#   data.frame(row.names = c("Sélection sur grain" , "Sélection sur épi"),
+#              H2 = c(H2g , H2e),
+#              i = c(ig , ie),
+#              R = c(Rg , Re),
+#              S = c(Sg , Se)),
+#   2)
 
 
 
-# Simulation epi par epi --------------------------------------------------
+# parametres --------------------------------------------------------------
 
-epis <- rnorm(n = nb_epi_plante * dens , 
-              mean = 0 , 
-              sd = sigma_inter)
 
-seuil_epis <- qnorm(p = 1 - p , 
-               mean = 0 , 
-               sd = sigma_inter)
+mu <- 0
+vg <- 1
+vinter <- 1
+vintra <- 0.5
+vpos <- 1
+r <- 1  #coefficient de réduction de la surface
 
-epis_sel <- epis[which(epis > seuil_epis)]
+NG_E <- 70  #nb grains par epi
+NE_P <- 3  #nb epi par plante
+NE_O <- 5000 #nb epis observés
 
-grains_sel_epis <- as.vector(
-  sapply(epis_sel , FUN = rnorm , n = nb_grain_epi , sd = sigma_intra))
 
-S_epis <- mean(grains_sel_epis)
+# analytique et tirage donne la même chose ? ------------------------------
 
-i_epis <- S_epis/sigma_p
+an <- c()
+tir <- c()
 
-h2_epis <- sigma_g^2/(sigma_g + sigma_e + sigma_inter + sigma_intra/nb_grain_epi)
+for (vg in seq(0.8 , 1 , 0.1)){
+  for (vinter in seq(0.8 , 1 , 0.1)){
+    for (vintra in seq(0.8 , 1 , 0.1)){
+      for (vpos in seq(0.8 , 1 , 0.1)){
+        for (r in seq(0.8 , 1 , 0.1)){
+          for(NG_E in 68 : 70){
+            for (NE_P in 1:3){
+              for (NE_O in c(4000 , 4500 , 5000)){
+                
+                tab <- simulation(mu = mu , 
+                                  vg = vg , 
+                                  vinter = vinter , 
+                                  vintra = vintra , 
+                                  vpos = vpos , 
+                                  r = r , 
+                                  NG_E = NG_E , 
+                                  NE_P = NE_P , 
+                                  NE_O = NE_O)
+                
+                s_epi <- sqrt(vg + vinter + vpos)
+                s_intra <- sqrt(vintra)
+                vp <- vintra + vg + vinter + vpos
+                s_p <- sqrt(vp)
+                p <- r/(NG_E * NE_P)
+                
+                # Grains
+                
+                grains <- rnorm(n = 1000000 , mean = mu , sd = s_p)
+                ag <- qnorm(p = 1-p , mean = mu , sd = s_p)
+                sel <- grains[which(grains>ag)]
+                Sg2 <- mean(sel) - mu
+                
+                # Epis
+                
+                epis <- rnorm(n = round(1000000/NG_E) , mean = mu , sd = s_epi)
+                ae <- qnorm(p = 1-p , mean = mu , sd = s_epi)
+                epsel <- epis[which(epis > ae)]
+                grsel <- c()
+                for (e in epsel){
+                  grsel <- c(grsel , rnorm(n = NG_E , mean = e , sd = s_intra))
+                }
+                
+                Se2 <- mean(grsel) - mu
+                
+              
+              an <- c(an , tab[1,"Sg"] , tab[1,"Se"])
+              tir <- c(tir , Sg2 , Se2)
+              
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
 
-R_epis <- h2_epis*i_epis*sigma_p
+
+tab <- data.frame(analytique = an , tirage = tir)
+
+ggplot(data = tab , aes(x = analytique , y = tirage)) + geom_point() + geom_abline(slope = 1 , intercept = 0 , col = "red")
+
+cor(tir,an) #0.9968019

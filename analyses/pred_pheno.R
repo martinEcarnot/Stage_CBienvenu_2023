@@ -87,9 +87,13 @@ apply(phenotypes , MARGIN = 2 , FUN = un_trait ,
 
 pred_pheno <- res
 
+load()
+
 pred_pheno 
 
-save(pred_pheno , file = "pred_pheno")
+#save(pred_pheno , file = "pred_pheno")
+
+load("pred_pheno")
 
 ggplot(pred_pheno , aes(x = pretraitement , y = accuracy)) + geom_boxplot() + facet_wrap(~trait)
 
