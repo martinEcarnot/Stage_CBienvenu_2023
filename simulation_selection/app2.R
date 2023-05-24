@@ -169,7 +169,7 @@ server <- function(input, output, session) {
     )
   
   p1 <- reactive(
-    ggplot(data = don() , aes(x = abs , y = ord , col = Distribution)) + geom_line() + geom_vline(xintercept = mu) + labs(x = "Phenotype du grain" , y = "Densité de probabilité" , title = "Distributions des grains et des épis") + geom_vline(xintercept = ag() , col = "#F8766D") + geom_vline(xintercept = ae() , col = "#619CFF") + scale_colour_manual(values = c("#F8766D", "#619CFF")) + theme(plot.background = element_rect(colour = "black"))
+    ggplot(data = don() , aes(x = abs , y = ord , col = Distribution)) + geom_line() + geom_vline(xintercept = mu) + labs(x = "Phenotype du grain" , y = "Densité de probabilité" , title = "Distributions des grains et des épis") + geom_vline(xintercept = ag() , col = "#F8766D") + geom_vline(xintercept = ae() , col = "#619CFF") + scale_colour_manual(values = c("#F8766D", "#619CFF")) + theme(plot.background = element_rect(colour = "black")) + ylim(0,1) + xlim(-5,5)
   )
 
 
@@ -190,7 +190,7 @@ server <- function(input, output, session) {
   
   
   p2 <- reactive(
-    ggplot(data = don2() , aes(x = abs , y = ord , col = Distribution)) + geom_line() + geom_vline(xintercept = ag() , col = "#F8766D") + geom_vline(xintercept = ae() , col = "#619CFF") + scale_colour_manual(values = c("#619CFF", "#F8766D")) + labs(x = "Phenotype du grain" , y = "Densité de probabilité" , title = "Distributions des grains sélectionnés") + theme(plot.background = element_rect(colour = "black"))
+    ggplot(data = don2() , aes(x = abs , y = ord , col = Distribution)) + geom_line() + geom_vline(xintercept = ag() , col = "#F8766D") + geom_vline(xintercept = ae() , col = "#619CFF") + scale_colour_manual(values = c("#619CFF", "#F8766D")) + labs(x = "Phenotype du grain" , y = "Densité de probabilité" , title = "Distributions des grains sélectionnés") + theme(plot.background = element_rect(colour = "black")) + xlim(2,8) + ylim(0,2)
     )
   
   
