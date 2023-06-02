@@ -9,6 +9,7 @@ library(prospectr)
 library(signal)
 library(rrBLUP)
 library(tidyverse)
+library(ggplot2)
 
 # individus en commun
 
@@ -95,7 +96,7 @@ pred_pheno
 
 load("pred_pheno")
 
-ggplot(pred_pheno , aes(x = pretraitement , y = accuracy)) + geom_boxplot() + facet_wrap(~trait)
+ggplot(pred_pheno , aes(x = pretraitement , y = accuracy)) + geom_boxplot() + facet_wrap(~trait) + labs(title = "Accuracy de prédictions de différents traits selon le \nprétraitement du spectre" , x = "Prétraitement" , y="Accuracy") + theme(legend.position = "none")
 
 
 

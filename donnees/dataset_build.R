@@ -1,7 +1,7 @@
 rm(list = ls())
 
-# setwd("~/Stage/donnees")
-setwd("~/Documents/INRA/SelPhen_2023/Stage_CBienvenu_2023/donnees/")
+setwd("~/Stage/donnees")
+#setwd("~/Documents/INRA/SelPhen_2023/Stage_CBienvenu_2023/donnees/")
 
 library(nirsextra)
 library(tidyverse)
@@ -458,6 +458,8 @@ rm(g,i,df,file_names,opto)
   # Chargement des donnees des bacs :
   bac <- read.table("./data_brute/BAC1.csv" , header = T , sep = ";" , dec = ".")
   
+ 
+  
   for (i in 2:6){
     tmp <- read.table(paste0("./data_brute/BAC",i,".csv") , header = T , sep = ";" , dec = ".")
     names(tmp) <- names(bac)
@@ -491,9 +493,9 @@ rm(g,i,df,file_names,opto)
   
   
   # modifications pour les genotypes qui ont pas germe
-  # On commence par creer une variable de presence ou non dans les bacs pour indiquer si Ã§a a germe. Initialisation a OUI et toutes les fois ou c'est pas le cas en vrai, on modifie en NON :
+  # On commence par creer une variable qui indique l'individu semÃ© au premier semis
   
-  bac$germi <- "OUI"
+  bac$semis_1 <- row.names(bac)
   
   # Les individus qui ont pas germe sont ressences dans le fichier "correction_bac.csv"
   # importation de ce fichier
@@ -539,251 +541,127 @@ rm(g,i,df,file_names,opto)
   row.names(correc) <- correc$ind
   
   
-  # on modifie bac : on met "NON" dans la colonne germi pour dire que Ã§a a pas germe et on ajoute une ligne avec l'individu qui le remplace 
+  # on modifie bac : on crÃ©e une colonne semis 2 qui va ressencer les individus semÃ©s au deuxiÃ¨me semis
   c <- 1 # compteur utile dans le if des genotypes inconnus
+  bac$semis_2 <- NA
   
   for (i in 1:nrow(correc)){
     ind <- correc[i,"ind"]
     new_ind <- correc[i,"new_ind"]
     
-    # Si on sait quel genotype a remplace : on duplique la ligne de base et on change son numero de grain, puis on change la valeur de germination de la ligne de base
+    # Si on sait quel genotype a remplace : on remplit la colonne semis_2
     if (is.na(correc[ind , "grain"]) == FALSE){
-      bac[new_ind,] <- bac[ind,]
-      bac[new_ind,"grain"] <- correc[ind,"grain"]
-      bac[ind , "germi"] <- "NON"
+      bac[ind,"semis_2"] <- new_ind
     }
     
-    # Si on ne sait pas quel genotype a ete seme (les NA dans correc), on change juste le nom du genotype en INCONNU
+    # Si on ne sait pas quel genotype a ete seme (les NA dans correc), on met INCONNU dans semis_2
     
     if (is.na(correc[ind , "grain"]) == TRUE){
-      bac[ind,"geno"] <- "INCONNU"
-      bac[ind,"grain"] <- c
+      bac[ind,"semis_2"] <- paste0("INCONNU_",c)
       c <- c+1
     }
   }
 
-  rm(c)
-# On actualise les rownames
-row.names(bac) <- paste0(bac$geno , "_" , bac$grain)
-  
   rm(ind , new_ind , i)
+  
+  
+  
   # Ã§a c'etait pour toutes les donnees surlignees en orange sur le papier sans annotations roses (sauf pour la boite 12 oÃ¹ c'est pris en compte malgre les annotations roses).
   
   # il y a d'autres donnees plus chiantes qu'on peut pas simplement remplacer comme Ã§a car les boites et les rangs entre l'individu remplace et le remplaÃ§ant ne correspondent pas. Du coup faut aller chercher Ã  la main Ã  quels genotype ils correspondent. Ce sont toutes les donnees entourrees en rose sur le format papier (sauf celles de la boite 12)
   
-  {
+  
+  func <- function(b,r,d,g,ind){
     # recuperation des infos sur le genotype remplaÃ§ant
-    a <- subset(bac , boite == 6 & Rang.OK == "E" & Debut == 3 & grain == 3)
+    a <- subset(bac , boite == b & Rang.OK == r & Debut == d & grain == g)
     
-    # genotype remplace
-    ind <- "305_2"
-    
-    new_geno <- a$geno
-    new_grain <- a$grain + 6
-    new_ind <- paste0(new_geno,"_",new_grain)
-    
-    bac[new_ind , ] <- bac[ind , ]
-    bac[ind,"germi"] <- "NON"
-    
-    bac[new_ind,"geno"] <- new_geno
-    bac[new_ind,"grain"] <- new_grain
-  }
-  
-  
-  {
-    a <- subset(bac , boite == 10 & Rang.OK == "F" & Debut == 3 & grain == 3)
-    ind <- "488_7"
+    # genotype remplace = ind
     
     new_geno <- a$geno
     new_grain <- a$grain + 6
     new_ind <- paste0(new_geno,"_",new_grain)
     
-    bac[new_ind , ] <- bac[ind , ]
-    bac[ind,"germi"] <- "NON"
-    
-    bac[new_ind,"geno"] <- new_geno
-    bac[new_ind,"grain"] <- new_grain
+    bac[new_ind , ] <<- bac[ind , ]
+    bac[new_ind,"geno"] <<- new_geno
+    bac[new_ind,"grain"] <<- new_grain
+    bac[new_ind,"semis_1"] <<- ind
+    bac[new_ind,"semis_2"] <<- new_ind
+    bac <<- bac[-which(bac$semis_1==ind & is.na(bac$semis_2)==T),]
   }
   
-  {
-    a <- subset(bac , boite == 10 & Rang.OK == "C" & Debut == 10 & grain == 4)
-    ind <- "188_2"
-    
-    new_geno <- a$geno
-    new_grain <- a$grain + 6
-    new_ind <- paste0(new_geno,"_",new_grain)
-    
-    bac[new_ind , ] <- bac[ind , ]
-    bac[ind,"germi"] <- "NON"
-    
-    bac[new_ind,"geno"] <- new_geno
-    bac[new_ind,"grain"] <- new_grain
-  }
+  #func(b=4 , r="E" , d=1 , g=1 , ind="394_1")
+  func(b=6 , r="E" , d=3 , g=3 , ind="305_2")
+  func(b=10 , r="F" , d=3 , g=3 , ind="488_7")
+  func(b=10 , r="C" , d=10 , g=4 , ind="188_2")
+  func(b=2 , r="C" , d=8 , g=2 , ind="65_2")
+  func(b=10 , r="E" , d=8 , g=2 , ind = "447_3")
+  #func(b=9 , r="D" , d=7 , g=1 , ind="428_5")
+  func(b=8 , r="C" , d=2 , g=2 , ind="428_6")
+  func(b=7 , r="H" , d=2 , g=2 , ind="311_6")
+  func(b=4 , r="A" , d=1 , g=1 , ind="489_6")
+  #func(b=1 , r="B" , d=8 , g=2 , ind="6_6")
+  #func(b=1 , r="B" , d=8 , g=2 , ind="6_7")
   
-  {
-    a <- subset(bac , boite == 2 & Rang.OK == "C" & Debut == 8 & grain == 2)
-    ind <- "65_2"
-    
-    new_geno <- a$geno
-    new_grain <- a$grain + 6
-    new_ind <- paste0(new_geno,"_",new_grain)
-    
-    bac[new_ind , ] <- bac[ind , ]
-    bac[ind,"germi"] <- "NON"
-    
-    bac[new_ind,"geno"] <- new_geno
-    bac[new_ind,"grain"] <- new_grain
+  #pb pour le 428_5, le 394_1, le 6_6 et le 6_7 : genotype de rempplacement deja plante
+  # on les remplace par des genotypes inconnus
+ 
+  
+  for (g in c("428_5" , "394_1" , "6_6" , "6_7")){
+    bac[g,"semis_2"] <- paste0("INCONNU_",c)
+    bac[g,"geno"] <- "INCONNU"
+    bac[g,"grain"] <- c
+    c <- c+1
   }
   
   
-  
-  {
-    a <- subset(bac , boite == 9 & Rang.OK == "D" & Debut == 7 & grain == 1)
-    ind <- "428_5"
-    
-    new_geno <- a$geno
-    new_grain <- a$grain + 6
-    new_ind <- paste0(new_geno,"_",new_grain)
-    
-    bac[new_ind , ] <- bac[ind , ]
-    bac[ind,"germi"] <- "NON"
-    
-    bac[new_ind,"geno"] <- new_geno
-    bac[new_ind,"grain"] <- new_grain
-  }
-  
-  {
-    a <- subset(bac , boite == 8 & Rang.OK == "C" & Debut == 2 & grain == 2)
-    ind <- "428_6"
-    
-    new_geno <- a$geno
-    new_grain <- a$grain + 6
-    new_ind <- paste0(new_geno,"_",new_grain)
-    
-    bac[new_ind , ] <- bac[ind , ]
-    bac[ind,"germi"] <- "NON"
-    
-    bac[new_ind,"geno"] <- new_geno
-    bac[new_ind,"grain"] <- new_grain
-  }
-  
-  
-  {
-    a <- subset(bac , boite == 7 & Rang.OK == "H" & Debut == 2 & grain == 2)
-    ind <- "311_6"
-    
-    new_geno <- a$geno
-    new_grain <- a$grain + 6
-    new_ind <- paste0(new_geno,"_",new_grain)
-    
-    bac[new_ind , ] <- bac[ind , ]
-    bac[ind,"germi"] <- "NON"
-    
-    bac[new_ind,"geno"] <- new_geno
-    bac[new_ind,"grain"] <- new_grain
-  }
-  
-  
-  {
-    a <- subset(bac , boite == 4 & Rang.OK == "A" & Debut == 1 & grain == 1)
-    ind <- "489_6"
-    
-    new_geno <- a$geno
-    new_grain <- a$grain + 6
-    new_ind <- paste0(new_geno,"_",new_grain)
-    
-    bac[new_ind , ] <- bac[ind , ]
-    bac[ind,"germi"] <- "NON"
-    
-    bac[new_ind,"geno"] <- new_geno
-    bac[new_ind,"grain"] <- new_grain
-  }
-  
-  
-  rm(ind,new_geno,new_ind,new_grain,a,correc)
+  # On actualise les rownames
+  row.names(bac) <- ifelse(is.na(bac$semis_2)==T,bac$semis_1,bac$semis_2)
   
   # On enleve les variables inutiles 
+  bac$X.1 <- bac$Fin <- bac$boite <- bac$boite.1 <- bac$Debut <- bac$RANG <- bac$Rang.OK <- bac$graines <- bac$gen <- bac$grain <-NULL
   
-  bac$X.1 <- bac$Fin <- bac$boite <- bac$boite.1 <- bac$Debut <- bac$RANG <- bac$Rang.OK <- bac$graines <- bac$gen <- NULL
-  
+
   save(bac , file = "bac")
   
-  rm(bac)
+  rm(bac,correc,c,g,func)
   
 }
 
-# Ajout des donnÃ©es de germination du 20/03/2023
 
-# load("bac")
 
-# On trouve les genotypes qui ont pas germe le 20/03 : les y et les x correspondent a ce qu'il y a sur papier. On precise germi = "OUI" pour bien cibler les genotypes qui ont remplace ceux qui ont pas germe a la premiere fois (les genotypes remplancants ont ete note "OUI" par defaut)
+# Ajout des donnees d'epiaison
 
-# no <- c(which(bac$germi == "OUI" & bac$BAC == 1 & bac$Y == 1 & bac$X == 10),
-#         which(bac$germi == "OUI" & bac$BAC == 1 & bac$Y == 1 & bac$X == 16),
-#         which(bac$germi == "OUI" & bac$BAC == 1 & bac$Y == 2 & bac$X == 5),
-#         which(bac$germi == "OUI" & bac$BAC == 1 & bac$Y == 2 & bac$X == 16),
-#         which(bac$germi == "OUI" & bac$BAC == 1 & bac$Y == 4 & bac$X == 11),
-#         which(bac$germi == "OUI" & bac$BAC == 1 & bac$Y == 5 & bac$X == 16),
-#         which(bac$germi == "OUI" & bac$BAC == 1 & bac$Y == 7 & bac$X == 12),
-#         which(bac$germi == "OUI" & bac$BAC == 1 & bac$Y == 8 & bac$X == 7),
-#         which(bac$germi == "OUI" & bac$BAC == 1 & bac$Y == 10 & bac$X == 16),
-#         which(bac$germi == "OUI" & bac$BAC == 1 & bac$Y == 13 & bac$X == 7),
-#         which(bac$germi == "OUI" & bac$BAC == 1 & bac$Y == 13 & bac$X == 14),
-#         
-#         which(bac$germi == "OUI" & bac$BAC == 2 & bac$Y == 3 & bac$X == 7),
-#         which(bac$germi == "OUI" & bac$BAC == 2 & bac$Y == 4 & bac$X == 16),
-#         which(bac$germi == "OUI" & bac$BAC == 2 & bac$Y == 5 & bac$X == 1),
-#         which(bac$germi == "OUI" & bac$BAC == 2 & bac$Y == 6 & bac$X == 7),
-#         which(bac$germi == "OUI" & bac$BAC == 2 & bac$Y == 8 & bac$X == 7),
-#         which(bac$germi == "OUI" & bac$BAC == 2 & bac$Y == 8 & bac$X == 13),
-#         which(bac$germi == "OUI" & bac$BAC == 2 & bac$Y == 9 & bac$X == 16),
-#         which(bac$germi == "OUI" & bac$BAC == 2 & bac$Y == 13 & bac$X == 9),
-#         
-#         which(bac$germi == "OUI" & bac$BAC == 3 & bac$Y == 1 & bac$X == 7),
-#         which(bac$germi == "OUI" & bac$BAC == 3 & bac$Y == 2 & bac$X == 5),
-#         which(bac$germi == "OUI" & bac$BAC == 3 & bac$Y == 5 & bac$X == 2),
-#         which(bac$germi == "OUI" & bac$BAC == 3 & bac$Y == 5 & bac$X == 3),
-#         which(bac$germi == "OUI" & bac$BAC == 3 & bac$Y == 5 & bac$X == 7),
-#         which(bac$germi == "OUI" & bac$BAC == 3 & bac$Y == 6 & bac$X == 1),
-#         which(bac$germi == "OUI" & bac$BAC == 3 & bac$Y == 6 & bac$X == 10),
-#         which(bac$germi == "OUI" & bac$BAC == 3 & bac$Y == 6 & bac$X == 11),
-#         which(bac$germi == "OUI" & bac$BAC == 3 & bac$Y == 8 & bac$X == 5),
-#         which(bac$germi == "OUI" & bac$BAC == 3 & bac$Y == 8 & bac$X == 7),
-#         which(bac$germi == "OUI" & bac$BAC == 3 & bac$Y == 9 & bac$X == 6),
-#         which(bac$germi == "OUI" & bac$BAC == 3 & bac$Y == 9 & bac$X == 10),
-#         which(bac$germi == "OUI" & bac$BAC == 3 & bac$Y == 10 & bac$X == 7),
-#         which(bac$germi == "OUI" & bac$BAC == 3 & bac$Y == 10 & bac$X == 8),
-#         which(bac$germi == "OUI" & bac$BAC == 3 & bac$Y == 11 & bac$X == 11),
-#         which(bac$germi == "OUI" & bac$BAC == 3 & bac$Y == 11 & bac$X == 12),
-#         which(bac$germi == "OUI" & bac$BAC == 3 & bac$Y == 11 & bac$X == 15),
-#         
-#         which(bac$germi == "OUI" & bac$BAC == 4 & bac$Y == 1 & bac$X == 15),
-#         which(bac$germi == "OUI" & bac$BAC == 4 & bac$Y == 2 & bac$X == 12),
-#         which(bac$germi == "OUI" & bac$BAC == 4 & bac$Y == 3 & bac$X == 3),
-#         which(bac$germi == "OUI" & bac$BAC == 4 & bac$Y == 7 & bac$X == 1),
-#         which(bac$germi == "OUI" & bac$BAC == 4 & bac$Y == 7 & bac$X == 9),
-#         which(bac$germi == "OUI" & bac$BAC == 4 & bac$Y == 11 & bac$X == 5),
-#         which(bac$germi == "OUI" & bac$BAC == 4 & bac$Y == 12 & bac$X == 16),
-#         
-#         which(bac$germi == "OUI" & bac$BAC == 5 & bac$Y == 1 & bac$X == 1),
-#         which(bac$germi == "OUI" & bac$BAC == 5 & bac$Y == 4 & bac$X == 8),
-#         which(bac$germi == "OUI" & bac$BAC == 5 & bac$Y == 7 & bac$X == 4),
-#         which(bac$germi == "OUI" & bac$BAC == 5 & bac$Y == 7 & bac$X == 6),
-#         which(bac$germi == "OUI" & bac$BAC == 5 & bac$Y == 8 & bac$X == 1),
-#         which(bac$germi == "OUI" & bac$BAC == 5 & bac$Y == 10 & bac$X == 16),
-#         which(bac$germi == "OUI" & bac$BAC == 5 & bac$Y == 11 & bac$X == 12),
-#         which(bac$germi == "OUI" & bac$BAC == 5 & bac$Y == 13 & bac$X == 2),
-#         
-#         which(bac$germi == "OUI" & bac$BAC == 6 & bac$Y == 3 & bac$X == 15),
-#         which(bac$germi == "OUI" & bac$BAC == 6 & bac$Y == 6 & bac$X == 8),
-#         which(bac$germi == "OUI" & bac$BAC == 6 & bac$Y == 13 & bac$X == 8)
-# )
-# 
-# bac[no,"germi"] <- "NON"
-# 
-# save(bac , file = "bac")
-# 
-# 
-# rm(list = ls())
-# }
-# fonction pour passer une matrice comme une colonne dans un dataframe : sp2df (il faut que les psectres soient sous format matrice)
+load("bac")
+epiaison <- read.table("data_brute/epiaison.csv" , sep = ";" , dec = "." , header = T , na.strings = "")
+
+bac$key <- paste0(bac$BAC,"_",bac$X,"_",bac$Y)
+
+epiaison$key <- paste0(epiaison$BAC,"_",epiaison$X,"_",epiaison$Y)
+epiaison <- epiaison %>% select(key,DATE)
+
+bac <- merge(bac , epiaison , by = "key") %>% select(!c("key")) %>% rename(epiaison = DATE)
+
+row.names(bac) <- ifelse(is.na(bac$semis_2)==T,bac$semis_1,bac$semis_2)
+
+
+# Création d'une variable de presence/absence
+bac$appel <- ifelse(bac$epiaison != "x" | is.na(bac$epiaison) == T, "present" , "absent")
+
+# Les données d'épiaison sont codées comme le jour de mai (2 = 2 mai)
+# Le premier semis a été fait le 6 janvier, et le deuxième semis a été fait le 17 février
+# On corrige la colonne d'epiaison en mettant le nombre de jours réels avant epiaison
+# pour le semis 1, il y a 115 jours entre le 6 janvier et le 1 mai, donc on rajoute 115 au donnees du premier semis
+# pour le semis 2, il y a 63 jors entre le 17 fevrier et le 1 mai, donc on rajoute 60 aux donnees du deuxieme semis
+
+bac$epiaison <- as.numeric(bac$epiaison)
+
+bac$epiaison <- ifelse(is.na(bac$semis_2)==T , bac$epiaison + 115 , bac$epiaison + 63)
+
+
+# Ajout des donnees de luzerne
+
+bac$luz <- ifelse(bac$BAC==1 | bac$BAC==4 , "catera" ,
+                  ifelse(bac$BAC==6 | bac$BAC==2 , "aria" , "sans"))
+
+
+save(bac , file = "bac")

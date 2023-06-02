@@ -4,17 +4,28 @@ library(ggplot2)
 library(shiny)
 library(plot3D)
 library(tidyverse)
+
 # fonctions ---------------------------------------------------------------
 
 i_p <- function(p){
   exp(- qnorm(1-p)^2 / 2) / (p * sqrt(2*pi) )
 }
 
+
+RR <- function(vg , vinter , vintra , vpos , NG_E , NE_O , NG_O ,nsel){
+  NG_E * NE_O * sqrt(vg+vinter+vpos+vintra) * exp((qnorm(1-nsel/NG_O)^2 - qnorm(1-nsel/(NG_E*NE_O))^2) / 2) / (NG_O * sqrt(vg+vinter+vpos+vintra/NG_E))
+}
+
+
+isuri <- function(nsel,NG_O,NE_O,NG_E){
+  NG_E * NE_O * exp((qnorm(1-nsel/NG_O)^2 - qnorm(1-nsel/(NG_E*NE_O))^2) / 2) / NG_O }
+
+
+
 simulation <- function(mu , vg , vinter , vintra , vpos , r , NG_E , NE_P , NE_O){
   
   # calculs utiles
-  s_epi <- sqrt(vg + vinter + vpos)
-  s_intra <- sqrt(vintra)
+  s_epi <- sqrt(vg + vinter + vpos + vintra/NG_E)
   vp <- vintra + vg + vinter + vpos
   s_p <- sqrt(vp)
   p <- r/(NG_E * NE_P)
@@ -35,7 +46,7 @@ simulation <- function(mu , vg , vinter , vintra , vpos , r , NG_E , NE_P , NE_O
   
   # rapport des R
   
-  RR <- s_epi * s_p / (vg + vinter + vpos + vintra/NG_E)
+  RR <- s_p / s_epi 
   
   # resultats
   data.frame(mu=mu, vg=vg, vinter=vinter , vintra=vintra , vpos=vpos , r=r , NG_E=NG_E , NE_P=NE_P , NE_O=NE_O , p=p ,
@@ -48,58 +59,101 @@ simulation <- function(mu , vg , vinter , vintra , vpos , r , NG_E , NE_P , NE_O
 
 
 
-# parametres --------------------------------------------------------------
-
-mu <- 0
-vg <- 1
-vinter <- 1
-vintra <- 1
-vpos <- 1
-r <- 1  #coefficient de rÃ©duction de la surface
-
-NG_E <- 70  #nb grains par epi
-NE_P <- 1  #nb epi par plante
-NE_O <- 5000 #nb epis observÃ©s
 
 
-                 
-res <- simulation(mu = mu , 
-                  vg = vg ,
-                  vinter = vinter ,
-                  vintra = vintra ,
-                  vpos = vpos ,
-                  r = r ,
-                  NG_E = NG_E ,
-                  NE_P = NE_P ,
-                  NE_O = NE_O)
+# plot des i/i ------------------------------------------------------------
 
-for (NG_E in 20:90){
-  for (vintra in seq(0.1,8,0.1)){
-    res <- rbind(res , simulation(mu = mu , 
-                                  vg = vg ,
-                                  vinter = vinter ,
-                                  vintra = vintra ,
-                                  vpos = vpos ,
-                                  r = r ,
-                                  NG_E = NG_E ,
-                                  NE_P = NE_P ,
-                                  NE_O = NE_O))
+
+
+
+ui <- fluidPage(
+  
+  # parametres
+  fluidRow( # faire une ligne de parametres
+    
+    column(6 , "" ,
+           sliderInput("Nombre de grains sélectionnés","ngs" , min = 1000 , max = 1000000 , step = 1000 , value = 500000),
+           sliderInput("Nombre de grains par épi","nge" , min = 20 , max = 100 , step = 10 , value = 70)),
+    
+    column(6 , "" ,
+           sliderInput("theta","theta" , min = 0 , max = 360 , step = 1 , value = 0),
+           sliderInput("phi","phi" , min = 0 , max = 360 , step = 1 , value = 0)
+    ),
+    fluidRow(
+      column(12, "",
+             plotOutput("graph"))
+    )
+  )
+)  
+
+
+
+ng_o <- seq(70000,1000000,1000)
+ne_o <- seq(100,1000,50)
+ngo <- c()
+neo <- c()
+for (a in ng_o){
+  for (b in ne_o){
+    ngo <- c(ngo,a)
+    neo <- c(neo,b)
   }
 }
 
+rm(ng_o,ne_o,a,b)
+
+isuri(nsel = 1000000 , NG_O = ngo , NE_O = neo , NG_E = 20)
 
 
 
-res$vp <- res$vinter + res$vinter + res$vg + res$vpos
-#tab <- res %>% mutate(vv=vintra/vp) %>% select(RR,vv,NG_E)
+server <- function(input, output, session) {
+  t <- reactive(input$theta)
+  p <- reactive(input$phi)
+  
+  nsel <- reactive(input$ngs)
+  nge <- reactive(input$nge)
+  
+  
+  for (a in seq(nsel()+1000,1000000,1000)){
+    for (b in seq(round(nsel()/NG_E())+50,5000,50)){
+      ngo <- c(ngo,a)
+      neo <- c(neo,b)
+      ii <- reactive(c(ii(),isuri(nsel=nsel(),NG_O=a,NE_O=b,NG_E=nge())))
+    }
+  }
+  
+  g <- reactive(scatter3D(x = neo , y = ngo , z = ii , theta = t() , phi = p())
+  )
+  
+  output$graph <- renderPlot({g()})
+}
 
-vv <- res$vintra / res$vp
-RR <- res$RR
-nge <- res$NG_E
+
+shinyApp(ui, server)
 
 
 
 
+
+
+# plot des R/R en fct de i/i et vintra/vp ---------------------------------
+
+rm(list=ls())
+
+RRii <- function(vg , vinter , vintra , vpos , ii , NG_E){
+  ii * sqrt(vg+vinter+vpos+vintra)  / sqrt(vg+vinter+vpos+vintra/NG_E)
+}
+
+i <- c()
+v <- c()
+r <- c()
+
+for (ii in seq(0.01,2,0.01)){
+  for (vintra in seq(0.1,4,0.1)){
+    v <- c(v , vintra/(vintra+3))
+    i <- c(i , ii)
+    r <- c(r , RRii(vg=1,vinter=1,vintra=vintra,vpos=1,NG_E=70,ii=ii))
+  }
+}
 
 ui <- fluidPage(
   
@@ -122,11 +176,12 @@ server <- function(input, output, session) {
   t <- reactive(input$theta)
   p <- reactive(input$phi)
   
-  g <- reactive(scatter3D(x = vv , y = nge , z = RR , theta = t() , phi = p())
+  g <- reactive(scatter3D(x = i , y = v , z = r , theta = t() , phi = p())
   )
   
   output$graph <- renderPlot({g()})
 }
+
 
 shinyApp(ui, server)
 
