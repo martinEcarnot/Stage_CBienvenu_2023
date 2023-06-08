@@ -2,8 +2,8 @@ rm(list=ls())
 
 library(ggplot2)
 library(shiny)
-library(gg3D)
 library(tidyverse)
+library(plotly)
 
 # fonctions ---------------------------------------------------------------
 
@@ -21,40 +21,7 @@ isuri <- function(nsel,NG_O,NE_O,NG_E){
   NG_E * NE_O * exp((qnorm(1-nsel/NG_O)^2 - qnorm(1-nsel/(NG_E*NE_O))^2) / 2) / NG_O }
 
 
-simulation <- function(mu , vg , vinter , vintra , vpos , r , NG_E , NE_P , NE_O){
-  
-  # calculs utiles
-  s_epi <- sqrt(vg + vinter + vpos + vintra/NG_E)
-  vp <- vintra + vg + vinter + vpos
-  s_p <- sqrt(vp)
-  p <- r/(NG_E * NE_P)
-  
-  # Selection grain a grain 
-  ig <- i_p(p)
-  H2g <- vg / vp
-  Sg <- ig * s_p
-  Rg <- H2g*Sg
-  
-  # Selection epi par epi 
-  Se <- ig*s_epi
-  ie <- Se/s_p
-  H2e <- vg / (vg + vinter + vpos + vintra/NG_E)
-  Re <- H2e*Se
-  NE_S <- NE_O * p
-  
-  
-  # rapport des R
-  
-  RR <- s_p / s_epi 
-  
-  # resultats
-  data.frame(mu=mu, vg=vg, vinter=vinter , vintra=vintra , vpos=vpos , r=r , NG_E=NG_E , NE_P=NE_P , NE_O=NE_O , p=p ,
-             H2g=H2g , ig=ig , Sg=Sg , Rg=Rg ,
-             H2e=H2e , ie=ie , Se=Se , Re=Re ,
-             RR=RR)
-  
 
-}
 
 
 
@@ -152,8 +119,8 @@ ui <- fluidPage(
     column(4 , "Axes et parametres graphiques" ,
            sliderInput("theta","theta" , min = 0 , max = 360 , step = 1 , value = 0),
            sliderInput("phi","phi" , min = 0 , max = 360 , step = 1 , value = 0),
-           sliderInput("ngo" , "Nombre de grains observes" , min = 30000 , max = 1000000 , step = 10000 , value = c(70000,500000)),
-           sliderInput("neo" , "Nombre d'epis observes" , min = 10 , max = 5000 , step = 10 , value = c(20,1000))
+           sliderInput("ngo" , "Nombre de grains observes" , min = 40000 , max = 1000000 , step = 20000 , value = c(80000,500000)),
+           sliderInput("neo" , "Nombre d'epis observes" , min = 20 , max = 5000 , step = 20 , value = c(20,1000))
           ),
     
     column(4 , "Variances" , 
@@ -172,7 +139,46 @@ ui <- fluidPage(
 
 
 
-
+# server <- function(input, output, session) {
+#   ngo <- reactive(seq(input$ngo[1] , input$ngo[2] , length = 50))
+#   neo <- reactive(seq(input$neo[1] , input$neo[2] , length = 50))
+# 
+#   t <- reactive(input$theta)
+#   p <- reactive(input$phi)
+# 
+#   sel <- reactive(input$ngs)
+#   nge <- reactive(input$nge)
+# 
+#   vg <- reactive(input$vg)
+#   vinter <- reactive(input$vinter)
+#   vintra <- reactive(input$vintra)
+#   vpos <- reactive(input$vpos)
+# 
+# 
+# 
+#   zv <- reactive(outer(X = ngo() , Y = neo() , FUN = isuri , NG_E = nge() , nsel = sel() ))
+# 
+#   zvalue <- reactive(zv()*sqrt(vg()+vinter()+vpos()+vintra())/sqrt(vg()+vinter()+vpos()+vintra()/nge()))
+# 
+#   xy <- reactive(expand.grid(ngo(), neo()))
+# 
+#   g <- {reactive(persp(x = ngo() ,
+#                 y = neo() ,
+#                 z = zvalue() ,
+#                 theta = t(),
+#                 phi = p(),
+#                 xlab = "Nombre de grains observes" ,
+#                 ylab = "Nombre d'epis observes",
+#                 zlab = "Repi / Rgrain"))
+# 
+#     reactive(points(trans3d(xy()[,1], xy()[,2], 1, pmat = g()), col = 2, pch = 10))
+#     }
+# 
+# 
+# 
+# 
+#   output$graph <- renderPlot({g()})
+# }
 
 
 server <- function(input, output, session) {
@@ -196,24 +202,26 @@ server <- function(input, output, session) {
   
   zvalue <- reactive(zv()*sqrt(vg()+vinter()+vpos()+vintra())/sqrt(vg()+vinter()+vpos()+vintra()/nge()))
   
-  xy <- reactive(expand.grid(ngo(), neo()))
+  plan <- reactive(expand.grid(ngo(), neo()))
   
-  g <- {reactive(persp(x = ngo() ,
-                y = neo() ,
-                z = zvalue() ,
-                theta = t(),
-                phi = p(),
-                xlab = "Nombre de grains observes" ,
-                ylab = "Nombre d'epis observes",
-                zlab = "Repi / Rgrain"))
+
+  
+  
+  
+  
+  output$graph <- renderPlot({
     
-    reactive(points(trans3d(xy()[,1], xy()[,2], 1, pmat = g()), col = 2, pch = 10))
-    }
-  
-  
-  
-  
-  output$graph <- renderPlot({g()})
+    graph <- reactive(persp(x = neo() , y = ngo() , z = zvalue() , phi = p() , theta = t()))
+    
+    for (ix in neo()){
+      lines(trans3d(x = ix , y = c(min(ngo()),max(ngo())) , z = 1 , pmat = graph()), col = "red")
+      }
+    
+    for (igrec in ngo()){
+      lines(trans3d(x = c(min(neo()),max(neo())) , y = igrec , z = 1 , pmat = graph()), col = "red")
+      }
+    
+      })
 }
 
 
@@ -222,58 +230,22 @@ shinyApp(ui, server)
 
 
 
+class(RR(NG_O = 80000 , NE_O = 50 , NG_E = 50 , nsel = 2000 , vinter = 1 , vintra = 1 , vpos = 1 , vg = 1))
 
-# plot des R/R en fct de i/i et vintra/vp ---------------------------------
+ngo <- seq(80000 , 500000 , 20000)
 
-rm(list=ls())
+neo <- seq(50 , 1000 , 50)
 
-RRii <- function(vg , vinter , vintra , vpos , ii , NG_E){
-  ii * sqrt(vg+vinter+vpos+vintra)  / sqrt(vg+vinter+vpos+vintra/NG_E)
-}
+zvalue <- sapply(ngo , FUN = function(go){sapply(neo , FUN = RR , NG_O = go , NG_E = 70 , nsel = 2000 , vinter = 1 , vintra = 1 , vpos = 1 , vg = 1)}
+            )
+plan <- expand.grid(neo,ngo)
 
-i <- c()
-v <- c()
-r <- c()
 
-for (ii in seq(0.01,2,0.01)){
-  for (vintra in seq(0.1,4,0.1)){
-    v <- c(v , vintra/(vintra+3))
-    i <- c(i , ii)
-    r <- c(r , RRii(vg=1,vinter=1,vintra=vintra,vpos=1,NG_E=70,ii=ii))
-  }
-}
+{
 
-ui <- fluidPage(
   
-  # parametres
-  fluidRow( # faire une ligne de parametres
-    
-    column(12 , "" ,
-           sliderInput("theta","theta" , min = 0 , max = 360 , step = 1 , value = 0),
-           sliderInput("phi","phi" , min = 0 , max = 360 , step = 1 , value = 0)
-    ),
-    fluidRow(
-      column(12, "",
-             plotOutput("graph"))
-    )
-  )
-)  
-
-
-server <- function(input, output, session) {
-  t <- reactive(input$theta)
-  p <- reactive(input$phi)
-  
-  g <- reactive(scatter3D(x = i , y = v , z = r , theta = t() , phi = p())
-  )
-  
-  output$graph <- renderPlot({g()})
+  #points(trans3d(plan[,1], plan[,2], 1, pmat = graph), col = "red", pch = 19 , type = "c")
 }
-
-
-shinyApp(ui, server)
-
-
 
 # # analytique et tirage donne la même chose ? ------------------------------
 # 
@@ -464,22 +436,6 @@ fig <- fig %>% add_surface(z = ~zvalue)
 
 fig <- fig %>% add_surface(z = ~seuil, opacity = 0.5 , surfacecolor=color2, cauto=F , cmax=1 , cmin=0)
 
+fig <- fig %>% layout(colorscale = "none")
+
 fig
-
-
-
-
-
-
-
-
-p <- plot_ly(colors = c('red', 'blue')) %>%
-  add_surface(x = df1$t1,
-              y = df1$t2,
-              z = df1$p1,
-              opacity = 0.8,
-              #surfacecolor=c('red')
-              surfacecolor=color,
-              cauto=F,
-              cmax=1,
-              cmin=0)
