@@ -79,7 +79,7 @@ H2_pente <- function(i , don , a){
 }
 
 calcul_H2 <- function(i , don){
-  mod <- lmer(i ~ (1|geno) , data = don)
+  mod <- lmer(i ~ (1|geno) + BAC, data = don)
   Vg <- VarCorr(mod)$geno[1]
   Vr <- (sigma(mod))^2
   Vg/(Vg + Vr)
@@ -101,6 +101,9 @@ vg <- opto %>% group_by(geno,vgrain) %>% summarise(vs = sd(Surface))
 
 # ne peut pas marcher car 1 seul variance par génotype
 calcul_H2(i = vg$vs , don = vg)
+
+
+rm(vg,opto)
 
 # H2 des spectres ---------------------------------------------------------
 
@@ -137,3 +140,29 @@ ggplot(h2_sp , aes(x = sp_moyen , y = H2)) + geom_point() + labs(title = "Hérit
 
 ggplot(h2_sp , aes(x = lambda , y = H2)) + geom_line() + labs(title = "Héritabilité des longueurs d'ondes" , x = "Longueur d'onde" , y = "H2") + facet_wrap(~traitement)
 
+
+
+
+
+# epiaison ----------------------------------------------------------------
+
+load("../donnees/bac")
+
+bac$BAC <- as.factor(bac$BAC)
+
+apply(X = bac[,c("epiaison" , "N_flag" , "prot_semis")] , MARGIN = 2 , FUN = calcul_H2 , don = bac)
+
+ggplot(bac , aes(x = geno , y = epiaison)) + geom_boxplot()
+
+cherche <- bac %>% group_by(geno) %>% summarise(var_preco = sd(epiaison , na.rm = T))
+ggplot(cherche , aes(x = geno , y = var_preco)) + geom_point()
+
+ggplot(bac , aes(x = X , y = Y , fill = epiaison)) + geom_tile() + facet_wrap(~BAC)
+ggplot(bac , aes(x = X , y = Y , fill = semis)) + geom_tile() + facet_wrap(~BAC)
+
+for (i in 1:nrow(bac)){
+  n <- which(cherche$geno == bac[i,"geno"])
+  bac[i,"var_preco"] <- cherche[n,"var_preco"]
+}
+
+ggplot(bac , aes(x = X , y = Y , fill = var_preco)) + geom_tile() + facet_wrap(~BAC)

@@ -3,8 +3,10 @@ rm(list = ls())
 setwd("~/Stage/donnees")
 #setwd("~/Documents/INRA/SelPhen_2023/Stage_CBienvenu_2023/donnees/")
 
-library(nirsextra)
 library(tidyverse)
+
+
+library(nirsextra)
 library(rchemo)
 
 
@@ -620,6 +622,8 @@ rm(g,i,df,file_names,opto)
   # On enleve les variables inutiles 
   bac$X.1 <- bac$Fin <- bac$boite <- bac$boite.1 <- bac$Debut <- bac$RANG <- bac$Rang.OK <- bac$graines <- bac$gen <- bac$grain <-NULL
   
+  # on crÃ©e la variable de date de semis utile
+  bac$semis <- ifelse(is.na(bac$semis_2) == T , "06/01" , "17/02")
 
   save(bac , file = "bac")
   
@@ -630,7 +634,7 @@ rm(g,i,df,file_names,opto)
 
 
 # Ajout des donnees d'epiaison
-
+{
 load("bac")
 epiaison <- read.table("data_brute/epiaison.csv" , sep = ";" , dec = "." , header = T , na.strings = "")
 
@@ -644,24 +648,297 @@ bac <- merge(bac , epiaison , by = "key") %>% select(!c("key")) %>% rename(epiai
 row.names(bac) <- ifelse(is.na(bac$semis_2)==T,bac$semis_1,bac$semis_2)
 
 
-# Création d'une variable de presence/absence
+# Cr?ation d'une variable de presence/absence
 bac$appel <- ifelse(bac$epiaison != "x" | is.na(bac$epiaison) == T, "present" , "absent")
 
-# Les données d'épiaison sont codées comme le jour de mai (2 = 2 mai)
-# Le premier semis a été fait le 6 janvier, et le deuxième semis a été fait le 17 février
-# On corrige la colonne d'epiaison en mettant le nombre de jours réels avant epiaison
+# Les donn?es d'?piaison sont cod?es comme le jour de mai (2 = 2 mai)
+# Le premier semis a ?t? fait le 6 janvier, et le deuxi?me semis a ?t? fait le 17 f?vrier
+# On corrige la colonne d'epiaison en mettant le nombre de jours r?els avant epiaison
 # pour le semis 1, il y a 115 jours entre le 6 janvier et le 1 mai, donc on rajoute 115 au donnees du premier semis
 # pour le semis 2, il y a 63 jors entre le 17 fevrier et le 1 mai, donc on rajoute 60 aux donnees du deuxieme semis
 
 bac$epiaison <- as.numeric(bac$epiaison)
 
 bac$epiaison <- ifelse(is.na(bac$semis_2)==T , bac$epiaison + 115 , bac$epiaison + 63)
-
+}
 
 # Ajout des donnees de luzerne
-
+{
 bac$luz <- ifelse(bac$BAC==1 | bac$BAC==4 , "catera" ,
                   ifelse(bac$BAC==6 | bac$BAC==2 , "aria" , "sans"))
 
 
 save(bac , file = "bac")
+
+rm(list=ls())
+}
+
+
+# Ajout des donnÃ©es d'azote de feuille drapeau
+{
+load("bac")
+N <- read.table("./data_brute/SelPhen2023_azote_flo_drapeau_azmod4_3.txt" , header = T , sep = "," , dec = ".")
+
+# formatage du tableau
+N$BAC2 <- sapply(str_split(N$list , "_") , "[" , 1)
+N$tmp <- sapply(str_split(N$list , "_") , "[" , 2)
+N$X <- as.numeric(sapply(str_split(N$tmp , "000") , "[" , 2))
+N$Ytmp <- sapply(str_split(N$tmp , "000") , "[" , 1)
+N$Y <- as.numeric(sapply(str_split(N$Ytmp , "y") , "[" , 2))
+
+N$list <- N$tmp <- N$Ytmp <- NULL
+
+
+# Il y a un problem avec les donnes les lignes y10, elles sont notees 1. On resous ce probleme
+
+for (i in 2:nrow(N)){
+  if ((N$Y[i-1] == 9 & N$Y[i] == 1) | (N$Y[i-1] == 10 & N$Y[i] == 1) ){
+    N$Y[i] <- 10
+  }
+}
+
+
+# On trouve pour quels bacs il manque des donnÃ©es
+N$count <- 1
+cherche <- N %>% group_by(BAC2 , Y) %>% summarise(count=sum(count)) %>% filter(count != 32)
+
+
+# On regarde a la main pour essaye de trouver quelles donnees il manque exactement en prenant les plantes manquantes comme repere
+# 
+# alamain <- N %>% filter((BAC2 == cherche$BAC2[1] & Y == cherche$Y[1]) |
+#                           (BAC2 == cherche$BAC2[2] & Y == cherche$Y[2]) |
+#                           (BAC2 == cherche$BAC2[3] & Y == cherche$Y[3]) |
+#                           (BAC2 == cherche$BAC2[4] & Y == cherche$Y[4]) |
+#                           (BAC2 == cherche$BAC2[5] & Y == cherche$Y[5]) |
+#                           (BAC2 == cherche$BAC2[6] & Y == cherche$Y[6]) |
+#                           (BAC2 == cherche$BAC2[7] & Y == cherche$Y[7]) |
+#                           (BAC2 == cherche$BAC2[8] & Y == cherche$Y[8]))
+# 
+# 
+# 
+# # cellule de debug
+# i <- 208
+# x <- 1
+# {
+#   print(alamain[c(i,i+1),])
+#   i <- i+2
+#   x <- x+1
+# }
+
+# Alright
+
+# bac x9y5 : y=10 il manque x=16
+# bac x9y5 : y=13 il manque x=1 et x=2
+# bac x9y4 : y=4 il manque x=31 et x=32
+# bac x9y4 : y=5 il manque x=1 et x=2
+# bac x9y4 : y=9 il manque x=31 et x=32
+# bac x9y4 : y=13 il manque x=1 x=2 x=3 x=4 x=31 x=32
+# bac x10y5 : y=3 il manque x=1 x=2
+# bac x10y5 : y=11 il manque x=1 x=2
+
+
+# Mais du coup c'est bon y'a rien a faire care les manquants sont pas dans les donnees et ce qui ont ete mesures ont bien les bons x et y donc c'est bon le merge va tou bien faire
+
+
+
+# Les donnees ont ete acquises lignes y par lignes y en faisant 32 mesures : 2 par plante; Donc il faut transformer la variable X pour qu elle devienne vraie
+
+N$Xfaux <- N$X
+
+N$X <- N$Xfaux - N$Xfaux %/% 2
+
+
+# On fait la moyenne des deux observations pour chaque individu
+
+N2 <- N %>% group_by(BAC2 , Y , X) %>% summarise(N_flag = mean(az))
+
+
+# Transposition de la variable bac
+
+N2$BAC <- ifelse(N2$BAC2 == "x09y03" , "1" ,
+                ifelse(N2$BAC2 == "x09y04" , "2" ,
+                       ifelse(N2$BAC2 == "x09y05" , "3" ,
+                              ifelse(N2$BAC2 == "x10y03" , "4" ,
+                                     ifelse(N2$BAC2 == "x10y04" , "5" , "6")))))
+
+
+
+
+
+# Ajout dans les donnees bac
+
+bac$key <- paste0(bac$BAC , "_" , bac$X , "_" , bac$Y)
+N2$key <- paste0(N2$BAC , "_" , N2$X , "_" , N2$Y)
+
+N2$X <- N2$Y <- N2$BAC <- NULL
+
+bac <- merge(bac , N2 , by = "key" , all = T)
+
+
+
+bac$key <- NULL
+
+row.names(bac) <- ifelse(is.na(bac$semis_2)==T,bac$semis_1,bac$semis_2)
+
+
+save(bac , file = "bac")
+
+rm(list=ls())
+}
+
+
+
+# ajout des donnees de teneur en proteine des grains plantes
+{
+load("bac")
+
+pred1 <- read.table(file = "data_brute/Pred_prot_grain_ASD_nov2022.csv" , sep = "," , dec = "." , header = T)
+
+pred2 <- read.table(file = "data_brute/Pred_prot_grain_ASD_nov2022_bis.csv" , sep = "," , dec = "." , header = T)
+
+pred <- rbind(pred1,pred2) %>% mutate(X = NULL)
+
+rm(pred1,pred2)
+
+# On ressort le jeu de donnees spectres_info qui contient le lien entre les noms et l'identifiant du grain
+load("spectres_info")
+
+spectres_info <- spectres_info %>% select(nom_originel , grain , geno) %>% rename(nom = nom_originel)
+
+
+# verification qu'on a bien la mÃªme info :
+
+unique(sort(pred$nom)==sort(spectres_info$nom)) 
+# c'est good
+
+
+tout <- merge(pred,spectres_info , by = "nom")
+
+row.names(tout) <- paste0(tout$geno,"_",tout$grain)
+
+
+final <- tout %>% rename(prot_semis = prot_calib_grain) %>% select(prot_semis)
+
+
+bac <- merge(bac , final , by = "row.names" , all.x = T) %>% column_to_rownames(var = "Row.names")
+
+save(bac , file = "bac")
+
+rm(list = ls())
+}
+
+
+
+
+
+# # Side quest : les donnees pour fred
+# 
+# load("spectres_info")
+# 
+# info <- spectres_info %>% select(nom_originel , grain , geno) %>% rename(nom = nom_originel)
+# 
+# rm(spectres_info)
+# 
+# # Chargement des donnees des bacs :
+# bac <- read.table("./data_brute/BAC1.csv" , header = T , sep = ";" , dec = ".")
+# 
+# 
+# 
+# for (i in 2:6){
+#   tmp <- read.table(paste0("./data_brute/BAC",i,".csv") , header = T , sep = ";" , dec = ".")
+#   names(tmp) <- names(bac)
+#   bac <- rbind(bac , tmp)
+# }
+# 
+# rm(tmp , i)
+# 
+# # Modification de la variable grain en fonction de l'information dans la variable graines pour que ce soit homogene avec le reste (de 1 a 12)
+# 
+# bac$grain <- ifelse(bac$graines == "01:06" , bac$grain , bac$grain + 6)
+# 
+# 
+# # creation d'une variable geno homogene aux autres tableaux de donnees
+# # il y a des noms avec .sp Ã  la fin, on les enleve, et on separe le ELAX du numero
+# 
+# a <- strsplit(bac$gen , split = ".sp")
+# l <- sapply(a, "[",1)
+# b <- strsplit(l , split = "_")
+# bac$geno <- sapply(b, "[",2)
+# 
+# # On cree le row.names pour que ce soit homogene aux autres tableaux
+# 
+# row.names(bac) <- paste0(bac$geno , "_" , bac$grain)
+# row.names(info) <- paste0(info$geno , "_" , info$grain)
+# 
+# rm(a,b,l)
+# 
+# # extraction de quel genotype est dans quelle boite grace a bac
+# # ATTENTION : pour certains genotypes, les rangs dans les boites normales et les boites bis ne correspondent pas. on fait donc au cas par cas entre boite et boite bis
+# 
+# bac$col <- ifelse(bac$Debut < 7 , 1 , 7)
+# 
+# ext <- bac %>% group_by(boite,Rang.OK) %>% summarise()
+# 
+# ext <- as.data.frame(ext)
+# 
+# for (i in 1:nrow(ext)){
+#   r <- ext[i,"Rang.OK"]
+#   b <- ext[i,"boite"]
+#   
+#   tmp <- filter(bac , boite == b & Rang.OK == r & Debut == 1)
+#   
+#   ext[i,"geno"] <- 
+# }
+# 
+# # On met une coolonne pour signifier quelles boites sont bis
+# ext$bis <- ifelse(is.na(as.numeric(ext$boite)) == T , "OUI" , "NON")
+# 
+# # On met ext de sorte Ã  ce que tous les grains soient la avec leur coordonnees
+# 
+# coord <- data.frame(geno = 0 , boite = 0 , grain = 0 , colonne = 0 , rang = 0)
+# 
+# for (i in 1:nrow(ext)){
+#   
+#   gen <- rep(as.numeric(ext[i,"geno"]) , 6)
+#   boi <- rep(as.character(ext[i,"boite"]) , 6)  
+#   
+#   grain <- 1:6
+#   if (ext[i,"bis"] == "OUI"){grain <- 7:12}
+#   
+#   col <- 1:6
+#   if (ext[i,"col"]==7){col <- 7:12}
+#   
+#   rang <- rep(as.character(ext[i,"Rang.OK"]) , 6)
+#   
+#   tmp <- data.frame(geno = gen , boite = boi , grain = grain , colonne = col , rang = rang)
+#   
+#   coord <- rbind(coord,tmp)
+# }
+# 
+# coord <- coord[-1,]
+# 
+# # on refait des colonnes pratiques
+# coord$ind <- paste0(coord$geno,"_",coord$grain)
+# 
+# 
+# # On reprend le vrai fichier bac pour avoir les genos plantes mais pas germes
+# # et on fait du menage
+# rm(ext,info,tmp,boi,col,gen,grain,i,rang)
+# 
+# load("bac")
+# 
+# pas_germe <- ifelse(bac$semis=="17/02" , bac$semis_1 , "osef") %>% unique()
+# 
+# #on enleve le osef qui est en premiÃ¨re position
+# pas_germe <- pas_germe[-which(pas_germe == "osef")]
+# 
+# # On garde que ce qui est utilse dans les bacs
+# sel_bac <- bac %>% select(BAC , X , Y) %>% rownames_to_column(var = "ind")
+# 
+# 
+# 
+# tab <- merge(sel_bac,coord,all = T) %>% relocate(geno , .after = ind) %>% relocate(grain , .after = geno) %>% relocate(rang , .before = colonne)
+# 
+# tab$bis <- ifelse(is.na(as.numeric(tab$boite)) == T , "OUI" , "NON")
+# 
+# tab <- tab %>% arrange(bis,boite,rang,ind) %>% mutate(bis=NULL)
