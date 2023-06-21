@@ -225,6 +225,39 @@ rm(list = ls())
 
 
 
+# On fait aussi une liste avec les spectres moyens de chaque génotype
+
+load("spectres")
+
+sp <- spectres$brutes
+sp$geno <- sapply(strsplit(row.names(sp) , "_") , "[" , 1)
+brutes <- sp %>% group_by(geno) %>% summarise_all(.funs = mean) %>% column_to_rownames(var = "geno")
+
+sp <- spectres$det
+sp$geno <- sapply(strsplit(row.names(sp) , "_") , "[" , 1)
+det <- sp %>% group_by(geno) %>% summarise_all(.funs = mean) %>% column_to_rownames(var = "geno")
+
+sp <- spectres$det_SNV
+sp$geno <- sapply(strsplit(row.names(sp) , "_") , "[" , 1)
+det_SNV <- sp %>% group_by(geno) %>% summarise_all(.funs = mean) %>% column_to_rownames(var = "geno")
+
+sp <- spectres$dev1
+sp$geno <- sapply(strsplit(row.names(sp) , "_") , "[" , 1)
+dev1 <- sp %>% group_by(geno) %>% summarise_all(.funs = mean) %>% column_to_rownames(var = "geno")
+
+sp <- spectres$dev2
+sp$geno <- sapply(strsplit(row.names(sp) , "_") , "[" , 1)
+dev2 <- sp %>% group_by(geno) %>% summarise_all(.funs = mean) %>% column_to_rownames(var = "geno")
+
+
+spectres_moy <- list(brutes , det , det_SNV , dev1 , dev2)
+names(spectres_moy) <- c("brutes","det","det_SNV","dev1","dev2")
+
+save(spectres_moy , file = "spectres_moyens")
+
+rm(list = ls())
+
+
 # Donnees optomachine -----------------------------------------------------
 
 rm(list=ls())
@@ -660,6 +693,42 @@ bac$appel <- ifelse(bac$epiaison != "x" | is.na(bac$epiaison) == T, "present" , 
 bac$epiaison <- as.numeric(bac$epiaison)
 
 bac$epiaison <- ifelse(is.na(bac$semis_2)==T , bac$epiaison + 115 , bac$epiaison + 63)
+
+# On transforme en degre jour
+meteo <- read.table(file = "data_brute/essai_INRAE_STATION_34172005 (14).csv" , sep = ";" , dec = "." , header = T , skip = 9)
+
+# degre jours depuis le 6 janvier
+dj <- meteo %>% filter(MOIS > 1 | JOUR >= 6)
+row.names(dj) <- 1:nrow(dj)
+dj$DJ <- NA
+dj$DJ[1] <- dj$TM[1]
+
+for (i in 2:nrow(dj)){
+  dj[i,"DJ"] <- dj[i-1,"DJ"] + dj[i,"TM"]
+}
+
+
+# degre jour depuis le 17 fevrier
+a <- dj[which(dj$MOIS == 2 & dj$JOUR == 16) , "DJ"]
+
+dj$DJ2 <- dj$DJ - a
+
+dj2 <- dj %>% filter(DJ2 >0)
+
+
+# On inclue ça dans la variable epiaison
+bac$preco <- NA
+
+for (i in 1:nrow(bac)){
+  index <- bac[i,"epiaison"]
+  if (bac[i,"semis"] == "06/01"){
+    bac[i,"preco"] <- dj[index,"DJ"]
+  }
+  
+  if (bac[i,"semis"] == "17/02"){
+    bac[i,"preco"] <- dj2[index,"DJ2"]
+  }
+}
 }
 
 # Ajout des donnees de luzerne
@@ -822,7 +891,16 @@ final <- tout %>% rename(prot_semis = prot_calib_grain) %>% select(prot_semis)
 
 bac <- merge(bac , final , by = "row.names" , all.x = T) %>% column_to_rownames(var = "Row.names")
 
+bac$BAC <- as.factor(bac$BAC)
+
 save(bac , file = "bac")
+
+
+load("opto")
+
+opto <- merge(opto , final , by = "row.names" , all.x = T) %>% column_to_rownames(var = "Row.names")
+
+save(opto , file = "opto")
 
 rm(list = ls())
 }

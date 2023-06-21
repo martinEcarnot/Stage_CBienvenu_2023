@@ -3,49 +3,60 @@ rm(list = ls())
 setwd("C:/Users/bienvenu/Documents/Stage/Analyses")
 load("../donnees/spectres")
 load("../donnees/opto")
-
+load("../donnees/bac")
 
 library(prospectr)
 library(signal)
 library(rrBLUP)
 library(tidyverse)
 library(ggplot2)
-
-# individus en commun
-
-lignes <- merge(opto , spectres$brutes , by = "row.names")$Row.names %>% sort()
+library(lme4)
+library(lmerTest)
 
 
+# fonctions ---------------------------------------------------------------
 
 
-# Validation croisée
-
-un_pretrait <- function(sp , Nrep , Nout , pheno , design = NULL , donnees){
+pred <- function(sp , Nrep , Nout , pheno){
   
   # donnees spectrales
   sp <- sp[lignes,]
   sp <- scale(sp, center=T, scale=T)        # scale absorbance at each wavelength (predictor)
-  matH <- tcrossprod(sp)/ncol(sp)     # Compute the hyperspectral similarity matrix
   
-  print(paste("pre traitement =",names(spectres[i])))
+  print(paste("pre traitement =",noms_sp[i]))
   
   for (rep in 1:Nrep) {
     print(paste("rep =",rep))
     valid <- sample(length(pheno), Nout)
-    phenoTrain <- pheno
-    phenoTrain[valid] <- NA
+    train <- setdiff(1:length(pheno) , valid)
     
-    hblup <- mixed.solve(y=phenoTrain, K=matH , Z = design)
+    phenoTrain <- pheno[train]
+    sp_train <- sp[train,]
     
     
-    # noms pour remplir le tableau de resultats
-    nom <- paste0(names(donnees[j]),"_",names(spectres[i]),"_",rep)
+    matH <- tcrossprod(sp_train)/ncol(sp_train)     # Compute the hyperspectral similarity matrix
     
-    # Remplissage du tableau
-    res[nom,"pretraitement"] <<- names(spectres[i])
-    res[nom,"trait"] <<- names(donnees[j])
-    res[nom,"rep"] <<- rep
-    res[nom,"accuracy"] <<- cor(hblup$u[valid], pheno[valid], use="complete.obs")
+    hblup_zu <- mixed.solve(y=phenoTrain, K=matH) # kinship based
+    
+    hblup_xb <- mixed.solve(y=phenoTrain, Z=sp_train) # "marker" based
+    
+    # noms pour remplir le tableau de resultats pour modele zu
+    nom <- paste0(noms_trait[j],"_",noms_sp[i],"_zu_",rep)
+    
+    # Remplissage du tableau pour modele zu
+    res[nom,"pretraitement"] <<- noms_sp[i]
+    res[nom,"trait"] <<- noms_trait[j]
+    res[nom,"accuracy"] <<- cor(hblup_zu$u[valid], pheno[valid], use="complete.obs")
+    res[nom,"model"] <<- "zu"
+    
+    # noms pour remplir le tableau de resultats pour modele xb
+    nom <- paste0(noms_trait[j],"_",noms_sp[i],"_xb_",rep)
+    
+    # Remplissage du tableau pour modele xb
+    res[nom,"pretraitement"] <<- noms_sp[i]
+    res[nom,"trait"] <<- noms_trait[j]
+    res[nom,"accuracy"] <<- cor(hblup_xb$u[valid], pheno[valid], use="complete.obs")
+    res[nom,"model"] <<- "xb"
   }
   
   i <<- i+1
@@ -54,49 +65,112 @@ un_pretrait <- function(sp , Nrep , Nout , pheno , design = NULL , donnees){
 
 
 
-un_trait <- function(y , nrep , nout , d = NULL , don){
+un_trait <- function(y , nrep , nout , spectres){
   
-  print(paste("trait =",names(don[j])))
+  print(paste("trait =", noms_trait[j]))
   
   i <<- 1
   
-  lapply(spectres , FUN = un_pretrait ,
+  lapply(spectres , FUN = pred ,
          Nrep = nrep , 
          Nout = nout ,
-         design = d ,
-         pheno = y , 
-         donnees = don)
+         pheno = y)
   
   j <<- j+1
 }
 
 
+boss <- function(X,Y,nrep,nout){
+  # individus en commun
+  lignes <<- merge(X[1] , Y , by = "row.names")$Row.names %>% sort()
+  
+  # Noms des pré traitements
+  noms_sp <<- names(X)
+  
+  # Noms des variables
+  noms_trait <<- names(Y)
+  
+  res <<- data.frame()
+  j <<- 1
+  
+  # On laisse que les bons individus dans Y
+  Y <- Y[lignes,]
+  
+  apply(Y , MARGIN = 2 , FUN = un_trait ,
+        nrep = nrep , 
+        nout = nout ,
+        spectres = X)
+}
+
+
+calcul_BLUP <- function(i , don , x1 = NULL , x2 = NULL , x3 = NULL){
+  mod <- lmer(i ~ (1|geno), data = don)
+  ranef(mod)$geno
+}
 
 
 
 
-phenotypes <- opto[lignes,] %>% select(Perimetre,Surface)
+# choix des donnees -------------------------------------------------------
 
-res <- data.frame()
-j <- 1
-
-apply(phenotypes , MARGIN = 2 , FUN = un_trait ,
-      nrep = 10 , 
-      nout = 100 ,
-      don = phenotypes)
+don <- opto
 
 
-pred_pheno <- res
+# Extraction des BLUPs sur plusieurs variables
+a <- apply(X = opto[,c(3,5,6,10)] , MARGIN = 2 , FUN = calcul_BLUP , don = opto)
 
-load()
+BLUP <- as.data.frame(a[1])
 
-pred_pheno 
+for (b in 2:length(a)){
+  BLUP <- cbind(BLUP , a[b])
+}
 
-#save(pred_pheno , file = "pred_pheno")
+names(BLUP) <- names(opto[,c(3,5,6,10)])
 
-load("pred_pheno")
+rm(a,b)
 
-ggplot(pred_pheno , aes(x = pretraitement , y = accuracy)) + geom_boxplot() + facet_wrap(~trait) + labs(title = "Accuracy de prédictions de différents traits selon le \nprétraitement du spectre" , x = "Prétraitement" , y="Accuracy") + theme(legend.position = "none")
+# verif que les BLUPs suivent bien une loi normale :
+ggplot(BLUP , aes(sample=Longueur)) + geom_qq() + geom_qq_line(col = "red")
+ggplot(BLUP , aes(sample=Largeur)) + geom_qq() + geom_qq_line(col = "red")
+ggplot(BLUP , aes(sample=Perimetre)) + geom_qq() + geom_qq_line(col = "red")
+ggplot(BLUP , aes(sample=Surface)) + geom_qq() + geom_qq_line(col = "red")
+
+# verif que BLUP et pheno sont corrélés
+phen <- don %>% group_by(geno) %>% summarise_at(.vars = c("Longueur","Largeur","Perimetre","Surface") , .funs = mean) %>% column_to_rownames(var = "geno") %>% merge(BLUP , by = "row.names")
+
+ggplot(phen , aes(x = Surface.x , y = Surface.y)) + geom_point()
+ggplot(phen , aes(x = Longueur.x , y = Longueur.y)) + geom_point()
+ggplot(phen , aes(x = Largeur.x , y = Largeur.y)) + geom_point()
+ggplot(phen , aes(x = Perimetre.x , y = Perimetre.y)) + geom_point()
+
+rm(phen)
 
 
 
+
+# compute entre BLUPs et spectres moyens ----------------------------------
+
+
+boss(X = spectres_moy , Y = BLUP , nrep=3 , nout=20)
+
+
+ggplot(res , aes(x = pretraitement , y = accuracy , fill = model)) + geom_boxplot() + facet_wrap(~trait)
+
+
+
+
+# compute en ne moyennant pas les spectres et en mettant son BLUP  a chaque genotype--------
+
+for (i in 1:nrow(opto)){
+  g <- opto[i,"geno"]
+  opto[i,"BLUP_longueur"] <- BLUP[g,"Longueur"]
+  opto[i,"BLUP_largeur"] <- BLUP[g,"Largeur"]
+  opto[i,"BLUP_perimetre"] <- BLUP[g,"Perimetre"]
+  opto[i,"BLUP_surface"] <- BLUP[g,"Surface"]
+}
+
+boss(X = spectres , Y = opto[,c("BLUP_longueur" , "BLUP_largeur" , "BLUP_perimetre" , "BLUP_surface")] , nrep=3 , nout=400)
+
+pred_pheno_blup <- res
+
+save(pred_pheno_blup , file = "pred_pheno_blup")

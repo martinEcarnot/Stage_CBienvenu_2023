@@ -413,29 +413,35 @@ points(trans3d(xy[,1], xy[,2], 1, pmat = g), col = 2, pch = 16)
 library(plotly)
 
 # volcano is a numeric matrix that ships with R
-ngo <- seq(30000,500000,length=50)
-neo <- seq(10 , 1000 , length=50)
+ngo <- seq(60000,500000,length=50)
+neo <- seq(100 , 1000 , length=50)
 
 z <- outer(X = ngo , Y = neo , FUN = isuri , NG_E = 70 , nsel = 2000)
-zvalue <- z*sqrt(4)/sqrt(3+1/70)
+zvalue <- t(z*sqrt(4)/sqrt(3+1/70))
 
+axy <- list(
+  title = "NEO")
 
+axx <- list(
+  title = "NGO")
 
-seuil <- rep(1,length(z))
-dim(seuil) <- dim(z)
+axz <- list(
+  title = "Repi/Rgrain")
 
-color <- rep(0, length(seuil))
-dim(color) <- dim(seuil)
-
-color2 <- rep(1, length(seuil))
-dim(color) <- dim(seuil)
-
-fig <- plot_ly(colors = c('green', 'blue'))
-
-fig <- fig %>% add_surface(z = ~zvalue)
-
-fig <- fig %>% add_surface(z = ~seuil, opacity = 0.5 , surfacecolor=color2, cauto=F , cmax=1 , cmin=0)
-
-fig <- fig %>% layout(colorscale = "none")
-
+fig <- plot_ly(colors = c('green', 'blue') , showscale = FALSE , x = ~ngo , y = ~neo , z = ~zvalue) %>%
+  add_surface() %>% 
+  add_surface(z = matrix(1 , ncol = 2 , nrow = 2) , y = c(0,1000) , x = c(0,500000), opacity = 0.5) %>% 
+  layout(scene = list(xaxis=axx,yaxis=axy,zaxis=axz))
+  
 fig
+
+
+RR(NE_O = 100,
+   NG_O = 500000,
+   nsel = 2000,
+   NG_E = 70,
+   vg = 1,
+   vinter = 1,
+   vintra = 1,
+   vpos = 1)
+

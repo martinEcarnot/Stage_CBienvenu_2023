@@ -150,7 +150,54 @@ load("../donnees/bac")
 
 bac$BAC <- as.factor(bac$BAC)
 
-apply(X = bac[,c("epiaison" , "N_flag" , "prot_semis")] , MARGIN = 2 , FUN = calcul_H2 , don = bac)
+don <- bac %>% filter(is.na(epiaison)==F & geno != "INCONNU" & N_flag < 4)
+
+mod <- lmer(epiaison ~ (1|geno) + semis + BAC, data = don)
+Vg <- VarCorr(mod)$geno[1]
+Vr <- (sigma(mod))^2
+Vg/(Vg + Vr)
+
+BLUP <- ranef(mod)$geno %>% rename(GBLUP = "(Intercept)")
+
+ggplot(BLUP , aes(x = GBLUP)) + geom_histogram()
+ggplot(BLUP , aes(sample = GBLUP)) + geom_qq() + geom_qq_line(col = "red")
+
+
+
+
+
+# azote feuille drapeau ---------------------------------------------------
+don <- bac %>% filter(is.na(N_flag)==F & geno != "INCONNU" & N_flag < 4 & is.na(epiaison)==F)
+
+mod <- lmer(N_flag ~ (1|geno) + semis + BAC, data = don)
+Vg <- VarCorr(mod)$geno[1]
+Vr <- (sigma(mod))^2
+Vg/(Vg + Vr)
+
+BLUP <- ranef(mod)$geno %>% rename(GBLUP = "(Intercept)")
+
+ggplot(BLUP , aes(x = GBLUP)) + geom_histogram()
+ggplot(BLUP , aes(sample = GBLUP)) + geom_qq() + geom_qq_line(col = "red")
+
+
+
+
+# prot grain semé ---------------------------------------------------------
+load("../donnees/opto")
+
+mod <- lmer(prot_semis ~ (1|geno) , data = opto)
+Vg <- VarCorr(mod)$geno[1]
+Vr <- (sigma(mod))^2
+Vg/(Vg + Vr)
+
+BLUP <- ranef(mod)$geno %>% rename(GBLUP = "(Intercept)")
+
+ggplot(BLUP , aes(x = GBLUP)) + geom_histogram()
+ggplot(BLUP , aes(sample = GBLUP)) + geom_qq() + geom_qq_line(col = "red")
+
+
+# Plots -------------------------------------------------------------------
+
 
 ggplot(bac , aes(x = geno , y = epiaison)) + geom_boxplot()
 
@@ -166,3 +213,8 @@ for (i in 1:nrow(bac)){
 }
 
 ggplot(bac , aes(x = X , y = Y , fill = var_preco)) + geom_tile() + facet_wrap(~BAC)
+
+
+ggplot(bac , aes(x = X , y = Y , fill = appel)) + geom_tile() + facet_wrap(~BAC)
+
+table(bac$appel)/nrow(bac)

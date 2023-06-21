@@ -1,0 +1,1909 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.2' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     70147,       1901]
+NotebookOptionsPosition[     66874,       1838]
+NotebookOutlinePosition[     67755,       1864]
+CellTagsIndexPosition[     67673,       1859]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell["\<\
+On tranforme l\[CloseCurlyQuote]equation en (1-R/R)\.b2 pour que l\[AGrave] o\
+\[UGrave] R/R=1, les d\[EAcute]riv\[EAcute]es partielles de (1-R/R)\.b2 =  0. \
+On regarde d\[CloseCurlyQuote]abord si les d\[EAcute]riv\[EAcute]es \
+partielles existent en fonction de chaque variable. Si oui on pourra faire \
+une methode  de Newton pour trouver le jeu de param\[EGrave]tres tels que \
+Repi/Rgrain = 1
+\
+\>", "Text",
+ CellChangeTimes->{{3.896177851324134*^9, 3.896177852476118*^9}, {
+  3.896179873928521*^9, 3.896179877039719*^9}, {3.896237964516507*^9, 
+  3.896238050628336*^9}},ExpressionUUID->"8fb95b7d-fa4b-4d53-88c7-\
+50ce26199485"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"f", "[", 
+   RowBox[{
+   "NEO_", " ", ",", " ", "nsel_", " ", ",", " ", "NGE_", " ", ",", " ", 
+    "NGO_", " ", ",", " ", "vg_", " ", ",", " ", "vinter_", " ", ",", " ", 
+    "vintra_", " ", ",", " ", "vpos_"}], "]"}], ":=", 
+  SuperscriptBox[
+   RowBox[{"(", 
+    RowBox[{"1", "-", 
+     FractionBox[
+      RowBox[{
+       SuperscriptBox["\[ExponentialE]", 
+        RowBox[{
+         RowBox[{"-", 
+          SuperscriptBox[
+           RowBox[{"InverseErfc", "[", 
+            RowBox[{"2", " ", 
+             RowBox[{"(", 
+              RowBox[{"1", "-", 
+               FractionBox["nsel", 
+                RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+         SuperscriptBox[
+          RowBox[{"InverseErfc", "[", 
+           RowBox[{"2", " ", 
+            RowBox[{"(", 
+             RowBox[{"1", "-", 
+              FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+       "NEO", " ", "NGE", " ", 
+       SqrtBox[
+        RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+      RowBox[{"NGO", " ", 
+       SqrtBox[
+        RowBox[{"vg", "+", "vinter", "+", 
+         FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], " ", ")"}], 
+   "2"]}]], "Input",
+ CellChangeTimes->{{3.8961778847137175`*^9, 3.896177893201178*^9}, {
+  3.8962379097184772`*^9, 3.896237941317495*^9}, {3.896238716673413*^9, 
+  3.896238720614486*^9}},ExpressionUUID->"d363188f-89cf-4fbb-af4d-\
+da1cf43b2b61"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"variables", " ", "=", " ", 
+  RowBox[{"{", 
+   RowBox[{
+   "NEO", " ", ",", " ", "nsel", " ", ",", " ", "NGE", " ", ",", " ", "NGO", 
+    " ", ",", " ", "vg", " ", ",", " ", "vinter", " ", ",", " ", "vintra", 
+    " ", ",", " ", "vpos"}], "}"}]}]], "Input",
+ CellLabel->"In[6]:=",ExpressionUUID->"a038d578-d908-44e1-b709-73672e2cd9ac"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+  "NEO", ",", "nsel", ",", "NGE", ",", "NGO", ",", "vg", ",", "vinter", ",", 
+   "vintra", ",", "vpos"}], "}"}]], "Output",
+ CellChangeTimes->{3.8961779457632837`*^9, 3.89623786790554*^9, 
+  3.8962380634323406`*^9},
+ CellLabel->"Out[6]=",ExpressionUUID->"5cb29985-f593-46f2-94ad-092eb610baec"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"J", " ", "=", " ", 
+  RowBox[{"D", "[", 
+   RowBox[{
+    RowBox[{"f", "[", 
+     RowBox[{
+     "NEO", " ", ",", " ", "nsel", " ", ",", " ", "NGE", " ", ",", " ", "NGO",
+       " ", ",", " ", "vg", " ", ",", " ", "vinter", " ", ",", " ", "vintra", 
+      " ", ",", " ", "vpos"}], "]"}], ",", 
+    RowBox[{"{", 
+     RowBox[{"{", 
+      RowBox[{
+      "NEO", " ", ",", " ", "nsel", " ", ",", " ", "NGE", " ", ",", " ", 
+       "NGO", " ", ",", " ", "vg", " ", ",", " ", "vinter", " ", ",", " ", 
+       "vintra", " ", ",", " ", "vpos"}], "}"}], "}"}]}], "]"}]}]], "Input",
+ CellChangeTimes->{{3.896178002779758*^9, 3.896178075471216*^9}},
+ CellLabel->"In[7]:=",ExpressionUUID->"65d0b33e-667f-4110-b02a-e4671def6b07"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"2", " ", 
+    RowBox[{"(", 
+     RowBox[{"1", "-", 
+      FractionBox[
+       RowBox[{
+        SuperscriptBox["\[ExponentialE]", 
+         RowBox[{
+          RowBox[{"-", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", 
+                 RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+          SuperscriptBox[
+           RowBox[{"InverseErfc", "[", 
+            RowBox[{"2", " ", 
+             RowBox[{"(", 
+              RowBox[{"1", "-", 
+               FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+        "NEO", " ", "NGE", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+       RowBox[{"NGO", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", 
+          FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}], " ", 
+    RowBox[{"(", 
+     RowBox[{
+      RowBox[{"-", 
+       FractionBox[
+        RowBox[{
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{
+           RowBox[{"-", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", 
+                  RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+         "NGE", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+        RowBox[{"NGO", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", 
+           FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], "-", 
+      FractionBox[
+       RowBox[{"2", " ", 
+        SuperscriptBox["\[ExponentialE]", 
+         SuperscriptBox[
+          RowBox[{"InverseErfc", "[", 
+           RowBox[{"2", " ", 
+            RowBox[{"(", 
+             RowBox[{"1", "-", 
+              FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]], " ", 
+        "nsel", " ", 
+        SqrtBox["\[Pi]"], " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]], " ", 
+        RowBox[{"InverseErfc", "[", 
+         RowBox[{"2", " ", 
+          RowBox[{"(", 
+           RowBox[{"1", "-", 
+            FractionBox["nsel", 
+             RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}]}], 
+       RowBox[{"NEO", " ", "NGO", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", 
+          FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}]}], ",", 
+   RowBox[{"-", 
+    RowBox[{
+     FractionBox["1", 
+      RowBox[{"NGO", " ", 
+       SqrtBox[
+        RowBox[{"vg", "+", "vinter", "+", 
+         FractionBox["vintra", "NGE"], "+", "vpos"}]]}]], 
+     RowBox[{"2", " ", 
+      SuperscriptBox["\[ExponentialE]", 
+       RowBox[{
+        RowBox[{"-", 
+         SuperscriptBox[
+          RowBox[{"InverseErfc", "[", 
+           RowBox[{"2", " ", 
+            RowBox[{"(", 
+             RowBox[{"1", "-", 
+              FractionBox["nsel", 
+               RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+        SuperscriptBox[
+         RowBox[{"InverseErfc", "[", 
+          RowBox[{"2", " ", 
+           RowBox[{"(", 
+            RowBox[{"1", "-", 
+             FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+      "NEO", " ", "NGE", " ", 
+      SqrtBox[
+       RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]], " ", 
+      RowBox[{"(", 
+       RowBox[{"1", "-", 
+        FractionBox[
+         RowBox[{
+          SuperscriptBox["\[ExponentialE]", 
+           RowBox[{
+            RowBox[{"-", 
+             SuperscriptBox[
+              RowBox[{"InverseErfc", "[", 
+               RowBox[{"2", " ", 
+                RowBox[{"(", 
+                 RowBox[{"1", "-", 
+                  FractionBox["nsel", 
+                   RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], 
+            "+", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+          "NEO", " ", "NGE", " ", 
+          SqrtBox[
+           RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+         RowBox[{"NGO", " ", 
+          SqrtBox[
+           RowBox[{"vg", "+", "vinter", "+", 
+            FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}], " ", 
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{"-", 
+         FractionBox[
+          RowBox[{"2", " ", 
+           SuperscriptBox["\[ExponentialE]", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", 
+                  RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]], " ", 
+           SqrtBox["\[Pi]"], " ", 
+           RowBox[{"InverseErfc", "[", 
+            RowBox[{"2", " ", 
+             RowBox[{"(", 
+              RowBox[{"1", "-", 
+               FractionBox["nsel", 
+                RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}]}], 
+          RowBox[{"NEO", " ", "NGE"}]]}], "+", 
+        FractionBox[
+         RowBox[{"2", " ", 
+          SuperscriptBox["\[ExponentialE]", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]], " ", 
+          SqrtBox["\[Pi]"], " ", 
+          RowBox[{"InverseErfc", "[", 
+           RowBox[{"2", " ", 
+            RowBox[{"(", 
+             RowBox[{"1", "-", 
+              FractionBox["nsel", "NGO"]}], ")"}]}], "]"}]}], "NGO"]}], 
+       ")"}]}]}]}], ",", 
+   RowBox[{"2", " ", 
+    RowBox[{"(", 
+     RowBox[{"1", "-", 
+      FractionBox[
+       RowBox[{
+        SuperscriptBox["\[ExponentialE]", 
+         RowBox[{
+          RowBox[{"-", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", 
+                 RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+          SuperscriptBox[
+           RowBox[{"InverseErfc", "[", 
+            RowBox[{"2", " ", 
+             RowBox[{"(", 
+              RowBox[{"1", "-", 
+               FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+        "NEO", " ", "NGE", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+       RowBox[{"NGO", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", 
+          FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}], " ", 
+    RowBox[{"(", 
+     RowBox[{
+      RowBox[{"-", 
+       FractionBox[
+        RowBox[{
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{
+           RowBox[{"-", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", 
+                  RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+         "NEO", " ", "vintra", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+        RowBox[{"2", " ", "NGE", " ", "NGO", " ", 
+         SuperscriptBox[
+          RowBox[{"(", 
+           RowBox[{"vg", "+", "vinter", "+", 
+            FractionBox["vintra", "NGE"], "+", "vpos"}], ")"}], 
+          RowBox[{"3", "/", "2"}]]}]]}], "-", 
+      FractionBox[
+       RowBox[{
+        SuperscriptBox["\[ExponentialE]", 
+         RowBox[{
+          RowBox[{"-", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", 
+                 RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+          SuperscriptBox[
+           RowBox[{"InverseErfc", "[", 
+            RowBox[{"2", " ", 
+             RowBox[{"(", 
+              RowBox[{"1", "-", 
+               FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+        "NEO", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+       RowBox[{"NGO", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", 
+          FractionBox["vintra", "NGE"], "+", "vpos"}]]}]], "-", 
+      FractionBox[
+       RowBox[{"2", " ", 
+        SuperscriptBox["\[ExponentialE]", 
+         SuperscriptBox[
+          RowBox[{"InverseErfc", "[", 
+           RowBox[{"2", " ", 
+            RowBox[{"(", 
+             RowBox[{"1", "-", 
+              FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]], " ", 
+        "nsel", " ", 
+        SqrtBox["\[Pi]"], " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]], " ", 
+        RowBox[{"InverseErfc", "[", 
+         RowBox[{"2", " ", 
+          RowBox[{"(", 
+           RowBox[{"1", "-", 
+            FractionBox["nsel", 
+             RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}]}], 
+       RowBox[{"NGE", " ", "NGO", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", 
+          FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}]}], ",", 
+   RowBox[{"2", " ", 
+    RowBox[{"(", 
+     RowBox[{"1", "-", 
+      FractionBox[
+       RowBox[{
+        SuperscriptBox["\[ExponentialE]", 
+         RowBox[{
+          RowBox[{"-", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", 
+                 RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+          SuperscriptBox[
+           RowBox[{"InverseErfc", "[", 
+            RowBox[{"2", " ", 
+             RowBox[{"(", 
+              RowBox[{"1", "-", 
+               FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+        "NEO", " ", "NGE", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+       RowBox[{"NGO", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", 
+          FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}], " ", 
+    RowBox[{"(", 
+     RowBox[{
+      FractionBox[
+       RowBox[{
+        SuperscriptBox["\[ExponentialE]", 
+         RowBox[{
+          RowBox[{"-", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", 
+                 RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+          SuperscriptBox[
+           RowBox[{"InverseErfc", "[", 
+            RowBox[{"2", " ", 
+             RowBox[{"(", 
+              RowBox[{"1", "-", 
+               FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+        "NEO", " ", "NGE", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+       RowBox[{
+        SuperscriptBox["NGO", "2"], " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", 
+          FractionBox["vintra", "NGE"], "+", "vpos"}]]}]], "+", 
+      FractionBox[
+       RowBox[{"2", " ", 
+        SuperscriptBox["\[ExponentialE]", 
+         RowBox[{
+          RowBox[{"-", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", 
+                 RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+          RowBox[{"2", " ", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]}]], " ", 
+        "NEO", " ", "NGE", " ", "nsel", " ", 
+        SqrtBox["\[Pi]"], " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]], " ", 
+        RowBox[{"InverseErfc", "[", 
+         RowBox[{"2", " ", 
+          RowBox[{"(", 
+           RowBox[{"1", "-", 
+            FractionBox["nsel", "NGO"]}], ")"}]}], "]"}]}], 
+       RowBox[{
+        SuperscriptBox["NGO", "3"], " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", 
+          FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}]}], ",", 
+   RowBox[{"2", " ", 
+    RowBox[{"(", 
+     RowBox[{
+      FractionBox[
+       RowBox[{
+        SuperscriptBox["\[ExponentialE]", 
+         RowBox[{
+          RowBox[{"-", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", 
+                 RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+          SuperscriptBox[
+           RowBox[{"InverseErfc", "[", 
+            RowBox[{"2", " ", 
+             RowBox[{"(", 
+              RowBox[{"1", "-", 
+               FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+        "NEO", " ", "NGE", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+       RowBox[{"2", " ", "NGO", " ", 
+        SuperscriptBox[
+         RowBox[{"(", 
+          RowBox[{"vg", "+", "vinter", "+", 
+           FractionBox["vintra", "NGE"], "+", "vpos"}], ")"}], 
+         RowBox[{"3", "/", "2"}]]}]], "-", 
+      FractionBox[
+       RowBox[{
+        SuperscriptBox["\[ExponentialE]", 
+         RowBox[{
+          RowBox[{"-", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", 
+                 RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+          SuperscriptBox[
+           RowBox[{"InverseErfc", "[", 
+            RowBox[{"2", " ", 
+             RowBox[{"(", 
+              RowBox[{"1", "-", 
+               FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+        "NEO", " ", "NGE"}], 
+       RowBox[{"2", " ", "NGO", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]], " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", 
+          FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}], " ", 
+    RowBox[{"(", 
+     RowBox[{"1", "-", 
+      FractionBox[
+       RowBox[{
+        SuperscriptBox["\[ExponentialE]", 
+         RowBox[{
+          RowBox[{"-", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", 
+                 RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+          SuperscriptBox[
+           RowBox[{"InverseErfc", "[", 
+            RowBox[{"2", " ", 
+             RowBox[{"(", 
+              RowBox[{"1", "-", 
+               FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+        "NEO", " ", "NGE", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+       RowBox[{"NGO", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", 
+          FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}]}], ",", 
+   RowBox[{"2", " ", 
+    RowBox[{"(", 
+     RowBox[{
+      FractionBox[
+       RowBox[{
+        SuperscriptBox["\[ExponentialE]", 
+         RowBox[{
+          RowBox[{"-", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", 
+                 RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+          SuperscriptBox[
+           RowBox[{"InverseErfc", "[", 
+            RowBox[{"2", " ", 
+             RowBox[{"(", 
+              RowBox[{"1", "-", 
+               FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+        "NEO", " ", "NGE", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+       RowBox[{"2", " ", "NGO", " ", 
+        SuperscriptBox[
+         RowBox[{"(", 
+          RowBox[{"vg", "+", "vinter", "+", 
+           FractionBox["vintra", "NGE"], "+", "vpos"}], ")"}], 
+         RowBox[{"3", "/", "2"}]]}]], "-", 
+      FractionBox[
+       RowBox[{
+        SuperscriptBox["\[ExponentialE]", 
+         RowBox[{
+          RowBox[{"-", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", 
+                 RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+          SuperscriptBox[
+           RowBox[{"InverseErfc", "[", 
+            RowBox[{"2", " ", 
+             RowBox[{"(", 
+              RowBox[{"1", "-", 
+               FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+        "NEO", " ", "NGE"}], 
+       RowBox[{"2", " ", "NGO", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]], " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", 
+          FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}], " ", 
+    RowBox[{"(", 
+     RowBox[{"1", "-", 
+      FractionBox[
+       RowBox[{
+        SuperscriptBox["\[ExponentialE]", 
+         RowBox[{
+          RowBox[{"-", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", 
+                 RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+          SuperscriptBox[
+           RowBox[{"InverseErfc", "[", 
+            RowBox[{"2", " ", 
+             RowBox[{"(", 
+              RowBox[{"1", "-", 
+               FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+        "NEO", " ", "NGE", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+       RowBox[{"NGO", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", 
+          FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}]}], ",", 
+   RowBox[{"2", " ", 
+    RowBox[{"(", 
+     RowBox[{
+      FractionBox[
+       RowBox[{
+        SuperscriptBox["\[ExponentialE]", 
+         RowBox[{
+          RowBox[{"-", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", 
+                 RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+          SuperscriptBox[
+           RowBox[{"InverseErfc", "[", 
+            RowBox[{"2", " ", 
+             RowBox[{"(", 
+              RowBox[{"1", "-", 
+               FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+        "NEO", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+       RowBox[{"2", " ", "NGO", " ", 
+        SuperscriptBox[
+         RowBox[{"(", 
+          RowBox[{"vg", "+", "vinter", "+", 
+           FractionBox["vintra", "NGE"], "+", "vpos"}], ")"}], 
+         RowBox[{"3", "/", "2"}]]}]], "-", 
+      FractionBox[
+       RowBox[{
+        SuperscriptBox["\[ExponentialE]", 
+         RowBox[{
+          RowBox[{"-", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", 
+                 RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+          SuperscriptBox[
+           RowBox[{"InverseErfc", "[", 
+            RowBox[{"2", " ", 
+             RowBox[{"(", 
+              RowBox[{"1", "-", 
+               FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+        "NEO", " ", "NGE"}], 
+       RowBox[{"2", " ", "NGO", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]], " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", 
+          FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}], " ", 
+    RowBox[{"(", 
+     RowBox[{"1", "-", 
+      FractionBox[
+       RowBox[{
+        SuperscriptBox["\[ExponentialE]", 
+         RowBox[{
+          RowBox[{"-", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", 
+                 RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+          SuperscriptBox[
+           RowBox[{"InverseErfc", "[", 
+            RowBox[{"2", " ", 
+             RowBox[{"(", 
+              RowBox[{"1", "-", 
+               FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+        "NEO", " ", "NGE", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+       RowBox[{"NGO", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", 
+          FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}]}], ",", 
+   RowBox[{"2", " ", 
+    RowBox[{"(", 
+     RowBox[{
+      FractionBox[
+       RowBox[{
+        SuperscriptBox["\[ExponentialE]", 
+         RowBox[{
+          RowBox[{"-", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", 
+                 RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+          SuperscriptBox[
+           RowBox[{"InverseErfc", "[", 
+            RowBox[{"2", " ", 
+             RowBox[{"(", 
+              RowBox[{"1", "-", 
+               FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+        "NEO", " ", "NGE", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+       RowBox[{"2", " ", "NGO", " ", 
+        SuperscriptBox[
+         RowBox[{"(", 
+          RowBox[{"vg", "+", "vinter", "+", 
+           FractionBox["vintra", "NGE"], "+", "vpos"}], ")"}], 
+         RowBox[{"3", "/", "2"}]]}]], "-", 
+      FractionBox[
+       RowBox[{
+        SuperscriptBox["\[ExponentialE]", 
+         RowBox[{
+          RowBox[{"-", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", 
+                 RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+          SuperscriptBox[
+           RowBox[{"InverseErfc", "[", 
+            RowBox[{"2", " ", 
+             RowBox[{"(", 
+              RowBox[{"1", "-", 
+               FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+        "NEO", " ", "NGE"}], 
+       RowBox[{"2", " ", "NGO", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]], " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", 
+          FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}], " ", 
+    RowBox[{"(", 
+     RowBox[{"1", "-", 
+      FractionBox[
+       RowBox[{
+        SuperscriptBox["\[ExponentialE]", 
+         RowBox[{
+          RowBox[{"-", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", 
+                 RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+          SuperscriptBox[
+           RowBox[{"InverseErfc", "[", 
+            RowBox[{"2", " ", 
+             RowBox[{"(", 
+              RowBox[{"1", "-", 
+               FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+        "NEO", " ", "NGE", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+       RowBox[{"NGO", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", 
+          FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}]}]}], 
+  "}"}]], "Output",
+ CellChangeTimes->{{3.896178049839532*^9, 3.8961780797507615`*^9}, 
+   3.896237872446658*^9, 3.896238065537298*^9},
+ CellLabel->"Out[7]=",ExpressionUUID->"028523cf-45a8-4343-aa86-d083343e2135"]
+}, Open  ]],
+
+Cell["\<\
+La matrice jacobienne existe ! on peut donc faire la m\[EAcute]thode de Newton\
+\>", "Text",
+ CellChangeTimes->{{3.8961780906834383`*^9, 
+  3.8961781083654175`*^9}},ExpressionUUID->"a4933b3c-9a07-45d5-9d77-\
+8b00a7be9ad7"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"system", " ", "=", " ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"Part", "[", 
+      RowBox[{"J", ",", "1"}], "]"}], "==", "0"}], " ", ",", " ", 
+    RowBox[{
+     RowBox[{"Part", "[", 
+      RowBox[{"J", ",", "2"}], "]"}], "==", "0"}], " ", ",", " ", 
+    RowBox[{
+     RowBox[{"Part", "[", 
+      RowBox[{"J", ",", "3"}], "]"}], "==", "0"}], " ", ",", " ", 
+    RowBox[{
+     RowBox[{"Part", "[", 
+      RowBox[{"J", ",", "4"}], "]"}], "==", "0"}], " ", ",", " ", 
+    RowBox[{
+     RowBox[{"Part", "[", 
+      RowBox[{"J", ",", "5"}], "]"}], "==", "0"}], " ", ",", " ", 
+    RowBox[{
+     RowBox[{"Part", "[", 
+      RowBox[{"J", ",", "6"}], "]"}], "==", "0"}], " ", ",", " ", 
+    RowBox[{
+     RowBox[{"Part", "[", 
+      RowBox[{"J", ",", "7"}], "]"}], "==", "0"}], " ", ",", " ", 
+    RowBox[{
+     RowBox[{"Part", "[", 
+      RowBox[{"J", ",", "8"}], "]"}], "==", "0"}]}], " ", "}"}]}]], "Input",
+ CellChangeTimes->{{3.8961790111956015`*^9, 3.896179116229564*^9}, {
+  3.8961791701218615`*^9, 3.896179189998926*^9}, {3.8961792562240086`*^9, 
+  3.8961793557969503`*^9}, {3.896179503395784*^9, 3.8961795463476543`*^9}, {
+  3.8961795810327415`*^9, 3.896179581175623*^9}, {3.8962382198151727`*^9, 
+  3.896238241826578*^9}},
+ CellLabel->"In[13]:=",ExpressionUUID->"07533563-d40a-4ca1-9603-d1b928d56431"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"2", " ", 
+     RowBox[{"(", 
+      RowBox[{"1", "-", 
+       FractionBox[
+        RowBox[{
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{
+           RowBox[{"-", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", 
+                  RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+         "NEO", " ", "NGE", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+        RowBox[{"NGO", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", 
+           FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}], " ", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"-", 
+        FractionBox[
+         RowBox[{
+          SuperscriptBox["\[ExponentialE]", 
+           RowBox[{
+            RowBox[{"-", 
+             SuperscriptBox[
+              RowBox[{"InverseErfc", "[", 
+               RowBox[{"2", " ", 
+                RowBox[{"(", 
+                 RowBox[{"1", "-", 
+                  FractionBox["nsel", 
+                   RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], 
+            "+", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+          "NGE", " ", 
+          SqrtBox[
+           RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+         RowBox[{"NGO", " ", 
+          SqrtBox[
+           RowBox[{"vg", "+", "vinter", "+", 
+            FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], "-", 
+       FractionBox[
+        RowBox[{"2", " ", 
+         SuperscriptBox["\[ExponentialE]", 
+          SuperscriptBox[
+           RowBox[{"InverseErfc", "[", 
+            RowBox[{"2", " ", 
+             RowBox[{"(", 
+              RowBox[{"1", "-", 
+               FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]], " ", 
+         "nsel", " ", 
+         SqrtBox["\[Pi]"], " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]], " ", 
+         RowBox[{"InverseErfc", "[", 
+          RowBox[{"2", " ", 
+           RowBox[{"(", 
+            RowBox[{"1", "-", 
+             FractionBox["nsel", 
+              RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}]}], 
+        RowBox[{"NEO", " ", "NGO", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", 
+           FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}]}], 
+    "\[Equal]", "0"}], ",", 
+   RowBox[{
+    RowBox[{"-", 
+     RowBox[{
+      FractionBox["1", 
+       RowBox[{"NGO", " ", 
+        SqrtBox[
+         RowBox[{"vg", "+", "vinter", "+", 
+          FractionBox["vintra", "NGE"], "+", "vpos"}]]}]], 
+      RowBox[{"2", " ", 
+       SuperscriptBox["\[ExponentialE]", 
+        RowBox[{
+         RowBox[{"-", 
+          SuperscriptBox[
+           RowBox[{"InverseErfc", "[", 
+            RowBox[{"2", " ", 
+             RowBox[{"(", 
+              RowBox[{"1", "-", 
+               FractionBox["nsel", 
+                RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+         SuperscriptBox[
+          RowBox[{"InverseErfc", "[", 
+           RowBox[{"2", " ", 
+            RowBox[{"(", 
+             RowBox[{"1", "-", 
+              FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+       "NEO", " ", "NGE", " ", 
+       SqrtBox[
+        RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]], " ", 
+       RowBox[{"(", 
+        RowBox[{"1", "-", 
+         FractionBox[
+          RowBox[{
+           SuperscriptBox["\[ExponentialE]", 
+            RowBox[{
+             RowBox[{"-", 
+              SuperscriptBox[
+               RowBox[{"InverseErfc", "[", 
+                RowBox[{"2", " ", 
+                 RowBox[{"(", 
+                  RowBox[{"1", "-", 
+                   FractionBox["nsel", 
+                    RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], 
+             "+", 
+             SuperscriptBox[
+              RowBox[{"InverseErfc", "[", 
+               RowBox[{"2", " ", 
+                RowBox[{"(", 
+                 RowBox[{"1", "-", 
+                  FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+           "NEO", " ", "NGE", " ", 
+           SqrtBox[
+            RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+          RowBox[{"NGO", " ", 
+           SqrtBox[
+            RowBox[{"vg", "+", "vinter", "+", 
+             FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}], " ", 
+       RowBox[{"(", 
+        RowBox[{
+         RowBox[{"-", 
+          FractionBox[
+           RowBox[{"2", " ", 
+            SuperscriptBox["\[ExponentialE]", 
+             SuperscriptBox[
+              RowBox[{"InverseErfc", "[", 
+               RowBox[{"2", " ", 
+                RowBox[{"(", 
+                 RowBox[{"1", "-", 
+                  FractionBox["nsel", 
+                   RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]], " ", 
+            SqrtBox["\[Pi]"], " ", 
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", 
+                 RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}]}], 
+           RowBox[{"NEO", " ", "NGE"}]]}], "+", 
+         FractionBox[
+          RowBox[{"2", " ", 
+           SuperscriptBox["\[ExponentialE]", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]], " ", 
+           SqrtBox["\[Pi]"], " ", 
+           RowBox[{"InverseErfc", "[", 
+            RowBox[{"2", " ", 
+             RowBox[{"(", 
+              RowBox[{"1", "-", 
+               FractionBox["nsel", "NGO"]}], ")"}]}], "]"}]}], "NGO"]}], 
+        ")"}]}]}]}], "\[Equal]", "0"}], ",", 
+   RowBox[{
+    RowBox[{"2", " ", 
+     RowBox[{"(", 
+      RowBox[{"1", "-", 
+       FractionBox[
+        RowBox[{
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{
+           RowBox[{"-", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", 
+                  RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+         "NEO", " ", "NGE", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+        RowBox[{"NGO", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", 
+           FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}], " ", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"-", 
+        FractionBox[
+         RowBox[{
+          SuperscriptBox["\[ExponentialE]", 
+           RowBox[{
+            RowBox[{"-", 
+             SuperscriptBox[
+              RowBox[{"InverseErfc", "[", 
+               RowBox[{"2", " ", 
+                RowBox[{"(", 
+                 RowBox[{"1", "-", 
+                  FractionBox["nsel", 
+                   RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], 
+            "+", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+          "NEO", " ", "vintra", " ", 
+          SqrtBox[
+           RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+         RowBox[{"2", " ", "NGE", " ", "NGO", " ", 
+          SuperscriptBox[
+           RowBox[{"(", 
+            RowBox[{"vg", "+", "vinter", "+", 
+             FractionBox["vintra", "NGE"], "+", "vpos"}], ")"}], 
+           RowBox[{"3", "/", "2"}]]}]]}], "-", 
+       FractionBox[
+        RowBox[{
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{
+           RowBox[{"-", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", 
+                  RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+         "NEO", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+        RowBox[{"NGO", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", 
+           FractionBox["vintra", "NGE"], "+", "vpos"}]]}]], "-", 
+       FractionBox[
+        RowBox[{"2", " ", 
+         SuperscriptBox["\[ExponentialE]", 
+          SuperscriptBox[
+           RowBox[{"InverseErfc", "[", 
+            RowBox[{"2", " ", 
+             RowBox[{"(", 
+              RowBox[{"1", "-", 
+               FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]], " ", 
+         "nsel", " ", 
+         SqrtBox["\[Pi]"], " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]], " ", 
+         RowBox[{"InverseErfc", "[", 
+          RowBox[{"2", " ", 
+           RowBox[{"(", 
+            RowBox[{"1", "-", 
+             FractionBox["nsel", 
+              RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}]}], 
+        RowBox[{"NGE", " ", "NGO", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", 
+           FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}]}], 
+    "\[Equal]", "0"}], ",", 
+   RowBox[{
+    RowBox[{"2", " ", 
+     RowBox[{"(", 
+      RowBox[{"1", "-", 
+       FractionBox[
+        RowBox[{
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{
+           RowBox[{"-", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", 
+                  RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+         "NEO", " ", "NGE", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+        RowBox[{"NGO", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", 
+           FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}], " ", 
+     RowBox[{"(", 
+      RowBox[{
+       FractionBox[
+        RowBox[{
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{
+           RowBox[{"-", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", 
+                  RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+         "NEO", " ", "NGE", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+        RowBox[{
+         SuperscriptBox["NGO", "2"], " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", 
+           FractionBox["vintra", "NGE"], "+", "vpos"}]]}]], "+", 
+       FractionBox[
+        RowBox[{"2", " ", 
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{
+           RowBox[{"-", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", 
+                  RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+           RowBox[{"2", " ", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]}]], " ",
+          "NEO", " ", "NGE", " ", "nsel", " ", 
+         SqrtBox["\[Pi]"], " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]], " ", 
+         RowBox[{"InverseErfc", "[", 
+          RowBox[{"2", " ", 
+           RowBox[{"(", 
+            RowBox[{"1", "-", 
+             FractionBox["nsel", "NGO"]}], ")"}]}], "]"}]}], 
+        RowBox[{
+         SuperscriptBox["NGO", "3"], " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", 
+           FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}]}], 
+    "\[Equal]", "0"}], ",", 
+   RowBox[{
+    RowBox[{"2", " ", 
+     RowBox[{"(", 
+      RowBox[{
+       FractionBox[
+        RowBox[{
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{
+           RowBox[{"-", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", 
+                  RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+         "NEO", " ", "NGE", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+        RowBox[{"2", " ", "NGO", " ", 
+         SuperscriptBox[
+          RowBox[{"(", 
+           RowBox[{"vg", "+", "vinter", "+", 
+            FractionBox["vintra", "NGE"], "+", "vpos"}], ")"}], 
+          RowBox[{"3", "/", "2"}]]}]], "-", 
+       FractionBox[
+        RowBox[{
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{
+           RowBox[{"-", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", 
+                  RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+         "NEO", " ", "NGE"}], 
+        RowBox[{"2", " ", "NGO", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]], " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", 
+           FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}], " ", 
+     RowBox[{"(", 
+      RowBox[{"1", "-", 
+       FractionBox[
+        RowBox[{
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{
+           RowBox[{"-", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", 
+                  RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+         "NEO", " ", "NGE", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+        RowBox[{"NGO", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", 
+           FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}]}], 
+    "\[Equal]", "0"}], ",", 
+   RowBox[{
+    RowBox[{"2", " ", 
+     RowBox[{"(", 
+      RowBox[{
+       FractionBox[
+        RowBox[{
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{
+           RowBox[{"-", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", 
+                  RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+         "NEO", " ", "NGE", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+        RowBox[{"2", " ", "NGO", " ", 
+         SuperscriptBox[
+          RowBox[{"(", 
+           RowBox[{"vg", "+", "vinter", "+", 
+            FractionBox["vintra", "NGE"], "+", "vpos"}], ")"}], 
+          RowBox[{"3", "/", "2"}]]}]], "-", 
+       FractionBox[
+        RowBox[{
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{
+           RowBox[{"-", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", 
+                  RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+         "NEO", " ", "NGE"}], 
+        RowBox[{"2", " ", "NGO", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]], " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", 
+           FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}], " ", 
+     RowBox[{"(", 
+      RowBox[{"1", "-", 
+       FractionBox[
+        RowBox[{
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{
+           RowBox[{"-", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", 
+                  RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+         "NEO", " ", "NGE", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+        RowBox[{"NGO", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", 
+           FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}]}], 
+    "\[Equal]", "0"}], ",", 
+   RowBox[{
+    RowBox[{"2", " ", 
+     RowBox[{"(", 
+      RowBox[{
+       FractionBox[
+        RowBox[{
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{
+           RowBox[{"-", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", 
+                  RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+         "NEO", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+        RowBox[{"2", " ", "NGO", " ", 
+         SuperscriptBox[
+          RowBox[{"(", 
+           RowBox[{"vg", "+", "vinter", "+", 
+            FractionBox["vintra", "NGE"], "+", "vpos"}], ")"}], 
+          RowBox[{"3", "/", "2"}]]}]], "-", 
+       FractionBox[
+        RowBox[{
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{
+           RowBox[{"-", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", 
+                  RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+         "NEO", " ", "NGE"}], 
+        RowBox[{"2", " ", "NGO", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]], " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", 
+           FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}], " ", 
+     RowBox[{"(", 
+      RowBox[{"1", "-", 
+       FractionBox[
+        RowBox[{
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{
+           RowBox[{"-", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", 
+                  RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+         "NEO", " ", "NGE", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+        RowBox[{"NGO", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", 
+           FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}]}], 
+    "\[Equal]", "0"}], ",", 
+   RowBox[{
+    RowBox[{"2", " ", 
+     RowBox[{"(", 
+      RowBox[{
+       FractionBox[
+        RowBox[{
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{
+           RowBox[{"-", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", 
+                  RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+         "NEO", " ", "NGE", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+        RowBox[{"2", " ", "NGO", " ", 
+         SuperscriptBox[
+          RowBox[{"(", 
+           RowBox[{"vg", "+", "vinter", "+", 
+            FractionBox["vintra", "NGE"], "+", "vpos"}], ")"}], 
+          RowBox[{"3", "/", "2"}]]}]], "-", 
+       FractionBox[
+        RowBox[{
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{
+           RowBox[{"-", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", 
+                  RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+         "NEO", " ", "NGE"}], 
+        RowBox[{"2", " ", "NGO", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]], " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", 
+           FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}], " ", 
+     RowBox[{"(", 
+      RowBox[{"1", "-", 
+       FractionBox[
+        RowBox[{
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{
+           RowBox[{"-", 
+            SuperscriptBox[
+             RowBox[{"InverseErfc", "[", 
+              RowBox[{"2", " ", 
+               RowBox[{"(", 
+                RowBox[{"1", "-", 
+                 FractionBox["nsel", 
+                  RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+           SuperscriptBox[
+            RowBox[{"InverseErfc", "[", 
+             RowBox[{"2", " ", 
+              RowBox[{"(", 
+               RowBox[{"1", "-", 
+                FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+         "NEO", " ", "NGE", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+        RowBox[{"NGO", " ", 
+         SqrtBox[
+          RowBox[{"vg", "+", "vinter", "+", 
+           FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}], ")"}]}], 
+    "\[Equal]", "0"}]}], "}"}]], "Output",
+ CellChangeTimes->{{3.8961790917976*^9, 3.896179121616291*^9}, 
+   3.8961791908817987`*^9, 3.8961795477711353`*^9, 3.896179581843734*^9, 
+   3.8962380784218187`*^9, 3.896238246279934*^9},
+ CellLabel->"Out[13]=",ExpressionUUID->"db8db484-337b-4d6a-a817-093a93518992"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"FindRoot", "[", 
+  RowBox[{"system", " ", ",", " ", 
+   RowBox[{"{", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"NEO", ",", "100"}], "}"}], ",", "\[IndentingNewLine]", 
+     RowBox[{"{", 
+      RowBox[{"NGO", " ", ",", " ", "100000"}], "}"}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{"{", 
+      RowBox[{"NGE", " ", ",", " ", "70"}], "}"}], ",", "\[IndentingNewLine]", 
+     RowBox[{"{", 
+      RowBox[{"nsel", " ", ",", " ", "2000"}], "}"}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{"{", 
+      RowBox[{"vg", " ", ",", " ", "1"}], "}"}], ",", "\[IndentingNewLine]", 
+     RowBox[{"{", 
+      RowBox[{"vinter", " ", ",", " ", "1"}], "}"}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{"{", 
+      RowBox[{"vintra", " ", ",", " ", "1"}], "}"}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{"{", 
+      RowBox[{"vpos", " ", ",", " ", "1"}], "}"}]}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.896179590818299*^9, 3.8961796046617794`*^9}, {
+  3.896179635217718*^9, 3.8961797846932487`*^9}},
+ CellLabel->"In[14]:=",ExpressionUUID->"14d25784-48b1-425c-b799-86b555554d52"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"NEO", "\[Rule]", "959.2171487153133`"}], ",", 
+   RowBox[{"NGO", "\[Rule]", "2.25914657036681`*^6"}], ",", 
+   RowBox[{"NGE", "\[Rule]", "670.3107079452296`"}], ",", 
+   RowBox[{"nsel", "\[Rule]", "7262.877169770858`"}], ",", 
+   RowBox[{"vg", "\[Rule]", "45.273333492417784`"}], ",", 
+   RowBox[{"vinter", "\[Rule]", "26.855738097020804`"}], ",", 
+   RowBox[{"vintra", "\[Rule]", "32.99493656227576`"}], ",", 
+   RowBox[{"vpos", "\[Rule]", "26.855738097251816`"}]}], "}"}]], "Output",
+ CellChangeTimes->{3.896179813882086*^9, 3.896238256734319*^9},
+ CellLabel->"Out[14]=",ExpressionUUID->"a818e3a4-6bc9-431d-9ce3-4d27749efa95"]
+}, Open  ]],
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.896238108352363*^9, 3.896238146117182*^9}, {
+   3.8962382097823133`*^9, 3.8962382117811413`*^9}, 
+   3.8962387440910273`*^9},ExpressionUUID->"8a38b7fa-ca3f-4406-ae17-\
+08a087c27632"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"RR", "[", 
+   RowBox[{
+   "NEO_", " ", ",", " ", "nsel_", " ", ",", " ", "NGE_", " ", ",", " ", 
+    "NGO_", " ", ",", " ", "vg_", " ", ",", " ", "vinter_", " ", ",", " ", 
+    "vintra_", " ", ",", " ", "vpos_"}], "]"}], ":=", 
+  FractionBox[
+   RowBox[{
+    SuperscriptBox["\[ExponentialE]", 
+     RowBox[{
+      RowBox[{"-", 
+       SuperscriptBox[
+        RowBox[{"InverseErfc", "[", 
+         RowBox[{"2", " ", 
+          RowBox[{"(", 
+           RowBox[{"1", "-", 
+            FractionBox["nsel", 
+             RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+      SuperscriptBox[
+       RowBox[{"InverseErfc", "[", 
+        RowBox[{"2", " ", 
+         RowBox[{"(", 
+          RowBox[{"1", "-", 
+           FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", "NEO", 
+    " ", "NGE", " ", 
+    SqrtBox[
+     RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+   RowBox[{"NGO", " ", 
+    SqrtBox[
+     RowBox[{"vg", "+", "vinter", "+", 
+      FractionBox["vintra", "NGE"], "+", "vpos"}]]}]]}]], "Input",
+ CellChangeTimes->{{3.896238751405549*^9, 3.896238780826721*^9}},
+ CellLabel->"In[15]:=",ExpressionUUID->"db5e1444-aa76-4b2a-ae20-8ddcf2c8c001"],
+
+Cell["On essaye avec une in\[EAcute]galit\[EAcute]", "Text",
+ CellChangeTimes->{{3.8962387977477565`*^9, 
+  3.8962388040682354`*^9}},ExpressionUUID->"35374aa5-89e1-4c49-b052-\
+0ca316d31143"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Solve", "[", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"RR", "[", 
+     RowBox[{
+     "NEO", " ", ",", " ", "nsel", " ", ",", " ", "NGE", " ", ",", " ", "NGO",
+       " ", ",", " ", "vg", " ", ",", " ", "vinter", " ", ",", " ", "vintra", 
+      " ", ",", " ", "vpos"}], "]"}], ">", "1"}], ",", "NGE"}], 
+  "]"}]], "Input",
+ CellChangeTimes->{{3.8962388158471203`*^9, 3.8962388747429066`*^9}},
+ CellLabel->"In[16]:=",ExpressionUUID->"12032519-ade3-426c-aac7-63af2659a1fa"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Solve", "nsmet", 
+   "\"This system cannot be solved with the methods available to Solve.\"", 2,
+    16, 1, 27159087514459896759, "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{3.896238878140086*^9},
+ CellLabel->
+  "Lors de l\[CloseCurlyQuote]\[EAcute]valuation de \
+In[16]:=",ExpressionUUID->"9e5c9d3f-f3ed-4d62-bd88-165f52691af0"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Reduce", "[", 
+  RowBox[{
+   RowBox[{
+    FractionBox[
+     RowBox[{
+      SuperscriptBox["\[ExponentialE]", 
+       RowBox[{
+        RowBox[{"-", 
+         SuperscriptBox[
+          RowBox[{"InverseErfc", "[", 
+           RowBox[{"2", " ", 
+            RowBox[{"(", 
+             RowBox[{"1", "-", 
+              FractionBox["nsel", 
+               RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+        SuperscriptBox[
+         RowBox[{"InverseErfc", "[", 
+          RowBox[{"2", " ", 
+           RowBox[{"(", 
+            RowBox[{"1", "-", 
+             FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+      "NEO", " ", "NGE", " ", 
+      SqrtBox[
+       RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+     RowBox[{"NGO", " ", 
+      SqrtBox[
+       RowBox[{"vg", "+", "vinter", "+", 
+        FractionBox["vintra", "NGE"], "+", "vpos"}]]}]], ">", "1"}], ",", 
+   "NGE"}], "]"}]], "Input",
+ CellChangeTimes->{{3.896238949875614*^9, 3.8962389526458254`*^9}},
+ CellLabel->"In[17]:=",ExpressionUUID->"d102ab97-1405-4640-b8b2-e33ad6838a36"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "Reduce", "nsmet", 
+   "\"This system cannot be solved with the methods available to Reduce.\"", 
+   2, 17, 2, 27159087514459896759, "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{3.8962389557623796`*^9},
+ CellLabel->
+  "Lors de l\[CloseCurlyQuote]\[EAcute]valuation de \
+In[17]:=",ExpressionUUID->"a15d15d1-5126-4c51-8743-cf9ff714a67b"],
+
+Cell[BoxData[
+ RowBox[{"Reduce", "[", 
+  RowBox[{
+   RowBox[{
+    FractionBox[
+     RowBox[{
+      SuperscriptBox["\[ExponentialE]", 
+       RowBox[{
+        RowBox[{"-", 
+         SuperscriptBox[
+          RowBox[{"InverseErfc", "[", 
+           RowBox[{"2", " ", 
+            RowBox[{"(", 
+             RowBox[{"1", "-", 
+              FractionBox["nsel", 
+               RowBox[{"NEO", " ", "NGE"}]]}], ")"}]}], "]"}], "2"]}], "+", 
+        SuperscriptBox[
+         RowBox[{"InverseErfc", "[", 
+          RowBox[{"2", " ", 
+           RowBox[{"(", 
+            RowBox[{"1", "-", 
+             FractionBox["nsel", "NGO"]}], ")"}]}], "]"}], "2"]}]], " ", 
+      "NEO", " ", "NGE", " ", 
+      SqrtBox[
+       RowBox[{"vg", "+", "vinter", "+", "vintra", "+", "vpos"}]]}], 
+     RowBox[{"NGO", " ", 
+      SqrtBox[
+       RowBox[{"vg", "+", "vinter", "+", 
+        FractionBox["vintra", "NGE"], "+", "vpos"}]]}]], ">", "1"}], ",", 
+   "NGE"}], "]"}]], "Output",
+ CellChangeTimes->{3.8962389557833214`*^9},
+ CellLabel->"Out[17]=",ExpressionUUID->"1eed224a-35d6-4364-8006-3e06d8c73df6"]
+}, Open  ]],
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.896238747890768*^9, 
+  3.896238747893756*^9}},ExpressionUUID->"e2d6a45e-1e7d-4849-87fa-\
+da1e48115fd3"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.8961785946287456`*^9, 3.896178633318658*^9}, {
+  3.8961786931520786`*^9, 3.8961788670002823`*^9}, {3.896178899867177*^9, 
+  3.896178919133735*^9}, {3.896178950509555*^9, 3.896178953127651*^9}},
+ CellTags->
+  "FindRoot_templates",ExpressionUUID->"be285a40-dbd4-454b-93a5-196c09f69fb9"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "FindRoot", "nveq", 
+   "\"The number of equations does not match the number of variables in \
+\\!\\(\\*RowBox[{\\\"FindRoot\\\", \\\"[\\\", RowBox[{RowBox[{\\\"{\\\", \
+RowBox[{FractionBox[RowBox[{SuperscriptBox[\\\"\[ExponentialE]\\\", \
+RowBox[{RowBox[{\\\"-\\\", RowBox[{\\\"Power\\\", \\\"[\\\", RowBox[{\\\"\
+\[LeftSkeleton]\\\", \\\"2\\\", \\\"\[RightSkeleton]\\\"}], \\\"]\\\"}]}], \\\
+\"+\\\", SuperscriptBox[RowBox[{\\\"InverseErfc\\\", \\\"[\\\", RowBox[{\\\"\
+\[LeftSkeleton]\\\", \\\"1\\\", \\\"\[RightSkeleton]\\\"}], \\\"]\\\"}], \
+\\\"2\\\"]}]], \\\" \\\", \\\"NEO\\\", \\\" \\\", \\\"NGE\\\", \\\" \\\", \
+SqrtBox[RowBox[{\\\"vg\\\", \\\"+\\\", \\\"vinter\\\", \\\"+\\\", \
+\\\"vintra\\\", \\\"+\\\", \\\"vpos\\\"}]]}], RowBox[{\\\"NGO\\\", \\\" \\\", \
+SqrtBox[RowBox[{\\\"Plus\\\", \\\"[\\\", RowBox[{\\\"\[LeftSkeleton]\\\", \
+\\\"4\\\", \\\"\[RightSkeleton]\\\"}], \\\"]\\\"}]]}]], \\\"\[Equal]\\\", \
+\\\"1\\\"}], \\\"}\\\"}], \\\",\\\", RowBox[{\\\"{\\\", RowBox[{RowBox[{\\\"{\
+\\\", RowBox[{\\\"NEO\\\", \\\",\\\", \\\"100\\\"}], \\\"}\\\"}], \\\",\\\", \
+RowBox[{\\\"{\\\", RowBox[{\\\"NGE\\\", \\\",\\\", \\\"70\\\"}], \\\"}\\\"}], \
+\\\",\\\", RowBox[{\\\"{\\\", RowBox[{\\\"NGO\\\", \\\",\\\", \
+\\\"100000\\\"}], \\\"}\\\"}], \\\",\\\", RowBox[{\\\"{\\\", RowBox[{\\\"vg\\\
+\", \\\",\\\", \\\"1\\\"}], \\\"}\\\"}], \\\",\\\", RowBox[{\\\"{\\\", \
+RowBox[{\\\"vinter\\\", \\\",\\\", \\\"1\\\"}], \\\"}\\\"}], \\\",\\\", \
+RowBox[{\\\"{\\\", RowBox[{\\\"vintra\\\", \\\",\\\", \\\"1\\\"}], \
+\\\"}\\\"}], \\\",\\\", RowBox[{\\\"{\\\", RowBox[{\\\"vpos\\\", \\\",\\\", \
+\\\"1\\\"}], \\\"}\\\"}], \\\",\\\", RowBox[{\\\"{\\\", RowBox[{\\\"nsel\\\", \
+\\\",\\\", \\\"2000\\\"}], \\\"}\\\"}]}], \\\"}\\\"}]}], \\\"]\\\"}]\\).\"", 
+   2, 7, 7, 27158692470346694802, "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ GeneratedCell->False,
+ CellAutoOverwrite->False,
+ CellChangeTimes->{{3.896178851880801*^9, 3.8961788691291313`*^9}, 
+   3.896178920909907*^9, 3.8961789713067594`*^9, {3.896179005763403*^9, 
+   3.8961790074613266`*^9}},
+ CellTags->
+  "FindRoot_templates",ExpressionUUID->"cb45b6b1-c34e-4192-8a51-52a5063fc129"]
+}, Open  ]],
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.896238732160494*^9, 3.896238736853264*^9}},
+ CellTags->
+  "FindRoot_templates",ExpressionUUID->"5330cd99-8496-44ac-a1a7-e2f1d6307abf"]
+},
+WindowSize->{1260., 725.25},
+WindowMargins->{{Automatic, 1018.5}, {167.25, Automatic}},
+FrontEndVersion->"13.2 pour Microsoft Windows (64-bit) (January 30, 2023)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"aff9a684-b800-45cb-8b30-f08697a21bb5"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{
+ "FindRoot_templates"->{
+  Cell[64154, 1789, 333, 5, 28, "Input",ExpressionUUID->"be285a40-dbd4-454b-93a5-196c09f69fb9",
+   CellTags->"FindRoot_templates"],
+  Cell[64490, 1796, 2182, 34, 77, "Message",ExpressionUUID->"cb45b6b1-c34e-4192-8a51-52a5063fc129",
+   CellTags->"FindRoot_templates"],
+  Cell[66687, 1833, 183, 3, 28, "Input",ExpressionUUID->"5330cd99-8496-44ac-a1a7-e2f1d6307abf",
+   CellTags->"FindRoot_templates"]}
+ }
+*)
+(*CellTagsIndex
+CellTagsIndex->{
+ {"FindRoot_templates", 67249, 1849}
+ }
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 643, 12, 81, "Text",ExpressionUUID->"8fb95b7d-fa4b-4d53-88c7-50ce26199485"],
+Cell[1204, 34, 1456, 39, 76, "Input",ExpressionUUID->"d363188f-89cf-4fbb-af4d-da1cf43b2b61"],
+Cell[CellGroupData[{
+Cell[2685, 77, 359, 7, 28, "Input",ExpressionUUID->"a038d578-d908-44e1-b709-73672e2cd9ac"],
+Cell[3047, 86, 333, 7, 32, "Output",ExpressionUUID->"5cb29985-f593-46f2-94ad-092eb610baec"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[3417, 98, 738, 16, 43, "Input",ExpressionUUID->"65d0b33e-667f-4110-b02a-e4671def6b07"],
+Cell[4158, 116, 25031, 700, 1232, "Output",ExpressionUUID->"028523cf-45a8-4343-aa86-d083343e2135"]
+}, Open  ]],
+Cell[29204, 819, 232, 5, 35, "Text",ExpressionUUID->"a4933b3c-9a07-45d5-9d77-8b00a7be9ad7"],
+Cell[CellGroupData[{
+Cell[29461, 828, 1343, 33, 43, "Input",ExpressionUUID->"07533563-d40a-4ca1-9603-d1b928d56431"],
+Cell[30807, 863, 26104, 717, 1232, "Output",ExpressionUUID->"db8db484-337b-4d6a-a817-093a93518992"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[56948, 1585, 1142, 27, 197, "Input",ExpressionUUID->"14d25784-48b1-425c-b799-86b555554d52"],
+Cell[58093, 1614, 680, 12, 35, "Output",ExpressionUUID->"a818e3a4-6bc9-431d-9ce3-4d27749efa95"]
+}, Open  ]],
+Cell[58788, 1629, 231, 4, 28, "Input",ExpressionUUID->"8a38b7fa-ca3f-4406-ae17-08a087c27632"],
+Cell[59022, 1635, 1220, 33, 76, "Input",ExpressionUUID->"db5e1444-aa76-4b2a-ae20-8ddcf2c8c001"],
+Cell[60245, 1670, 190, 3, 35, "Text",ExpressionUUID->"35374aa5-89e1-4c49-b052-0ca316d31143"],
+Cell[CellGroupData[{
+Cell[60460, 1677, 489, 11, 43, "Input",ExpressionUUID->"12032519-ade3-426c-aac7-63af2659a1fa"],
+Cell[60952, 1690, 387, 9, 28, "Message",ExpressionUUID->"9e5c9d3f-f3ed-4d62-bd88-165f52691af0"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[61376, 1704, 1106, 31, 90, "Input",ExpressionUUID->"d102ab97-1405-4640-b8b2-e33ad6838a36"],
+Cell[62485, 1737, 391, 9, 28, "Message",ExpressionUUID->"a15d15d1-5126-4c51-8743-cf9ff714a67b"],
+Cell[62879, 1748, 1083, 31, 74, "Output",ExpressionUUID->"1eed224a-35d6-4364-8006-3e06d8c73df6"]
+}, Open  ]],
+Cell[63977, 1782, 152, 3, 28, "Input",ExpressionUUID->"e2d6a45e-1e7d-4849-87fa-da1e48115fd3"],
+Cell[CellGroupData[{
+Cell[64154, 1789, 333, 5, 28, "Input",ExpressionUUID->"be285a40-dbd4-454b-93a5-196c09f69fb9",
+ CellTags->"FindRoot_templates"],
+Cell[64490, 1796, 2182, 34, 77, "Message",ExpressionUUID->"cb45b6b1-c34e-4192-8a51-52a5063fc129",
+ CellTags->"FindRoot_templates"]
+}, Open  ]],
+Cell[66687, 1833, 183, 3, 28, "Input",ExpressionUUID->"5330cd99-8496-44ac-a1a7-e2f1d6307abf",
+ CellTags->"FindRoot_templates"]
+}
+]
+*)
+
