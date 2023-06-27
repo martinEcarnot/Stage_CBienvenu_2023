@@ -17,10 +17,11 @@ RR <- function(NE_O , NG_O , vg , vinter , vintra , vpos , NG_E , nsel){
 }
 
 
-isuri <- function(nsel,NG_O,NE_O,NG_E){
+isuri <- function(NG_O,NE_O,nsel,NG_E){
   NG_E * NE_O * exp((qnorm(1-nsel/NG_O)^2 - qnorm(1-nsel/(NG_E*NE_O))^2) / 2) / NG_O }
 
-
+invisuri <- function(NG_O,NE_O,nsel,NG_E){
+  1/(NG_E * NE_O * exp((qnorm(1-nsel/NG_O)^2 - qnorm(1-nsel/(NG_E*NE_O))^2) / 2) / NG_O )}
 
 
 
@@ -374,7 +375,7 @@ ngo <- seq(30000,500000,length=50)
 neo <- seq(10 , 1000 , length=50)
 
 z <- outer(X = ngo , Y = neo , FUN = isuri , NG_E = 70 , nsel = 2000)
-z <- z*sqrt(4)/sqrt(3+1/70)
+z <- z*sqrt(3+1/70)/sqrt(4)
 
 
 
@@ -392,7 +393,7 @@ a <- persp(x = ngo ,
       z = z ,
       xlab = "Nombre de grains observes" ,
       ylab = "Nombre d'epis observes",
-      zlab = "Repi / Rgrain",
+      zlab = "Rgrain / Repi",
       col = c(couleur))
 
 
@@ -412,28 +413,30 @@ points(trans3d(xy[,1], xy[,2], 1, pmat = g), col = 2, pch = 16)
 
 library(plotly)
 
-# volcano is a numeric matrix that ships with R
-ngo <- seq(60000,500000,length=50)
-neo <- seq(100 , 1000 , length=50)
+# en fonction de nge et neo
+ngo <- seq(3000,200000,length=100)
+neo <- seq(100 , 2000 , length=100)
 
-z <- outer(X = ngo , Y = neo , FUN = isuri , NG_E = 70 , nsel = 2000)
-zvalue <- t(z*sqrt(4)/sqrt(3+1/70))
+z <- outer(X = ngo , Y = neo , FUN = invisuri , NG_E = 70 , nsel = 3000)
+zvalue <- t(z*sqrt(5+5/70)/sqrt(10))
 
 axy <- list(
-  title = "NEO")
+  title = "Nombre d'Èpis observÈs")
 
 axx <- list(
-  title = "NGO")
+  title = "Nombre grains observÈs")
 
 axz <- list(
-  title = "Repi/Rgrain")
+  title = "Rgrain/Repi")
 
 fig <- plot_ly(colors = c('green', 'blue') , showscale = FALSE , x = ~ngo , y = ~neo , z = ~zvalue) %>%
-  add_surface() %>% 
-  add_surface(z = matrix(1 , ncol = 2 , nrow = 2) , y = c(0,1000) , x = c(0,500000), opacity = 0.5) %>% 
+  add_surface() %>% add_surface(z = matrix(1 , ncol = 2 , nrow = 2) , y = c(0,2000) , x = c(0,200000), opacity = 0.5) %>% 
   layout(scene = list(xaxis=axx,yaxis=axy,zaxis=axz))
   
 fig
+
+
+
 
 
 RR(NE_O = 100,
@@ -445,3 +448,67 @@ RR(NE_O = 100,
    vintra = 1,
    vpos = 1)
 
+# en fonction de i/i et h2/h2
+rrih <- function(i,h){
+  i*sqrt(h)
+}
+
+i <- seq(0.1,1,length=50)
+h <- seq(1 , 1.5 , length=50)
+
+zvalue <- outer(X = i , Y = h , FUN = rrih)
+
+axy <- list(
+  title = "Hepi/Hgrain")
+
+axx <- list(
+  title = "iepi/igrain")
+
+axz <- list(
+  title = "Repi/Rgrain")
+
+fig <- plot_ly(colors = c('green', 'blue') , showscale = FALSE , x = ~i , y = ~h , z = ~zvalue) %>%
+  add_surface() %>% 
+  add_surface(z = matrix(1 , ncol = 2 , nrow = 2) , y = c(1,1.5) , x = c(0,1), opacity = 0.5) %>% 
+  layout(scene = list(xaxis=axx,yaxis=axy,zaxis=axz))
+
+fig
+
+
+
+
+
+
+
+# brute force pour trouver l'espace param√©trique --------------------------
+
+# on y va par tranche d'ordre de grandeur
+tot <- 70560
+param_v_fixe <- data.frame()
+i <- 1
+for (neo in c(seq(10,100,10),seq(200,1000,100),seq(1250,3000,250))){
+  for (ngo in c(seq(10000,100000,10000) , seq(150000,1000000,50000))){
+    for (nge in seq(20,100,10)){
+      for (nsel in seq(neo*nge*0.05,neo*nge,length=10)){
+        param_v_fixe[i,"NEO"] <- neo
+        param_v_fixe[i,"NGO"] <- ngo
+        param_v_fixe[i,"NGE"] <- nge
+        param_v_fixe[i,"nsel"] <- nsel
+        param_v_fixe[i,"vg"] <- 2
+        param_v_fixe[i,"vintra"] <- 5
+        param_v_fixe[i,"vinter"] <- 1
+        param_v_fixe[i,"vpos"] <- 2
+        param_v_fixe[i,"ReRg"] <- RR(NE_O = neo , NG_O = ngo , vg = 2 , vinter = 1 , vintra  = 5 , vpos = 2 , NG_E = nge , nsel = nsel)
+        
+        i <- i+1
+        
+       
+        
+        print(round(i*100/tot , 2))
+      }
+    }
+  }
+}
+
+
+save(param_v_fixe , file = "param_v_fixe")

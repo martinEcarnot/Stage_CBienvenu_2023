@@ -148,11 +148,36 @@ ggplot(h2_sp , aes(x = lambda , y = H2)) + geom_line() + labs(title = "Héritabi
 
 load("../donnees/bac")
 
-bac$BAC <- as.factor(bac$BAC)
-
 don <- bac %>% filter(is.na(epiaison)==F & geno != "INCONNU" & N_flag < 4)
-
 mod <- lmer(epiaison ~ (1|geno) + semis + BAC, data = don)
+Vg <- VarCorr(mod)$geno[1]
+Vr <- (sigma(mod))^2
+Vg/(Vg + Vr)
+
+# avec interation genotype date de semis
+don <- bac %>% filter(is.na(epiaison)==F & geno != "INCONNU" & N_flag < 4)
+mod <- lmer(epiaison ~ (1|geno) + semis + BAC + (1|semis:geno) , data = don)
+Vg <- VarCorr(mod)$geno[1]
+vgxd <- VarCorr(mod)$`semis:geno`[1]
+Vr <- (sigma(mod))^2
+Vg/(Vg + Vr + vgxd)
+
+BLUP <- ranef(mod)$geno %>% rename(GBLUP = "(Intercept)")
+
+ggplot(BLUP , aes(x = GBLUP)) + geom_histogram()
+ggplot(BLUP , aes(sample = GBLUP)) + geom_qq() + geom_qq_line(col = "red")
+
+
+
+
+
+
+# epiaison avec seulement semis 1 -----------------------------------------
+load("../donnees/bac")
+
+don <- bac %>% filter(is.na(epiaison)==F & geno != "INCONNU" & semis == "06/01")
+
+mod <- lmer(epiaison ~ (1|geno) + BAC, data = don)
 Vg <- VarCorr(mod)$geno[1]
 Vr <- (sigma(mod))^2
 Vg/(Vg + Vr)
@@ -161,8 +186,6 @@ BLUP <- ranef(mod)$geno %>% rename(GBLUP = "(Intercept)")
 
 ggplot(BLUP , aes(x = GBLUP)) + geom_histogram()
 ggplot(BLUP , aes(sample = GBLUP)) + geom_qq() + geom_qq_line(col = "red")
-
-
 
 
 
@@ -218,3 +241,35 @@ ggplot(bac , aes(x = X , y = Y , fill = var_preco)) + geom_tile() + facet_wrap(~
 ggplot(bac , aes(x = X , y = Y , fill = appel)) + geom_tile() + facet_wrap(~BAC)
 
 table(bac$appel)/nrow(bac)
+
+
+
+# H2 des axes de l'ACP des spectres ---------------------------------------
+rm(list = ls())
+load("../donnees/spectres")
+
+calcul_H2_pcasp <- function(i , don){
+  mod <- lmer(i ~ (1|geno) , data = don)
+  Vg <- VarCorr(mod)$geno[1]
+  Vr <- (sigma(mod))^2
+  Vg/(Vg + Vr)
+}
+
+fait <- function(X){
+  a <- PCA(X , graph = F)
+  b <- as.data.frame(a$ind$coord)
+  b$geno <- sapply(strsplit(row.names(b) , split = "_") , "[" , 1)
+  apply(X = b[,1:5] , MARGIN = 2 , FUN = calcul_H2_pcasp , don = b)
+}
+
+H2 <- data.frame()
+
+# spectres brutes
+
+res <- sapply(spectres , FUN = fait)
+res <- as.data.frame(res)
+
+H2 <- gather(res)
+H2$dim <- as.factor(rep(1:5,5))
+
+ggplot(H2 , aes(x = dim , y = value)) + geom_col() + facet_wrap(~key) + labs(y = "H2" , x = "Dimension de l'ACP")
