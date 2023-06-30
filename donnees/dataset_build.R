@@ -908,115 +908,227 @@ rm(list = ls())
 
 
 
+## Ajout des donnees de taille du grain
 
-# # Side quest : les donnees pour fred
-# 
-# load("spectres_info")
-# 
-# info <- spectres_info %>% select(nom_originel , grain , geno) %>% rename(nom = nom_originel)
-# 
-# rm(spectres_info)
-# 
-# # Chargement des donnees des bacs :
-# bac <- read.table("./data_brute/BAC1.csv" , header = T , sep = ";" , dec = ".")
-# 
-# 
-# 
-# for (i in 2:6){
-#   tmp <- read.table(paste0("./data_brute/BAC",i,".csv") , header = T , sep = ";" , dec = ".")
-#   names(tmp) <- names(bac)
-#   bac <- rbind(bac , tmp)
-# }
-# 
-# rm(tmp , i)
-# 
-# # Modification de la variable grain en fonction de l'information dans la variable graines pour que ce soit homogene avec le reste (de 1 a 12)
-# 
-# bac$grain <- ifelse(bac$graines == "01:06" , bac$grain , bac$grain + 6)
-# 
-# 
-# # creation d'une variable geno homogene aux autres tableaux de donnees
-# # il y a des noms avec .sp à la fin, on les enleve, et on separe le ELAX du numero
-# 
-# a <- strsplit(bac$gen , split = ".sp")
-# l <- sapply(a, "[",1)
-# b <- strsplit(l , split = "_")
-# bac$geno <- sapply(b, "[",2)
-# 
-# # On cree le row.names pour que ce soit homogene aux autres tableaux
-# 
-# row.names(bac) <- paste0(bac$geno , "_" , bac$grain)
-# row.names(info) <- paste0(info$geno , "_" , info$grain)
-# 
-# rm(a,b,l)
-# 
-# # extraction de quel genotype est dans quelle boite grace a bac
-# # ATTENTION : pour certains genotypes, les rangs dans les boites normales et les boites bis ne correspondent pas. on fait donc au cas par cas entre boite et boite bis
-# 
-# bac$col <- ifelse(bac$Debut < 7 , 1 , 7)
-# 
-# ext <- bac %>% group_by(boite,Rang.OK) %>% summarise()
-# 
-# ext <- as.data.frame(ext)
-# 
-# for (i in 1:nrow(ext)){
-#   r <- ext[i,"Rang.OK"]
-#   b <- ext[i,"boite"]
-#   
-#   tmp <- filter(bac , boite == b & Rang.OK == r & Debut == 1)
-#   
-#   ext[i,"geno"] <- 
-# }
-# 
-# # On met une coolonne pour signifier quelles boites sont bis
-# ext$bis <- ifelse(is.na(as.numeric(ext$boite)) == T , "OUI" , "NON")
-# 
-# # On met ext de sorte à ce que tous les grains soient la avec leur coordonnees
-# 
-# coord <- data.frame(geno = 0 , boite = 0 , grain = 0 , colonne = 0 , rang = 0)
-# 
-# for (i in 1:nrow(ext)){
-#   
-#   gen <- rep(as.numeric(ext[i,"geno"]) , 6)
-#   boi <- rep(as.character(ext[i,"boite"]) , 6)  
-#   
-#   grain <- 1:6
-#   if (ext[i,"bis"] == "OUI"){grain <- 7:12}
-#   
-#   col <- 1:6
-#   if (ext[i,"col"]==7){col <- 7:12}
-#   
-#   rang <- rep(as.character(ext[i,"Rang.OK"]) , 6)
-#   
-#   tmp <- data.frame(geno = gen , boite = boi , grain = grain , colonne = col , rang = rang)
-#   
-#   coord <- rbind(coord,tmp)
-# }
-# 
-# coord <- coord[-1,]
-# 
-# # on refait des colonnes pratiques
-# coord$ind <- paste0(coord$geno,"_",coord$grain)
-# 
-# 
-# # On reprend le vrai fichier bac pour avoir les genos plantes mais pas germes
-# # et on fait du menage
-# rm(ext,info,tmp,boi,col,gen,grain,i,rang)
-# 
-# load("bac")
-# 
-# pas_germe <- ifelse(bac$semis=="17/02" , bac$semis_1 , "osef") %>% unique()
-# 
-# #on enleve le osef qui est en première position
-# pas_germe <- pas_germe[-which(pas_germe == "osef")]
-# 
-# # On garde que ce qui est utilse dans les bacs
-# sel_bac <- bac %>% select(BAC , X , Y) %>% rownames_to_column(var = "ind")
-# 
-# 
-# 
-# tab <- merge(sel_bac,coord,all = T) %>% relocate(geno , .after = ind) %>% relocate(grain , .after = geno) %>% relocate(rang , .before = colonne)
-# 
-# tab$bis <- ifelse(is.na(as.numeric(tab$boite)) == T , "OUI" , "NON")
-# 
-# tab <- tab %>% arrange(bis,boite,rang,ind) %>% mutate(bis=NULL)
+load("bac")
+
+load("opto")
+
+a <- opto %>% select("Surface")
+
+bac <- merge(bac,a,by = "row.names" , all.x = T) %>% column_to_rownames(var = "Row.names")
+
+save(bac , file = "bac")
+
+
+# matrice genotypique et map ----------------------------------------------
+
+rm(list = ls())
+
+# on commence par matrice genotypique pour prediction genomique
+
+load("Map_EPO_07_09_2021_Clement/SG_EPO_complet.Rdata")
+
+load("bac")
+
+g  <- unique(bac$geno)
+
+row.names(SG) <- sapply(strsplit(row.names(SG) , split = "_") , "[" , 2)
+
+genot <- SG[which(row.names(SG) %in% g),]
+
+nrow(genot)
+# il y a un probleme, il y a un genot en trop
+
+sort(row.names(genot))
+# le 27 apparait 2 fois
+
+load("Map_EPO_07_09_2021_Clement/SG_EPO_complet.Rdata")
+a <- genot[which(row.names(genot) == "27"),]
+a <- rbind(a , SG[which(row.names(SG)=="EL4X_27"),])
+# le 27.1 (le deuxieme 27 dans le tableau est le mauvais)
+
+genot <- genot[-which(row.names(genot)=="27")[2],]
+
+
+nrow(genot)
+
+sort(row.names(genot))
+
+a <- genot[which(row.names(genot) == "27"),]
+a <- rbind(a , SG[which(row.names(SG)=="EL4X_27"),])
+unique(a[1,]==a[2,])
+# c'est good
+
+
+class(genot[1,])
+# mauvaise classe
+
+genot_pred <- apply(genot , MARGIN = c(1,2) , FUN = as.numeric)
+
+class(genot_pred[1,])
+
+save(genot_pred , file = "genot_pred")
+
+
+
+
+
+
+# On passe aux donnees de map et matrice genotypique pour la gwas
+rm(list = ls())
+
+load("genot_pred")
+
+map <- read.table("../donnees/Map_EPO_07_09_2021_Clement/Map_EPO_07_09_2021.csv" , sep = "," , dec = "." , header = T)
+
+ncol(genot_pred)
+nrow(map)
+# Il y a plus de marqueurs dans genot que dans map. on ne garde que ceux de map
+
+
+# on ne garde que le necessaire et on met tout dans le même ordre
+snp <- map$Marker_ID
+row.names(map) <- map$Marker_ID
+genot <- genot_pred[,snp]
+
+ncol(genot)
+unique(ncol(genot) == nrow(map))
+
+
+map <- map %>% select(Marker_ID , Svevo_original_Start , Chr.Svevo_original) %>% rename(SNP = Marker_ID , pos = Svevo_original_Start , chr = Chr.Svevo_original)
+
+
+unique(colnames(genot) == row.names(map))
+# c'est good et dans le même ordre
+
+
+# retour sur les genotypes
+
+## deal with NAs
+# nb NA
+sum(is.na(genot_pred))
+
+# fréquence des NA
+sum(is.na(genot_pred)) / prod(dim(genot_pred))
+
+
+# imputation des NA avec la classe génotypique la plus fréquente
+
+genot2 <- apply(genot, 2, function(x){
+  freq <- table(x)
+  #  x[is.na(x)] <- as.integer(names(which.max(freq))) ne fonctionne pas ici car c'est codé en AB et pas 0 1 2
+  x[is.na(x)] <- as.numeric(names(which.max(freq)))
+  return(x)
+})
+sum(is.na(genot2))
+
+
+class(genot2[1,])
+#bon format
+
+# Filtre sur les maf
+# frequences alléliques
+
+p <- colMeans(genot2) / 2
+q <- 1 - p
+
+
+# MAF (minor allele frequency)
+
+maf <- apply(cbind(p, q), 1, min)
+hist(maf, col = "grey", main = "", breaks = 50, xlim = c(0, 0.5))
+
+
+# Filtre sur MAF à 5%
+
+sum(maf < 0.05)
+genot.ok <- genot2[, maf >= 0.05]
+dim(genot.ok)
+
+
+# Vérification
+
+p <- colMeans(genot.ok) / 2
+q <- 1 - p
+maf <- apply(cbind(p, q), 1, min)
+hist(maf, col = "grey", main = "", breaks = 50, xlim = c(0, 0.5))
+
+
+
+dim(genot.ok)
+dim(map)
+# du coup maintenant il y a plus e snp dans genot que dans map
+
+snp <- colnames(genot.ok)
+map2 <- map[snp,]
+
+dim(map2)
+dim(genot.ok)
+
+map2[1:10,]
+genot.ok[1:10,1:10]
+
+
+# On met map dans l'ordre
+map <- map2 %>% arrange(chr,pos)
+
+# On fait suivre pour genot
+genot_gwas <- genot.ok[,row.names(map)]
+
+
+unique(colnames(genot_gwas) == row.names(map))
+plot(match(row.names(map), colnames(genot_gwas)))
+# c'est bon, tout est en ordre !
+
+
+
+# ah je viens de voir ça : y'a des chromosomes "Un" et de NA :
+which(map$chr == "Un")
+which(is.na(map$chr) == T)
+
+# on corrige ça :
+map <- map %>% filter(chr != "Un" & is.na(chr)==F)
+
+# dans map on fait une nouvel encodage des chr pour que ça passe dans certaines fct de manhatan plot
+
+map$chr2 <- map$chr
+
+for (i in 1:nrow(map)){
+  if (map[i,"chr2"] == "1A"){map[i,"chr2"] <- 1}
+  if (map[i,"chr2"] == "1B"){map[i,"chr2"] <- 2}
+  if (map[i,"chr2"] == "2A"){map[i,"chr2"] <- 3}
+  if (map[i,"chr2"] == "2B"){map[i,"chr2"] <- 4}
+  if (map[i,"chr2"] == "3A"){map[i,"chr2"] <- 5}
+  if (map[i,"chr2"] == "3B"){map[i,"chr2"] <- 6}
+  if (map[i,"chr2"] == "4A"){map[i,"chr2"] <- 7}
+  if (map[i,"chr2"] == "4B"){map[i,"chr2"] <- 8}
+  if (map[i,"chr2"] == "5A"){map[i,"chr2"] <- 9}
+  if (map[i,"chr2"] == "5B"){map[i,"chr2"] <- 10}
+  if (map[i,"chr2"] == "6A"){map[i,"chr2"] <- 11}
+  if (map[i,"chr2"] == "6B"){map[i,"chr2"] <- 12}
+  if (map[i,"chr2"] == "7A"){map[i,"chr2"] <- 13}
+  if (map[i,"chr2"] == "7B"){map[i,"chr2"] <- 14}
+}
+
+
+
+# On remet que les bons individus dans genot_gwas
+genot_gwas <- genot_gwas[,row.names(map)]
+dim(genot_gwas)
+dim(map)
+
+unique(colnames(genot_gwas) == row.names(map))
+plot(match(row.names(map), colnames(genot_gwas)))
+# c'est bon, tout est en ordre !
+
+map$chr2 <- as.numeric(map$chr2)
+
+
+save(genot_gwas , file = "genot_gwas")
+save(map , file = "map")
+
+
+rm(list=ls())
+
+

@@ -46,10 +46,12 @@ ggplot(data=bac , aes(x = preco , y=preco_voisin)) + geom_point() + geom_smooth(
 
 ggplot(data=bac , aes(x = preco , y=preco_voisin)) + geom_point() + geom_smooth(method = "lm") + facet_wrap(~luz)
 
+ggplot(data=bac , aes(x = preco , y=preco_voisin)) + geom_point() + geom_smooth(method = "lm") + facet_grid(BAC~luz)
+
 
 cor(bac$preco,bac$preco_voisin)
 
-mod <- lm(preco_voisin ~ preco , data = bac)
+mod <- lm(preco ~ preco_voisin , data = bac)
 par(mfrow = c(2,2))
 plot(mod)
 summary(mod)
@@ -73,3 +75,12 @@ mod <- lm(preco_voisin ~ preco + BAC + luz, data = bac)
 par(mfrow = c(2,2))
 plot(mod)
 summary(mod)
+
+
+
+ggplot(bac , aes(x = X , y = Y , fill = preco)) + geom_tile() + facet_wrap(~BAC)
+ggplot(bac , aes(x = X , y = Y , fill = preco_voisin)) + geom_tile() + facet_wrap(~BAC)
+ggplot(bac , aes(x = X , y = Y , fill = preco - preco_voisin)) + geom_tile() + facet_wrap(~BAC)
+
+
+ggplot(data=bac , aes(x = preco , y=preco_voisin)) + geom_point()
