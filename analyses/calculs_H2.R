@@ -144,63 +144,48 @@ ggplot(h2_sp , aes(x = lambda , y = H2)) + geom_line() + labs(title = "Héritabi
 
 
 
-# epiaison ----------------------------------------------------------------
+
+
+
+# donnees bac -------------------------------------------------------------
+
+rm(list = ls())
+
+# H2 en prenant en compte la date de semis
+calcul_H2_semis <- function(i , don){
+  mod <- lmer(i ~ (1|geno) + BAC + semis, data = don)
+  Vg <- VarCorr(mod)$geno[1]
+  Vr <- (sigma(mod))^2
+  Vg/(Vg + Vr)
+}
+
+
+
+# H2 sans prendre en compte la date de semis (a utiliser avec les donnees du semis 1 seulement)
+calcul_H2 <- function(i , don){
+  mod <- lmer(i ~ (1|geno) + BAC, data = don)
+  Vg <- VarCorr(mod)$geno[1]
+  Vr <- (sigma(mod))^2
+  Vg/(Vg + Vr)
+}
+
 
 load("../donnees/bac")
 
-don <- bac %>% filter(is.na(epiaison)==F & geno != "INCONNU" & N_flag < 4)
-mod <- lmer(epiaison ~ (1|geno) + semis + BAC, data = don)
-Vg <- VarCorr(mod)$geno[1]
-Vr <- (sigma(mod))^2
-Vg/(Vg + Vr)
+bac <- bac %>% filter(geno != "INCONNU")
 
-# avec interation genotype date de semis
-don <- bac %>% filter(is.na(epiaison)==F & geno != "INCONNU" & N_flag < 4)
-mod <- lmer(epiaison ~ (1|geno) + semis + BAC + (1|semis:geno) , data = don)
-Vg <- VarCorr(mod)$geno[1]
-vgxd <- VarCorr(mod)$`semis:geno`[1]
-Vr <- (sigma(mod))^2
-Vg/(Vg + Vr + vgxd)
+traits <- c("epiaison","N_flag","preco","hauteur")
 
-BLUP <- ranef(mod)$geno %>% rename(GBLUP = "(Intercept)")
+apply(X = bac[,traits] , MARGIN = 2 , FUN = calcul_H2_semis , don = bac)
 
-ggplot(BLUP , aes(x = GBLUP)) + geom_histogram()
-ggplot(BLUP , aes(sample = GBLUP)) + geom_qq() + geom_qq_line(col = "red")
+sans_s2 <- bac %>% filter(semis == "06/01")
+apply(X = sans_s2[,traits] , MARGIN = 2 , FUN = calcul_H2 , don = sans_s2)
 
 
-
-
-
-
-# epiaison avec seulement semis 1 -----------------------------------------
-load("../donnees/bac")
-
-don <- bac %>% filter(is.na(epiaison)==F & geno != "INCONNU" & semis == "06/01")
-
-mod <- lmer(epiaison ~ (1|geno) + BAC, data = don)
-Vg <- VarCorr(mod)$geno[1]
-Vr <- (sigma(mod))^2
-Vg/(Vg + Vr)
-
-BLUP <- ranef(mod)$geno %>% rename(GBLUP = "(Intercept)")
-
-ggplot(BLUP , aes(x = GBLUP)) + geom_histogram()
-ggplot(BLUP , aes(sample = GBLUP)) + geom_qq() + geom_qq_line(col = "red")
-
-
-
-# azote feuille drapeau ---------------------------------------------------
-don <- bac %>% filter(is.na(N_flag)==F & geno != "INCONNU" & N_flag < 4 & is.na(epiaison)==F)
-
-mod <- lmer(N_flag ~ (1|geno) + semis + BAC, data = don)
-Vg <- VarCorr(mod)$geno[1]
-Vr <- (sigma(mod))^2
-Vg/(Vg + Vr)
-
-BLUP <- ranef(mod)$geno %>% rename(GBLUP = "(Intercept)")
-
-ggplot(BLUP , aes(x = GBLUP)) + geom_histogram()
-ggplot(BLUP , aes(sample = GBLUP)) + geom_qq() + geom_qq_line(col = "red")
+sans_merdouilles <- bac %>% filter(is.na(hauteur) == F & N_flag < 4)
+sans_s2_merdouilles <- sans_merdouilles %>% filter(semis == "06/01")
+apply(X = sans_merdouilles[,traits] , MARGIN = 2 , FUN = calcul_H2_semis , don = sans_merdouilles)
+apply(X = sans_s2_merdouilles[,traits] , MARGIN = 2 , FUN = calcul_H2 , don = sans_s2_merdouilles)
 
 
 

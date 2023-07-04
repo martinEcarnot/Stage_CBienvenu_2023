@@ -921,6 +921,35 @@ bac <- merge(bac,a,by = "row.names" , all.x = T) %>% column_to_rownames(var = "R
 save(bac , file = "bac")
 
 
+
+# Ajout des donnees de hauteur du brain maitre
+
+load("bac")
+
+h <- read.table("./data_brute/mesure_hauteur.csv" , header = F , sep = ";" , dec = ".")
+names(h) <- c("geno" , "hauteur")
+
+h <- h %>% column_to_rownames(var = "geno")
+# mince y'a des genotypes sur lesquels on s'est trompe. On les enlève
+
+h <- h[-which(h$geno == "112_5" | h$geno == "130_5" | h$geno == "INCONNU_10"),]
+
+
+row.names(h) <- h$geno
+h$geno <- NULL
+
+bac <- merge(bac , h , by = "row.names" , all.x = T) %>% column_to_rownames(var = "Row.names")
+
+bac$hauteur <- as.numeric(bac$hauteur)
+bac$hauteur <- bac$hauteur + 30
+
+
+save(bac , file = "bac")
+
+
+
+
+
 # matrice genotypique et map ----------------------------------------------
 
 rm(list = ls())
