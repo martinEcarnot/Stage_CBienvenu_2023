@@ -2,6 +2,7 @@ rm(list = ls())
 
 setwd("C:/Users/bienvenu/Documents/Stage/Analyses")
 load("../donnees/spectres")
+load("../donnees/spectres_moyens")
 load("../donnees/opto")
 load("../donnees/bac")
 
@@ -111,7 +112,7 @@ calcul_BLUP <- function(i , don , x1 = NULL , x2 = NULL , x3 = NULL){
 
 
 
-# choix des donnees -------------------------------------------------------
+# donnees optomachine -------------------------------------------------------
 
 don <- opto
 
@@ -148,7 +149,7 @@ rm(phen)
 
 
 
-# compute entre BLUPs et spectres moyens ----------------------------------
+# compute entre BLUPs et spectres moyens 
 
 
 boss(X = spectres_moy , Y = BLUP , nrep=3 , nout=20)
@@ -159,7 +160,7 @@ ggplot(res , aes(x = pretraitement , y = accuracy , fill = model)) + geom_boxplo
 
 
 
-# compute en ne moyennant pas les spectres et en mettant son BLUP  a chaque genotype--------
+# compute en ne moyennant pas les spectres et en mettant son BLUP  a chaque genotype
 
 for (i in 1:nrow(opto)){
   g <- opto[i,"geno"]
@@ -174,3 +175,70 @@ boss(X = spectres , Y = opto[,c("BLUP_longueur" , "BLUP_largeur" , "BLUP_perimet
 pred_pheno_blup <- res
 
 save(pred_pheno_blup , file = "pred_pheno_blup")
+
+
+
+
+
+
+
+
+# pour donnees bac  -------------------------------------------------------
+
+don <- bac #%>% filter(geno != "INCONNU" & N_flag <= 4)
+
+calcul_BLUP_bac <- function(i , don){
+  mod <- lmer(i ~ (1|geno) + BAC + semis, data = don)
+  ranef(mod)$geno
+}
+
+
+# Extraction des BLUPs sur plusieurs variables
+traits <- c("preco","hauteur")
+a <- apply(X = don[,traits] , MARGIN = 2 , FUN = calcul_BLUP , don = don)
+
+BLUP <- as.data.frame(a[1])
+
+for (b in 2:length(a)){
+  BLUP <- cbind(BLUP , a[b])
+}
+
+names(BLUP) <- names(don[,traits])
+
+rm(a,b)
+
+# verif que les BLUPs suivent bien une loi normale :
+ggplot(BLUP , aes(sample=preco)) + geom_qq() + geom_qq_line(col = "red")
+ggplot(BLUP , aes(sample=hauteur)) + geom_qq() + geom_qq_line(col = "red")
+
+# verif que BLUP et pheno sont corrélés
+phen <- don %>% group_by(geno) %>% summarise_at(.vars = c("preco","hauteur") , .funs = mean , na.rm = T) %>% column_to_rownames(var = "geno") %>% merge(BLUP , by = "row.names")
+
+ggplot(phen , aes(x = preco.x , y = preco.y)) + geom_point()
+ggplot(phen , aes(x = hauteur.x , y = hauteur.y)) + geom_point()
+
+rm(phen)
+
+
+# compute entre BLUPs et spectres moyens 
+
+
+boss(X = spectres_moy , Y = BLUP , nrep=3 , nout=20)
+
+
+ggplot(res , aes(x = pretraitement , y = accuracy , fill = model)) + geom_boxplot() + facet_wrap(~trait)
+
+
+
+
+# compute en ne moyennant pas les spectres et en mettant son BLUP  a chaque genotype
+
+for (i in 1:nrow( don)){
+  g <-  don[i,"geno"]
+   don[i,"BLUP_hauteur"] <- BLUP[g,"hauteur"]
+   don[i,"BLUP_preco"] <- BLUP[g,"preco"]
+}
+
+boss(X = spectres , Y = don[,c("BLUP_hauteur" , "BLUP_preco")] , nrep=3 , nout=400)
+
+ggplot(res , aes(x = pretraitement , y = accuracy , fill = model)) + geom_boxplot() + facet_wrap(~trait)
