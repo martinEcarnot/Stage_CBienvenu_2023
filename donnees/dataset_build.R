@@ -950,6 +950,43 @@ save(bac , file = "bac")
 
 
 
+# ajout des donnees poids d'epi
+
+load("bac")
+
+
+p <- read.table("./data_brute/POIDS_EPI_CLEM.csv" , header = F , sep = ";")
+
+
+# y'a que 1 colonne où les lignes vont 3 par 3, 1:nom du genotype, 2:nb epi, 3:poids epi en mg
+
+tab <- data.frame()
+
+index <- seq(1,nrow(p),3)
+
+for (i in index){
+  tab[p[i,1],"nb_epi"] <- p[i+1,1]
+  tab[p[i,1],"poids_epis"] <- p[i+2,1]
+}
+
+# les épis ont été pesés avec leur sachet donc on enlève le poids du sachet
+tab <- tab %>% mutate_all(.funs = as.numeric)
+tab$poids_epis <- tab$poids_epis - 1475
+
+# on met les poids neglligeables à 0 et on passe en gramme
+tab$poids_epis <- ifelse(tab$poids_epis < 0 , 0 , tab$poids_epis/1000)
+
+
+bac <- merge(bac , tab , by = "row.names" , all.x = T) %>% column_to_rownames(var = "Row.names")
+
+save(bac , file = "bac")
+
+
+
+
+
+
+
 # matrice genotypique et map ----------------------------------------------
 
 rm(list = ls())
@@ -996,43 +1033,9 @@ class(genot[1,])
 genot_pred <- apply(genot , MARGIN = c(1,2) , FUN = as.numeric)
 
 class(genot_pred[1,])
+# bonne classe
 
-save(genot_pred , file = "genot_pred")
-
-
-
-
-
-
-# On passe aux donnees de map et matrice genotypique pour la gwas
-rm(list = ls())
-
-load("genot_pred")
-
-map <- read.table("../donnees/Map_EPO_07_09_2021_Clement/Map_EPO_07_09_2021.csv" , sep = "," , dec = "." , header = T)
-
-ncol(genot_pred)
-nrow(map)
-# Il y a plus de marqueurs dans genot que dans map. on ne garde que ceux de map
-
-
-# on ne garde que le necessaire et on met tout dans le même ordre
-snp <- map$Marker_ID
-row.names(map) <- map$Marker_ID
-genot <- genot_pred[,snp]
-
-ncol(genot)
-unique(ncol(genot) == nrow(map))
-
-
-map <- map %>% select(Marker_ID , Svevo_original_Start , Chr.Svevo_original) %>% rename(SNP = Marker_ID , pos = Svevo_original_Start , chr = Chr.Svevo_original)
-
-
-unique(colnames(genot) == row.names(map))
-# c'est good et dans le même ordre
-
-
-# retour sur les genotypes
+# nettoyage
 
 ## deal with NAs
 # nb NA
@@ -1056,6 +1059,13 @@ sum(is.na(genot2))
 class(genot2[1,])
 #bon format
 
+genot2 <- apply(genot2 , MARGIN = c(1,2) , FUN = as.numeric)
+
+class(genot2[1,])
+# bonne classe
+
+dim(genot2)
+
 # Filtre sur les maf
 # frequences alléliques
 
@@ -1075,6 +1085,7 @@ sum(maf < 0.05)
 genot.ok <- genot2[, maf >= 0.05]
 dim(genot.ok)
 
+class(genot.ok[1,])
 
 # Vérification
 
@@ -1086,24 +1097,68 @@ hist(maf, col = "grey", main = "", breaks = 50, xlim = c(0, 0.5))
 
 
 dim(genot.ok)
+
+genot_pred <- genot.ok
+
+save(genot_pred , file = "genot_pred")
+
+
+
+
+
+
+
+
+
+
+
+# On passe aux donnees de map et matrice genotypique pour la gwas
+rm(list = ls())
+
+load("genot_pred")
+
+map <- read.table("../donnees/Map_EPO_07_09_2021_Clement/Map_EPO_07_09_2021.csv" , sep = "," , dec = "." , header = T)
+
+ncol(genot_pred)
+nrow(map)
+# Il y a plus de marqueurs dans genot que dans map. on ne garde que ceux de map
+
+
+unique(snp %in% colnames(genot_pred))
+# certains snp de map sont pas dans genot_pred
+
+# on ne garde que le necessaire et on met tout dans le même ordre
+snp <- which(map$Marker_ID %in% colnames(genot_pred))
+row.names(map) <- map$Marker_ID
+
+map <- map[snp,]
+
+genot <- genot_pred[,row.names(map)]
+
+
+ncol(genot)
+unique(colnames(genot) == rownames(map))
+# c'est good
+
+
+map <- map %>% select(Marker_ID , Svevo_original_Start , Chr.Svevo_original) %>% rename(SNP = Marker_ID , pos = Svevo_original_Start , chr = Chr.Svevo_original)
+
+
+unique(colnames(genot) == row.names(map))
+# c'est good et dans le même ordre
+
+
+
+
 dim(map)
-# du coup maintenant il y a plus e snp dans genot que dans map
-
-snp <- colnames(genot.ok)
-map2 <- map[snp,]
-
-dim(map2)
-dim(genot.ok)
-
-map2[1:10,]
-genot.ok[1:10,1:10]
+dim(genot)
 
 
 # On met map dans l'ordre
-map <- map2 %>% arrange(chr,pos)
+map <- map %>% arrange(chr,pos)
 
 # On fait suivre pour genot
-genot_gwas <- genot.ok[,row.names(map)]
+genot_gwas <- genot[,row.names(map)]
 
 
 unique(colnames(genot_gwas) == row.names(map))

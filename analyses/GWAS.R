@@ -19,10 +19,10 @@ bac <- bac %>% filter(geno != "INCONNU")
 # parametres pour extraction des BLUPs ------------------------------------
 
 # donnees utilisees
-don <- bac %>% filter(is.na(preco)==F)
+don <- bac %>% filter(is.na(hauteur)==F)
 
 # modele
-f <- preco ~ (1|geno) + semis + BAC
+f <- preco ~ (1|geno) + BAC + semis
 
 
 {

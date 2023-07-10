@@ -79,7 +79,7 @@ H2_pente <- function(i , don , a){
 }
 
 calcul_H2 <- function(i , don){
-  mod <- lmer(i ~ (1|geno) + BAC, data = don)
+  mod <- lmer(i ~ (1|geno), data = don)
   Vg <- VarCorr(mod)$geno[1]
   Vr <- (sigma(mod))^2
   Vg/(Vg + Vr)
