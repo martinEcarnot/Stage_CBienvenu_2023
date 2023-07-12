@@ -681,9 +681,6 @@ bac <- merge(bac , epiaison , by = "key") %>% select(!c("key")) %>% rename(epiai
 row.names(bac) <- ifelse(is.na(bac$semis_2)==T,bac$semis_1,bac$semis_2)
 
 
-# Cr?ation d'une variable de presence/absence
-bac$appel <- ifelse(bac$epiaison != "x" | is.na(bac$epiaison) == T, "present" , "absent")
-
 # Les donn?es d'?piaison sont cod?es comme le jour de mai (2 = 2 mai)
 # Le premier semis a ?t? fait le 6 janvier, et le deuxi?me semis a ?t? fait le 17 f?vrier
 # On corrige la colonne d'epiaison en mettant le nombre de jours r?els avant epiaison
@@ -758,7 +755,7 @@ N$Y <- as.numeric(sapply(str_split(N$Ytmp , "y") , "[" , 2))
 N$list <- N$tmp <- N$Ytmp <- NULL
 
 
-# Il y a un problem avec les donnes les lignes y10, elles sont notees 1. On resous ce probleme
+# Il y a un problem avec les donnes les lignes y10, elles sont notees 1. On resout ce probleme
 
 for (i in 2:nrow(N)){
   if ((N$Y[i-1] == 9 & N$Y[i] == 1) | (N$Y[i-1] == 10 & N$Y[i] == 1) ){
@@ -833,21 +830,56 @@ N2$BAC <- ifelse(N2$BAC2 == "x09y03" , "1" ,
 
 
 
+# On enlève les donnees qui ont ete prises dans l'air
+
+la <- read.table("./data_brute/feuille_ou_air.txt" , header = T , sep = ",")
+
+la$BAC2 <- sapply(strsplit(la$list , "_") , "[" , 1)
+la$pos <- sapply(strsplit(la$list , "_") , "[" , 2)
+la$pos2 <- sapply(strsplit(la$pos , "y") , "[" , 2)
+for (i in 1:nrow(la)){
+  la[i,"Y"] <- substr(la[i,"pos2"] , start = 1 , stop = nchar(la[i,"pos2"])-5)
+  
+  la[i,"Xfaux"] <- as.numeric(substr(la[i,"pos2"] , start = 4 , stop = nchar(la[i,"pos2"])))
+}
+
+la$X <- la$Xfaux - la$Xfaux %/% 2
+
+la2 <- la %>% group_by(BAC2 , Y , X) %>% summarise(id = mean(id))
+
+table(la2$id)
+
+la2[which(la2$id == 0.5),"id"] <- 0
+
+table(la2$id)
+
+la2$BAC <- ifelse(la2$BAC2 == "x09y03" , "1" ,
+                 ifelse(la2$BAC2 == "x09y04" , "2" ,
+                        ifelse(la2$BAC2 == "x09y05" , "3" ,
+                               ifelse(la2$BAC2 == "x10y03" , "4" ,
+                                      ifelse(la2$BAC2 == "x10y04" , "5" , "6")))))
+
+
 
 # Ajout dans les donnees bac
 
+la2$key <- paste0(la2$BAC , "_" , la2$X , "_" , la2$Y)
 bac$key <- paste0(bac$BAC , "_" , bac$X , "_" , bac$Y)
 N2$key <- paste0(N2$BAC , "_" , N2$X , "_" , N2$Y)
 
-N2$X <- N2$Y <- N2$BAC <- NULL
+N2$X <- N2$Y <- N2$BAC <- la2$X <- la2$Y <- la2$BAC <- la2$BAC2 <- NULL
 
 bac <- merge(bac , N2 , by = "key" , all = T)
 
-
+bac <- merge(bac , la2 , by = "key" , all = T)
 
 bac$key <- NULL
 
 row.names(bac) <- ifelse(is.na(bac$semis_2)==T,bac$semis_1,bac$semis_2)
+
+bac$N_flag <- ifelse(bac$id == 0 , NA , bac$N_flag)
+
+bac$id <- NULL
 
 
 save(bac , file = "bac")
@@ -922,7 +954,7 @@ save(bac , file = "bac")
 
 
 
-# Ajout des donnees de hauteur du brain maitre
+# Ajout des donnees de hauteur du brin maitre
 
 load("bac")
 
@@ -984,6 +1016,74 @@ save(bac , file = "bac")
 
 
 
+
+# ajout variable bordure
+
+load("bac")
+
+bac$bordure <- ifelse(bac$X == 1 | bac$X == 16 | bac$Y == 1 | bac$Y == 13 , "OUI" , "NON")
+
+# verification
+ggplot(bac , aes(x = X , y = Y , fill = bordure)) + geom_tile() + facet_wrap(~BAC)
+# c'est ok
+
+save(bac , file = "bac")
+
+rm(list = ls())
+
+
+
+# ajout covariables de position
+
+load("bac")
+
+traits <- c("N_flag","preco","hauteur","nb_epi","poids_epis")
+
+for (t in traits){
+
+  for (i in 1:nrow(bac)){
+    
+    # coordonnees de la plante focale
+    xf <- bac[i,"X"]
+    yf <- bac[i,"Y"]
+    bacf <- bac[i,"BAC"]
+    
+    # precocite des plantes voisines
+    p1 <- bac[which(bac$X == xf+1 & bac$Y == yf & bac$BAC == bacf),t]
+    p2 <- bac[which(bac$X == xf-1 & bac$Y == yf & bac$BAC == bacf),t]
+    p3 <- bac[which(bac$X == xf & bac$Y == yf+1 & bac$BAC == bacf),t]
+    p4 <- bac[which(bac$X == xf & bac$Y == yf-1 & bac$BAC == bacf),t]
+    p5 <- bac[which(bac$X == xf+1 & bac$Y == yf+1 & bac$BAC == bacf),t]
+    p6 <- bac[which(bac$X == xf-1 & bac$Y == yf-1 & bac$BAC == bacf),t]
+    p7 <- bac[which(bac$X == xf+1 & bac$Y == yf-1 & bac$BAC == bacf),t]
+    p8 <- bac[which(bac$X == xf-1 & bac$Y == yf+1 & bac$BAC == bacf),t]
+    
+    # on garde que ceux qui sont pas vides
+    la <- c()
+    
+    for (p in c(p1,p2,p3,p4,p5,p6,p7,p8)){
+      if (is_empty(p)==F){la <- c(la,p)}
+    }
+    
+    # On fait la moyenne et on la met dans le tableau
+    bac[i,paste0(t,"_voisin")] <- mean(la , na.rm = T)
+    
+  }
+
+}
+
+rm(p1,p2,p3,p4,p5,p6,p7,p8,la,i,p,xf,yf,bacf,t,traits)
+
+save(bac , file = "bac")
+
+
+
+
+
+# Cr?ation d'une variable de presence/absence
+bac$appel <- ifelse(is.na(bac$hauteur) == F , "present" , "absent")
+
+save(bac , file = "bac")
 
 
 

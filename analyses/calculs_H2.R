@@ -9,7 +9,7 @@ library(GGally)
 library(lme4)
 library(lmerTest)
 library(rchemo)
-
+library(ggpubr)
 
 
 
@@ -85,6 +85,118 @@ calcul_H2 <- function(i , don){
   Vg/(Vg + Vr)
 }
 
+
+
+
+
+effets_signif <- function(don , traits , semis){
+  
+  if (semis == T){base <- "~ geno + semis +"}
+  
+  if (semis == F){base <- "~ geno +"}
+
+  res <<- data.frame()
+  
+  for (t in traits){
+    
+    models <- c()
+    
+    # effets 1 par 1
+    models <- c(models , paste(t,base,"BAC"))
+    models <- c(models , paste(t,base,"luz"))
+    models <- c(models , paste(t,base,"bordure"))
+    models <- c(models , paste(t,base,paste0(t,"_voisin")))
+    
+    # avec luzerne
+    models <- c(models , paste(t,base,"luz/BAC"))
+    models <- c(models , paste(t,base,"luz/BAC + BAC/bordure"))
+    models <- c(models , paste(t,base,"luz/BAC +",paste0(t,"_voisin")))
+    models <- c(models , paste(t,base,"luz/BAC + BAC/bordure +",paste0(t,"_voisin")))
+    
+    # sans luzerne
+    models <- c(models , paste(t,base,"BAC + bordure"))
+    models <- c(models , paste(t,base,"BAC + bordure +",paste0(t,"_voisin")))
+    models <- c(models , paste(t,base,"BAC/bordure"))
+    models <- c(models , paste(t,base,"BAC/bordure +",paste0(t,"_voisin")))
+    
+    for (m in models){
+      mod <- lm(as.formula(m) , data = don)
+      
+      tab <- data.frame(residuals = mod$residuals , fitted = mod$fitted.values)
+      
+      a <- ggplot(tab , aes(x = fitted , y = residuals)) + geom_point() + geom_smooth(col = "red" , se = F) + labs(title = "Residuals vs Fitted")
+      b <- ggplot(tab , aes(sample = residuals)) + geom_qq() + geom_qq_line(col = "red") + labs(title = "Normal-QQ")
+      
+      c <- ggarrange(a, b , ncol = 1, nrow = 2)
+      
+      print(annotate_figure(c , top = text_grob(m , face = "bold")))
+      
+      test <- anova(mod)
+      res[m,"geno"] <<- test["geno" , "Pr(>F)"]
+      res[m,"luz"] <<- test["luz" , "Pr(>F)"]
+      res[m,"semis"] <<- test["semis" , "Pr(>F)"]
+      res[m,"BAC"] <<- test["BAC" , "Pr(>F)"]
+      res[m,"luz:BAC"] <<- test["luz:BAC" , "Pr(>F)"]
+      res[m,paste0(t,"_voisin")] <<- test[paste0(t,"_voisin") , "Pr(>F)"]
+      res[m,"R2"] <<- summary(mod)$adj.r.squared
+      res[m,"trait"] <<- t
+    }
+  }
+
+}
+
+
+
+
+
+H2 <- function(don , traits , semis){
+  
+  if (semis == T){base <- "~ (1|geno) + semis +"}
+  
+  if (semis == F){base <- "~ (1|geno) +"}
+  
+  res <<- data.frame()
+  
+  for (t in traits){
+    
+    models <- c()
+    
+    # effets 1 par 1
+    models <- c(models , paste(t,base,"BAC"))
+    models <- c(models , paste(t,base,"luz"))
+    models <- c(models , paste(t,base,"bordure"))
+    models <- c(models , paste(t,base,paste0(t,"_voisin")))
+    
+    # avec luzerne
+    models <- c(models , paste(t,base,"luz/BAC"))
+    models <- c(models , paste(t,base,"luz/BAC + BAC/bordure"))
+    models <- c(models , paste(t,base,"luz/BAC +",paste0(t,"_voisin")))
+    models <- c(models , paste(t,base,"luz/BAC + BAC/bordure +",paste0(t,"_voisin")))
+    
+    # sans luzerne
+    models <- c(models , paste(t,base,"BAC + bordure"))
+    models <- c(models , paste(t,base,"BAC + bordure +",paste0(t,"_voisin")))
+    models <- c(models , paste(t,base,"BAC/bordure"))
+    models <- c(models , paste(t,base,"BAC/bordure +",paste0(t,"_voisin")))
+    
+    for (m in models){
+      mod <- lmer(as.formula(m) , data = don)
+      
+      Vg <- VarCorr(mod)$geno[1]
+      Vr <- (sigma(mod))^2
+      
+      
+      res[m,"H2"] <<- Vg/(Vg + Vr)
+      res[m,"trait"] <<- t
+    }
+  }
+  
+}
+
+
+
+
+
 # H2 des donnees optomachine ----------------------------------------------
 
 # données simples
@@ -107,34 +219,36 @@ rm(vg,opto)
 
 # H2 des spectres ---------------------------------------------------------
 
-load("../donnees/spectres")
+# load("../donnees/spectres")
+# 
+# h2_sp <- data.frame()
+# i <- 1
+# for (sp in spectres){
+#   
+#   sp$geno <- sapply(strsplit(row.names(sp) , split = "_") , "[",1)
+#   
+#   H2 <- apply(X = sp[,-ncol(sp)] , MARGIN = 2 , FUN = calcul_H2 , don = sp)
+#   tmp <- as.data.frame(H2)
+#   tmp$lambda <- sapply(strsplit(row.names(tmp) , split = "X") , "[",2)
+#   tmp$traitement <- names(spectres)[i]
+#   i <- i+1
+#   
+#   h2_sp <- rbind(h2_sp,tmp)
+# }
+# 
+# h2_sp$lambda <- as.numeric(h2_sp$lambda)
+# 
+# 
+# sp_moyen <- c()
+# for (sp in spectres){
+#   sp_moyen <- c(sp_moyen , apply(sp , MARGIN = 2 , FUN = mean))
+# }
+# 
+# h2_sp$sp_moyen <- sp_moyen
+# 
+# save(h2_sp , file = "H2_spectres")
 
-h2_sp <- data.frame()
-i <- 1
-for (sp in spectres){
-  
-  sp$geno <- sapply(strsplit(row.names(sp) , split = "_") , "[",1)
-  
-  H2 <- apply(X = sp[,-ncol(sp)] , MARGIN = 2 , FUN = calcul_H2 , don = sp)
-  tmp <- as.data.frame(H2)
-  tmp$lambda <- sapply(strsplit(row.names(tmp) , split = "X") , "[",2)
-  tmp$traitement <- names(spectres)[i]
-  i <- i+1
-  
-  h2_sp <- rbind(h2_sp,tmp)
-}
-
-h2_sp$lambda <- as.numeric(h2_sp$lambda)
-
-
-sp_moyen <- c()
-for (sp in spectres){
-  sp_moyen <- c(sp_moyen , apply(sp , MARGIN = 2 , FUN = mean))
-}
-
-h2_sp$sp_moyen <- sp_moyen
-
-save(h2_sp , file = "H2_spectres")
+load("H2_spectres")
 
 ggplot(h2_sp , aes(x = sp_moyen , y = H2)) + geom_point() + labs(title = "Héritabilité des longueur d'onde en fonction de l'absorbance du spectre moyen" , x = "Absorbance moyenne" , y = "H2") + facet_wrap(~traitement , scales = "free")
 
@@ -147,45 +261,183 @@ ggplot(h2_sp , aes(x = lambda , y = H2)) + geom_line() + labs(title = "Héritabi
 
 
 
-# donnees bac -------------------------------------------------------------
-
-rm(list = ls())
-
-# H2 en prenant en compte la date de semis
-calcul_H2_semis <- function(i , don){
-  mod <- lmer(i ~ (1|geno) + BAC + semis, data = don)
-  Vg <- VarCorr(mod)$geno[1]
-  Vr <- (sigma(mod))^2
-  Vg/(Vg + Vr)
-}
-
-
-
-# H2 sans prendre en compte la date de semis (a utiliser avec les donnees du semis 1 seulement)
-calcul_H2 <- function(i , don){
-  mod <- lmer(i ~ (1|geno) + BAC, data = don)
-  Vg <- VarCorr(mod)$geno[1]
-  Vr <- (sigma(mod))^2
-  Vg/(Vg + Vr)
-}
+# BAC : quels effets significatifs ----------------------------------------
 
 
 load("../donnees/bac")
 
-bac <- bac %>% filter(geno != "INCONNU")
+# On réessaye en enlevant les merdouilles
 
-traits <- c("epiaison","N_flag","preco","hauteur")
+don <- bac %>% filter(geno != "INCONNU" & appel == "present")
 
-apply(X = bac[,traits] , MARGIN = 2 , FUN = calcul_H2_semis , don = bac)
+traits <- c("preco","hauteur","N_flag","nb_epi","poids_epis")
 
-sans_s2 <- bac %>% filter(semis == "06/01")
-apply(X = sans_s2[,traits] , MARGIN = 2 , FUN = calcul_H2 , don = sans_s2)
+effets_signif(don = don , traits = traits , semis = T)
 
 
-sans_merdouilles <- bac %>% filter(is.na(hauteur) == F & N_flag < 4)
-sans_s2_merdouilles <- sans_merdouilles %>% filter(semis == "06/01")
-apply(X = sans_merdouilles[,traits] , MARGIN = 2 , FUN = calcul_H2_semis , don = sans_merdouilles)
-apply(X = sans_s2_merdouilles[,traits] , MARGIN = 2 , FUN = calcul_H2 , don = sans_s2_merdouilles)
+# preco : ok R2 = 0.8
+# hauteur : ok R2 = 0.36
+# N_flag : ok R2 = 0.23
+# nb_epi : pas ouf psq pas vraiment quantitatif R2 = 0.16 - 0.17
+# poids_epis : manque homoscedasticite R2 = 0.15
+
+ggplot(don , aes(x = nb_epi , y = poids_epis)) + geom_point() + geom_smooth(method = "lm" , col = "red" , se = F)
+# d'où la non homoscedasticite
+# donc il faut traiter poids_epis à part en prenant en compte nb_epi qui est très drivé par l'envt
+
+don <- bac %>% filter(geno != "INCONNU" & appel == "present")
+mod <- lm(poids_epis ~ geno + luz + semis + nb_epi + bordure , data = don)
+
+summary(mod)$adj.r.squared
+
+tab <- data.frame(residuals = mod$residuals , fitted = mod$fitted.values)
+
+a <- ggplot(tab , aes(x = fitted , y = residuals)) + geom_point() + geom_smooth(col = "red" , se = F) + labs(title = "Residuals vs Fitted")
+b <- ggplot(tab , aes(sample = residuals)) + geom_qq() + geom_qq_line(col = "red") + labs(title = "Normal-QQ")
+ggarrange(a, b , ncol = 1, nrow = 2)
+
+# Hmmm ça reste pas ouf
+# bon on va quand même essayer de calculer des BLUPs comme ça hein on verra bieng
+
+
+res_2 <- res
+
+R2_2 <- res %>% group_by(trait) %>% summarise(moy = mean(R2) , max = max(R2))
+
+
+
+
+# Même chose en enlevant le semis 2
+
+don <- bac %>% filter(geno != "INCONNU" & appel == "present" & semis == "06/01")
+
+traits <- c("preco","hauteur","N_flag","nb_epi","poids_epis")
+
+effets_signif(don = don , traits = traits , semis = F)
+
+R2_3 <- res %>% group_by(trait) %>% summarise(moy = mean(R2) , max = max(R2))
+
+res_3 <- res
+
+
+# preco : ok R2 = 0.35
+# hauteur : ok R2 = 0.3
+# N_flag : ok R2 = 0.25
+# nb_epi : pas ouf psq pas vraiment quantitatif R2 = 0.24
+# poids_epis : manque homoscedasticite R2 = 0.14
+
+
+R2_2
+R2_3
+
+
+res_22 <- res_2 %>% select(!c("trait","R2"))
+r22 <- c()
+for (i in 1:nrow(res_22)){
+  for (j in 1:ncol(res_22)){
+    if (is.na(res_22[i,j]) == F){
+      if (res_22[i,j] >= 0.05){
+        print(paste("NON /",rownames(res_22)[i],"/",colnames(res_22)[j]))
+        r22 <- c(r22 , paste("NON /",rownames(res_22)[i],"/",colnames(res_22)[j]))}
+    }
+  }
+}
+
+
+res_33 <- res_3 %>% select(!c("trait","R2"))
+r33 <- c()
+for (i in 1:nrow(res_33)){
+  for (j in 1:ncol(res_33)){
+    if (is.na(res_33[i,j]) == F){
+      if (res_33[i,j] >= 0.05){
+        print(paste("NON /",rownames(res_33)[i],"/",colnames(res_33)[j]))
+        r33 <- c(r33 , paste("NON /",rownames(res_33)[i],"/",colnames(res_33)[j]))
+        }
+    }
+  }
+}
+
+
+
+
+
+
+# pas d'effet de la luzerne sur la hauteur
+# pas d'effet du bac sur le poids de l'épi
+# pas d'effet de covariable spatiale sur le poids de l'epi
+
+# tout le reste est significatif
+
+
+
+# Modeles avec les meilleurs R2 :
+
+for (t in traits){
+  tab <- res_2 %>% filter(trait == t)
+  print(row.names(tab[which(tab$R2 == max(tab$R2)),]))
+}
+
+
+for (t in traits){
+  tab <- res_3 %>% filter(trait == t)
+  print(row.names(tab[which(tab$R2 == max(tab$R2)),]))
+}
+
+
+don <- bac %>% filter(geno != "INCONNU" & N_flag < 4 & N_flag_voisin < 4 & semis == "06/01")
+
+ggplot(don , aes(x = luz , y = preco)) + geom_boxplot()
+ggplot(don , aes(x = luz , y = hauteur)) + geom_boxplot()
+ggplot(don , aes(x = luz , y = N_flag)) + geom_boxplot()
+ggplot(don , aes(x = luz , y = nb_epi)) + geom_boxplot()
+ggplot(don , aes(x = luz , y = poids_epis)) + geom_boxplot()
+
+ggplot(don , aes(x =  BAC , y = preco , fill = luz)) + geom_boxplot()
+ggplot(don , aes(x =  BAC , y = hauteur , fill = luz)) + geom_boxplot()
+ggplot(don , aes(x =  BAC , y = N_flag , fill = luz)) + geom_boxplot()
+ggplot(don , aes(x =  BAC , y = nb_epi , fill = luz)) + geom_boxplot()
+ggplot(don , aes(x =  BAC , y = poids_epis , fill = luz)) + geom_boxplot()
+
+ggplot(don , aes(x = bordure , y = preco)) + geom_boxplot()
+ggplot(don , aes(x = bordure , y = hauteur)) + geom_boxplot()
+ggplot(don , aes(x = bordure , y = N_flag)) + geom_boxplot()
+ggplot(don , aes(x = bordure , y = nb_epi)) + geom_boxplot()
+ggplot(don , aes(x = bordure , y = poids_epis)) + geom_boxplot()
+
+ggplot(don , aes(x =  BAC , y = preco , fill = bordure)) + geom_boxplot()
+ggplot(don , aes(x =  BAC , y = hauteur , fill = bordure)) + geom_boxplot()
+ggplot(don , aes(x =  BAC , y = N_flag , fill = bordure)) + geom_boxplot()
+ggplot(don , aes(x =  BAC , y = nb_epi , fill = bordure)) + geom_boxplot()
+ggplot(don , aes(x =  BAC , y = poids_epis , fill = bordure)) + geom_boxplot()
+
+ggplot(don , aes(x = preco_voisin , y = preco)) + geom_point() + geom_smooth(method = "lm" , col = "red" , se = F)
+ggplot(don , aes(x = hauteur_voisin , y = hauteur)) + geom_point() + geom_smooth(method = "lm" , col = "red" , se = F)
+ggplot(don , aes(x = N_flag_voisin , y = N_flag)) + geom_point() + geom_smooth(method = "lm" , col = "red" , se = F)
+ggplot(don , aes(x = nb_epi_voisin , y = nb_epi)) + geom_point() + geom_smooth(method = "lm" , col = "red" , se = F)
+ggplot(don , aes(x = poids_epis_voisin , y = poids_epis)) + geom_point() + geom_smooth(method = "lm" , col = "red" , se = F)
+
+ggplot(don , aes(x = preco_voisin , y = preco)) + geom_point() + geom_smooth(method = "lm" , col = "red" , se = F) + facet_wrap(~BAC)
+ggplot(don , aes(x = hauteur_voisin , y = hauteur)) + geom_point() + geom_smooth(method = "lm" , col = "red" , se = F) + facet_wrap(~BAC)
+ggplot(don , aes(x = N_flag_voisin , y = N_flag)) + geom_point() + geom_smooth(method = "lm" , col = "red" , se = F) + facet_wrap(~BAC)
+ggplot(don , aes(x = nb_epi_voisin , y = nb_epi)) + geom_point() + geom_smooth(method = "lm" , col = "red" , se = F) + facet_wrap(~BAC)
+ggplot(don , aes(x = poids_epis_voisin , y = poids_epis)) + geom_point() + geom_smooth(method = "lm" , col = "red" , se = F) + facet_wrap(~BAC)
+
+
+
+
+
+
+
+# BAC : H2 avec les deux semis --------------------------------------------
+
+don <- bac %>% filter(geno != "INCONNU" & N_flag < 4)
+
+traits <- c("preco","hauteur","N_flag","nb_epi","poids_epis")
+
+H2(don = don , traits = traits , semis = T)
+
+
+
 
 
 

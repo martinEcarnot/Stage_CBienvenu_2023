@@ -1,11 +1,14 @@
 rm(list=ls())
 
+library(tidyverse)
+
+setwd("~/Stage/Analyses")
 
 load("../donnees/bac")
 
+set.seed(123)
 
-
-don <- bac %>% filter(is.na(nb_epi)==F & nb_epi > 1 & geno != "INCONNU")
+don <- bac %>% filter(is.na(nb_epi)==F & nb_epi > 1 & geno != "INCONNU" & semis == "06/01")
 
 hist(don$nb_epi)
 
