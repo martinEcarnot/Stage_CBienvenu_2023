@@ -1087,6 +1087,47 @@ save(bac , file = "bac")
 
 
 
+
+
+
+# creation de variable nb_voisins
+
+load("bac")
+
+for (i in 1:nrow(bac)){
+  
+  # coordonnees de la plante focale
+  xf <- bac[i,"X"]
+  yf <- bac[i,"Y"]
+  bacf <- bac[i,"BAC"]
+  
+  # precocite des plantes voisines
+  p1 <- bac[which(bac$X == xf+1 & bac$Y == yf & bac$BAC == bacf),"appel"]
+  p2 <- bac[which(bac$X == xf-1 & bac$Y == yf & bac$BAC == bacf),"appel"]
+  p3 <- bac[which(bac$X == xf & bac$Y == yf+1 & bac$BAC == bacf),"appel"]
+  p4 <- bac[which(bac$X == xf & bac$Y == yf-1 & bac$BAC == bacf),"appel"]
+  p5 <- bac[which(bac$X == xf+1 & bac$Y == yf+1 & bac$BAC == bacf),"appel"]
+  p6 <- bac[which(bac$X == xf-1 & bac$Y == yf-1 & bac$BAC == bacf),"appel"]
+  p7 <- bac[which(bac$X == xf+1 & bac$Y == yf-1 & bac$BAC == bacf),"appel"]
+  p8 <- bac[which(bac$X == xf-1 & bac$Y == yf+1 & bac$BAC == bacf),"appel"]
+  
+  nb <- 0
+  
+  for (p in c(p1,p2,p3,p4,p5,p6,p7,p8)){
+    if (p == "present"){nb <- nb+1}
+  }
+  
+  bac[i,"nb_voisin"] <- nb
+  
+  
+}
+
+
+save(bac , file = "bac")
+
+
+
+
 # matrice genotypique et map ----------------------------------------------
 
 rm(list = ls())
@@ -1316,3 +1357,51 @@ save(map , file = "map")
 rm(list=ls())
 
 
+
+
+
+
+
+# donnees champ -----------------------------------------------------------
+
+tab <- read.table("data_brute/hauteur_champ.csv" , header = F , sep = ";" , dec = ".")
+
+
+id <- tab[seq(1,nrow(tab),3),]
+
+hauteur <- as.numeric(tab[seq(2,nrow(tab),3),])
+
+rang <- as.numeric(tab[seq(3,nrow(tab),3),])
+
+
+champ <- data.frame(ind = id , hauteur = hauteur , nb_epillets = 2*rang+1)
+
+
+champ$passage <- sapply(strsplit(champ$ind , split = "_") , "[" , 1)
+
+champ$planche <- sapply(strsplit(champ$ind , split = "_") , "[" , 2)
+
+champ$selection <- sapply(strsplit(champ$ind , split = "_") , "[" , 3)
+
+
+champ <- champ %>% column_to_rownames(var = "ind")
+
+champ$parcelle <- paste0(champ$passage,champ$planche)
+
+for (i in 1:nrow(champ)){
+  if (champ[i,"parcelle"] == "11"){champ[i,"parcelle"] <- "1"}
+  if (champ[i,"parcelle"] == "21"){champ[i,"parcelle"] <- "2"}
+  if (champ[i,"parcelle"] == "31"){champ[i,"parcelle"] <- "3"}
+  if (champ[i,"parcelle"] == "12"){champ[i,"parcelle"] <- "4"}
+  if (champ[i,"parcelle"] == "22"){champ[i,"parcelle"] <- "5"}
+  if (champ[i,"parcelle"] == "inconnu1inconnu1"){champ[i,"parcelle"] <- "6"}
+  if (champ[i,"parcelle"] == "13"){champ[i,"parcelle"] <- "7"}
+  if (champ[i,"parcelle"] == "inconnu2inconnu2"){champ[i,"parcelle"] <- "8"}
+  if (champ[i,"parcelle"] == "33"){champ[i,"parcelle"] <- "9"}
+  if (champ[i,"parcelle"] == "14"){champ[i,"parcelle"] <- "10"}
+  if (champ[i,"parcelle"] == "24"){champ[i,"parcelle"] <- "11"}
+  if (champ[i,"parcelle"] == "34"){champ[i,"parcelle"] <- "12"}
+}
+
+
+save(champ , file = "champ")

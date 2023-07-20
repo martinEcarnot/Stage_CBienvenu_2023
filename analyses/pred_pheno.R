@@ -4,6 +4,8 @@ setwd("C:/Users/bienvenu/Documents/Stage/Analyses")
 load("../donnees/spectres")
 load("../donnees/spectres_moyens")
 load("../donnees/bac")
+load("../donnees/BLUP")
+load("../donnees/opto")
 
 library(prospectr)
 library(signal)
@@ -89,120 +91,35 @@ boss <- function(X,Y,nrep,nout){
 
 
 
-# donnees optomachine -------------------------------------------------------
-
-don <- opto
-
-
-# Extraction des BLUPs sur plusieurs variables
-a <- apply(X = opto[,c(3,5,6,10)] , MARGIN = 2 , FUN = calcul_BLUP , don = opto)
-
-BLUP <- as.data.frame(a[1])
-
-for (b in 2:length(a)){
-  BLUP <- cbind(BLUP , a[b])
-}
-
-names(BLUP) <- names(opto[,c(3,5,6,10)])
-
-rm(a,b)
-
-# verif que les BLUPs suivent bien une loi normale :
-ggplot(BLUP , aes(sample=Longueur)) + geom_qq() + geom_qq_line(col = "red")
-ggplot(BLUP , aes(sample=Largeur)) + geom_qq() + geom_qq_line(col = "red")
-ggplot(BLUP , aes(sample=Perimetre)) + geom_qq() + geom_qq_line(col = "red")
-ggplot(BLUP , aes(sample=Surface)) + geom_qq() + geom_qq_line(col = "red")
-
-# verif que BLUP et pheno sont corrélés
-phen <- don %>% group_by(geno) %>% summarise_at(.vars = c("Longueur","Largeur","Perimetre","Surface") , .funs = mean) %>% column_to_rownames(var = "geno") %>% merge(BLUP , by = "row.names")
-
-ggplot(phen , aes(x = Surface.x , y = Surface.y)) + geom_point()
-ggplot(phen , aes(x = Longueur.x , y = Longueur.y)) + geom_point()
-ggplot(phen , aes(x = Largeur.x , y = Largeur.y)) + geom_point()
-ggplot(phen , aes(x = Perimetre.x , y = Perimetre.y)) + geom_point()
-
-rm(phen)
-
-
-
-
-# compute entre BLUPs et spectres moyens 
-
-
-boss(X = spectres_moy , Y = BLUP , nrep=3 , nout=20)
-
-
-ggplot(res , aes(x = pretraitement , y = accuracy , fill = model)) + geom_boxplot() + facet_wrap(~trait)
-
-
-
-
-# compute en ne moyennant pas les spectres et en mettant son BLUP  a chaque genotype
-
-for (i in 1:nrow(opto)){
-  g <- opto[i,"geno"]
-  opto[i,"BLUP_longueur"] <- BLUP[g,"Longueur"]
-  opto[i,"BLUP_largeur"] <- BLUP[g,"Largeur"]
-  opto[i,"BLUP_perimetre"] <- BLUP[g,"Perimetre"]
-  opto[i,"BLUP_surface"] <- BLUP[g,"Surface"]
-}
-
-boss(X = spectres , Y = opto[,c("BLUP_longueur" , "BLUP_largeur" , "BLUP_perimetre" , "BLUP_surface")] , nrep=3 , nout=400)
-
-pred_pheno_blup <- res
-
-save(pred_pheno_blup , file = "pred_pheno_blup")
-
-
-
-
-
-
-
 
 # pour donnees bac  -------------------------------------------------------
 
+don <- bac %>% filter(geno != "INCONNU" & appel == "present")
 
-
-
-don <- bac %>% filter(geno != "INCONNU" & N_flag <= 4)
-
-calcul_BLUP_bac <- function(i , don){
-  mod <- lmer(i ~ (1|geno) + BAC + semis, data = don)
-  ranef(mod)$geno
-}
-
-
-# Extraction des BLUPs sur plusieurs variables
-
-a <- apply(X = don[,traits] , MARGIN = 2 , FUN = calcul_BLUP_bac , don = don)
-
-BLUP <- as.data.frame(a[1])
-
-for (b in 2:length(a)){
-  BLUP <- cbind(BLUP , a[b])
-}
-
-names(BLUP) <- names(don[,traits])
-
-rm(a,b)
+traits <- c("hauteur" , "preco" , "N_flag" , "poids_epis")
 
 # verif que les BLUPs suivent bien une loi normale :
 ggplot(BLUP , aes(sample=preco)) + geom_qq() + geom_qq_line(col = "red")
 ggplot(BLUP , aes(sample=hauteur)) + geom_qq() + geom_qq_line(col = "red")
-ggplot(BLUP , aes(sample=nb_epi)) + geom_qq() + geom_qq_line(col = "red")
+ggplot(BLUP , aes(sample=N_flag)) + geom_qq() + geom_qq_line(col = "red")
 ggplot(BLUP , aes(sample=poids_epis)) + geom_qq() + geom_qq_line(col = "red")
+ggplot(BLUP , aes(sample=Surface)) + geom_qq() + geom_qq_line(col = "red")
+ggplot(BLUP , aes(sample=prot_semis)) + geom_qq() + geom_qq_line(col = "red")
 
 # verif que BLUP et pheno sont corrélés
 phen <- don %>% group_by(geno) %>% summarise_at(.vars = traits , .funs = mean , na.rm = T) %>% column_to_rownames(var = "geno") %>% merge(BLUP , by = "row.names")
 
 ggplot(phen , aes(x = preco.x , y = preco.y)) + geom_point()
 ggplot(phen , aes(x = hauteur.x , y = hauteur.y)) + geom_point()
-ggplot(phen , aes(x = nb_epi.x , y = nb_epi.y)) + geom_point()
+ggplot(phen , aes(x = N_flag.x , y = N_flag.y)) + geom_point()
 ggplot(phen , aes(x = poids_epis.x , y = poids_epis.y)) + geom_point()
 
-rm(phen)
+phen <- opto %>% group_by(geno) %>% summarise_at(.vars = c("Surface","prot_semis") , .funs = mean , na.rm = T) %>% column_to_rownames(var = "geno") %>% merge(BLUP , by = "row.names")
 
+ggplot(phen , aes(x = Surface.x , y = Surface.y)) + geom_point()
+ggplot(phen , aes(x = prot_semis.x , y = prot_semis.y)) + geom_point()
+
+rm(phen)
 
 
 
@@ -212,7 +129,7 @@ rm(phen)
 
 nrep <- 10
 nout <- 40
-traits <- c("preco" , "hauteur" , "nb_epi" , "poids_epis")
+traits <- c("preco" , "hauteur" , "N_flag" , "poids_epis" , "Surface" , "prot_semis")
 
 boss(X = spectres_moy , Y = BLUP , nrep=nrep , nout=nout)
 
@@ -232,16 +149,18 @@ blup_sp_moy$donnees <- "blup_sp_moy"
 
 # compute en ne moyennant pas les spectres et en mettant son BLUP  a chaque genotype (ça marche pas du tout)
 
+don <- bac %>% filter(geno != "INCONNU" & appel == "present")
+
 for (i in 1:nrow( don)){
    g <-  don[i,"geno"]
-   don[i,"BLUP_nb_epi"] <- BLUP[g,"nb_epi"]
+   don[i,"BLUP_N_flag"] <- BLUP[g,"N_flag"]
    don[i,"BLUP_poids_epis"] <- BLUP[g,"poids_epis"]
    don[i,"BLUP_preco"] <- BLUP[g,"preco"]
    don[i,"BLUP_hauteur"] <- BLUP[g,"hauteur"]
 }
 
 nout <- 200
-traits <- c("BLUP_nb_epi","BLUP_poids_epis","BLUP_preco","BLUP_hauteur")
+traits <- c("BLUP_N_flag","BLUP_poids_epis","BLUP_preco","BLUP_hauteur")
 
 boss(X = spectres , Y = don[,traits] , nrep=nrep , nout=nout)
 
@@ -259,7 +178,7 @@ blup_tout_sp$donnees <- "blup_tout_sp"
 # Compute sur les donnees pheno directement (marche pas du tout)
 
 nout <- 40
-traits <- c("preco" , "hauteur" , "nb_epi" , "poids_epis")
+traits <- c("preco" , "hauteur" , "N_flag" , "poids_epis")
 
 boss(X = spectres , Y = don[,traits] , nrep=nrep , nout=nout)
 
@@ -274,9 +193,96 @@ phenotype$donnees <- "phenotype"
 
 resultats_phenomique <- rbind(blup_sp_moy , blup_tout_sp , phenotype)
 
-load("resultats_phenomique")
+#load("resultats_phenomique")
 
-resultats_phenomique <- rbind(resultats_phenomique , resultats_phenomique2)
+#resultats_phenomique <- rbind(resultats_phenomique , resultats_phenomique2)
 
 save(resultats_phenomique , file = "resultats_phenomique")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# donnees optomachine -------------------------------------------------------
+
+
+# compute en ne moyennant pas les spectres et en mettant son BLUP  a chaque genotype
+
+nrep <- 10
+nout <- 200
+
+for (i in 1:nrow(opto)){
+  g <- opto[i,"geno"]
+  opto[i,"BLUP_surface"] <- BLUP[g,"Surface"]
+  opto[i,"BLUP_prot_semis"] <- BLUP[g,"prot_semis"]
+}
+
+boss(X = spectres , Y = opto[,c("BLUP_surface","BLUP_prot_semis")] , nrep=nrep , nout=nout)
+
+blup_tout_sp <- res
+blup_tout_sp$donnees <- "blup_tout_sp"
+
+load("resultats_phenomique")
+
+resultats_phenomique <- rbind(resultats_phenomique,blup_tout_sp)
+
+save(resultats_phenomique , file = "resultats_phenomique")
+rm(resultats_phenomique)
+
+# compute avec le phenotype
+
+nout <- 40
+traits <- c("prot_semis" , "Surface")
+
+boss(X = spectres , Y = don[,traits] , nrep=nrep , nout=nout)
+
+ggplot(res , aes(x = pretraitement , y = accuracy^2)) + geom_boxplot() + facet_wrap(~trait)
+
+
+phenotype <- res
+phenotype$donnees <- "phenotype"
+
+
+resultats_phenomique <- rbind(resultats_phenomique, phenotype)
+
+save(resultats_phenomique , file = "resultats_phenomique")
+rm(resultats_phenomique)
+
+# resultats ---------------------------------------------------------------
+
+load("resultats_phenomique")
+
+
+ggplot(resultats_phenomique %>% filter(donnees == "blup_sp_moy") , aes(x = pretraitement , y = accuracy^2)) + facet_wrap(~trait) + geom_boxplot()
+
+
+ggplot(resultats_phenomique %>% filter(donnees == "blup_tout_sp") , aes(x = pretraitement , y = accuracy^2)) + facet_wrap(~trait) + geom_boxplot()
+
+ggplot(resultats_phenomique %>% filter(donnees == "phenotype") , aes(x = pretraitement , y = accuracy^2)) + facet_wrap(~trait) + geom_boxplot()
+
+
+
+
 

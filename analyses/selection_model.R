@@ -56,10 +56,19 @@ don <- bac %>% filter(geno != "INCONNU" & appel == "present")
 
 
 # hauteur
-formule1 <- hauteur ~ geno + semis + BAC + luz + bordure + luz:BAC + BAC:bordure + hauteur_voisin
+formule1 <- hauteur ~ geno + semis + luz + BAC + bordure + luz/BAC + BAC/bordure + hauteur_voisin
 formule2 <- hauteur ~ geno + semis + luz + BAC %in% luz + bordure %in% BAC + hauteur_voisin
 formule3 <- hauteur ~ geno + semis + BAC + bordure + BAC:bordure + hauteur_voisin
 formule4 <- hauteur ~ geno + semis + luz + bordure + luz:bordure + hauteur_voisin
+
+
+mod <- lm(formule1 <- hauteur ~ geno + semis + luz + BAC + bordure + luz/BAC + BAC/bordure + hauteur_voisin , data = don)
+drop1(mod , .~. , test = "F")
+
+mod <- lm(formule1 <- hauteur ~ BAC, data = don)
+drop1(mod , .~. , test = "F")
+
+lmer(hauteur ~ (1|geno) + luz + hauteur_voisin , data = don)
 
 step(lm(formule1 , data=don), direction="both")
 # hauteur ~ geno + semis + bordure + hauteur_voisin    AIC : 5082.13
@@ -191,76 +200,36 @@ drop1(mod , .~. , test = "F")
 
 
 
-# a la main ---------------------------------------------------------------
+# tests pour nb voisin
 
-# hauteur
-mod <- lm(hauteur ~ geno + semis + BAC + luz + bordure + luz:BAC + BAC:bordure + hauteur_voisin + geno:BAC , data = don)
+mod <- lm(hauteur ~ geno + semis + bordure + hauteur_voisin + nb_voisin , data = don)
+summary(mod)
+drop1(mod , .~. , test = "F")
+
+
+
+mod <- lm(preco ~ geno + semis + BAC + bordure + preco_voisin + nb_voisin , data = don)
+summary(mod)
+drop1(mod , .~. , test = "F")
+
+
+mod <- lm(N_flag ~ semis + BAC + bordure + N_flag_voisin + nb_voisin , data = don)
+summary(mod)
+drop1(mod , .~. , test = "F")
+# SIGNIFICATIF
+
+
+
+# nb_epi
+mod <- lm(nb_epi ~ semis + BAC + bordure + nb_epi_voisin + nb_voisin , data = don)
 par(mfrow = c(2,2))
 plot(mod)
 drop1(mod , .~. , test = "F")
-# Pas d'effet des interactions, on les enlève
+# pas bon
 
-mod <- lm(hauteur ~ geno + semis + BAC + luz + bordure + hauteur_voisin , data = don)
+# poids_epis
+mod <- lm(poids_epis ~ semis + BAC + nb_epi + nb_voisin , data = don)
 par(mfrow = c(2,2))
 plot(mod)
 drop1(mod , .~. , test = "F")
-# pas d'effet BAC ni luz
-
-mod <- lm(hauteur ~ geno + semis + bordure + hauteur_voisin , data = don)
-par(mfrow = c(2,2))
-plot(mod)
-drop1(mod , .~. , test = "F")
-# c'est good
-
-
-
-
-# preco
-mod <- lm(preco ~ geno + semis + BAC + luz + bordure + luz:BAC + BAC:bordure + preco_voisin + geno:BAC , data = don)
-par(mfrow = c(2,2))
-plot(mod)
-drop1(mod , .~. , test = "F")
-# pas d'effet des interactions, on les enlève
-
-mod <- lm(preco ~ geno + semis + BAC + luz + bordure + preco_voisin, data = don)
-par(mfrow = c(2,2))
-plot(mod)
-drop1(mod , .~. , test = "F")
-# pas d'effet luzerne
-
-mod <- lm(preco ~ geno + semis + BAC + bordure + preco_voisin, data = don)
-par(mfrow = c(2,2))
-plot(mod)
-drop1(mod , .~. , test = "F")
-
-
-
-
-mod <- lm(poids_epis ~ semis + luz + luz:BAC + nb_epi, data = don)
-par(mfrow = c(2,2))
-plot(mod)
-drop1(mod , .~. , test = "F")
-
-
-library(lme4)
-
-mod <- lmer(hauteur ~ (1|geno) + semis + luz + BAC + (1 + BAC|luz) , data = don)
-mod
-
-a <- ranef(mod)$luz
-
-
-
-
-
-mod <- lm(nb_epi ~ semis + luz + nb_epi_voisin + luz:BAC + BAC:bordure , data = don)
-drop1(mod , .~. , test = "F")
-mod
-
-
-
-don$bacluz <- paste0(don$BAC,"_",don$luz)
-
-mod <- lm(nb_epi ~ semis + nb_epi_voisin + bacluz + bacluz:bordure , data = don)
-drop1(mod , .~. , test = "F")
-mod
+# pas bon
