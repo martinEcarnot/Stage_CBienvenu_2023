@@ -294,7 +294,7 @@ phenomique_grain_lot <- rbind(phenomique_grain_lot , sp1)
 
 rm(spectres)
 
-save(phenomique_grain_lot , file = "phenomique_grain_lot")
+#save(phenomique_grain_lot , file = "phenomique_grain_lot")
 
 
 # avec les spectres moyennés
@@ -312,7 +312,7 @@ phenomique_grain_lot <- rbind(phenomique_grain_lot , sp2)
 
 rm(spectres_moy2)
 
-save(phenomique_grain_lot , file = "phenomique_grain_lot")
+#save(phenomique_grain_lot , file = "phenomique_grain_lot")
 
 # moyenne de 4 sp
 load("../donnees/spectres_moy4")
@@ -326,7 +326,7 @@ phenomique_grain_lot <- rbind(phenomique_grain_lot , sp4)
 
 rm(spectres_moy4)
 
-save(phenomique_grain_lot , file = "phenomique_grain_lot")
+#save(phenomique_grain_lot , file = "phenomique_grain_lot")
 
 # moyenne de 6 sp
 load("../donnees/spectres_moy6")
@@ -340,7 +340,7 @@ phenomique_grain_lot <- rbind(phenomique_grain_lot , sp6)
 
 rm(spectres_moy6)
 
-save(phenomique_grain_lot , file = "phenomique_grain_lot")
+#save(phenomique_grain_lot , file = "phenomique_grain_lot")
 
 # moyenne de 8 sp
 load("../donnees/spectres_moy8")
@@ -355,7 +355,7 @@ phenomique_grain_lot <- rbind(phenomique_grain_lot , sp8)
 rm(spectres_moy8)
 
 
-save(phenomique_grain_lot , file = "phenomique_grain_lot")
+#save(phenomique_grain_lot , file = "phenomique_grain_lot")
 
 # moyenne de 10 sp
 load("../donnees/spectres_moy10")
@@ -370,7 +370,7 @@ phenomique_grain_lot <- rbind(phenomique_grain_lot , sp10)
 rm(spectres_moy10)
 
 
-save(phenomique_grain_lot , file = "phenomique_grain_lot")
+#save(phenomique_grain_lot , file = "phenomique_grain_lot")
 
 rm(phenomique_grain_lot)
 
@@ -379,3 +379,6 @@ load("phenomique_grain_lot")
 
 
 ggplot(phenomique_grain_lot , aes(x = factor(nb_sp , levels = c("1","2","4","6","8","10","12")) , y = accuracy^2)) + geom_boxplot() + facet_wrap(~pretraitement)
+
+ggplot(phenomique_grain_lot , aes(x = pretraitement , y = accuracy^2)) + geom_boxplot() + facet_wrap(~nb_sp)
+
