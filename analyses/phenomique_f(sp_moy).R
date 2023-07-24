@@ -13,7 +13,7 @@ load("../donnees/opto")
 
 # fonctions ---------------------------------------------------------------
 
-
+{
 
 pred <- function(sp , Nrep , Nout , pheno){
   
@@ -86,10 +86,10 @@ boss <- function(X,Y,nrep,nout){
 }
 
 
+}
 
 
-
-# tests pour verifier que c'est miex plusieurs spectres sur un BLUP -------
+# tests pour verifier que c'est miuex plusieurs spectres sur un BLUP -------
 
 
 
@@ -246,7 +246,7 @@ ggplot(essai3 , aes(x = pretraitement , y = accuracy^2)) + geom_boxplot()
 
 
 
-# prediction --------------------------------------------------------------
+# prediction avec trop de puissance--------------------------------------------------------------
 
 # avec moyenne des 12 spectres
 nrep <- 10
@@ -382,3 +382,192 @@ ggplot(phenomique_grain_lot , aes(x = factor(nb_sp , levels = c("1","2","4","6",
 
 ggplot(phenomique_grain_lot , aes(x = pretraitement , y = accuracy^2)) + geom_boxplot() + facet_wrap(~nb_sp)
 
+
+
+
+
+# prediction avec un sp moyen par BLUP ------------------------------------
+
+
+# avec moyenne des 12 spectres
+nrep <- 10
+nout <- 40
+load("../donnees/spectres_moyens")
+
+boss(X = spectres_moy , Y = BLUP %>% select(prot_semis) , nrep = nrep , nout = nout)
+
+phenomique_grain_lot_2 <- res
+phenomique_grain_lot_2$nb_sp <- "12"
+phenomique_grain_lot_2$sp <- "1"
+
+ggplot(phenomique_grain_lot_2 , aes(x = pretraitement , y = accuracy^2)) + geom_boxplot()
+# ok
+
+rm(res,spectres_moy,opto)
+
+
+# avec les spectres moyennés
+
+
+# moyenne de 2 sp
+load("../donnees/spectres_moy2")
+
+for (ite in 1:12){
+  don <- BLUP %>% select(prot_semis)
+  row.names(don) <- paste0(row.names(BLUP),"_",ite)
+  
+  # la fonction ne traite que les rownames en commun entre X et Y donc à chaque fois, un seul des 12 spectres moyennés va être pris
+  boss(X = spectres_moy2 , Y = don , nrep = nrep , nout = nout)
+  
+  res$nb_sp <- "2"
+  res$sp <- ite
+  
+  phenomique_grain_lot_2 <- rbind(phenomique_grain_lot_2 , res)
+}
+
+rm(spectres_moy2)
+
+save(phenomique_grain_lot_2 , file = "phenomique_grain_lot_2")
+
+
+
+
+# moyenne de 4 sp
+load("../donnees/spectres_moy4")
+
+for (ite in 1:12){
+  don <- BLUP %>% select(prot_semis)
+  row.names(don) <- paste0(row.names(BLUP),"_",ite)
+  
+  # la fonction ne traite que les rownames en commun entre X et Y donc à chaque fois, un seul des 12 spectres moyennés va être pris
+  boss(X = spectres_moy4 , Y = don , nrep = nrep , nout = nout)
+  
+  res$nb_sp <- "4"
+  res$sp <- ite
+  
+  phenomique_grain_lot_2 <- rbind(phenomique_grain_lot_2 , res)
+}
+
+rm(spectres_moy4)
+
+save(phenomique_grain_lot_2 , file = "phenomique_grain_lot_2")
+
+
+
+
+
+# moyenne de 6 sp
+load("../donnees/spectres_moy6")
+
+for (ite in 1:12){
+  don <- BLUP %>% select(prot_semis)
+  row.names(don) <- paste0(row.names(BLUP),"_",ite)
+  
+  # la fonction ne traite que les rownames en commun entre X et Y donc à chaque fois, un seul des 12 spectres moyennés va être pris
+  boss(X = spectres_moy6 , Y = don , nrep = nrep , nout = nout)
+  
+  res$nb_sp <- "6"
+  res$sp <- ite
+  
+  phenomique_grain_lot_2 <- rbind(phenomique_grain_lot_2 , res)
+}
+
+rm(spectres_moy6)
+
+save(phenomique_grain_lot_2 , file = "phenomique_grain_lot_2")
+
+
+
+# moyenne de 8 sp
+load("../donnees/spectres_moy8")
+
+for (ite in 1:12){
+  don <- BLUP %>% select(prot_semis)
+  row.names(don) <- paste0(row.names(BLUP),"_",ite)
+  
+  # la fonction ne traite que les rownames en commun entre X et Y donc à chaque fois, un seul des 12 spectres moyennés va être pris
+  boss(X = spectres_moy8 , Y = don , nrep = nrep , nout = nout)
+  
+  res$nb_sp <- "8"
+  res$sp <- ite
+  
+  phenomique_grain_lot_2 <- rbind(phenomique_grain_lot_2 , res)
+}
+
+rm(spectres_moy8)
+
+save(phenomique_grain_lot_2 , file = "phenomique_grain_lot_2")
+
+
+
+
+# moyenne de 10 sp
+load("../donnees/spectres_moy10")
+
+for (ite in 1:12){
+  don <- BLUP %>% select(prot_semis)
+  row.names(don) <- paste0(row.names(BLUP),"_",ite)
+  
+  # la fonction ne traite que les rownames en commun entre X et Y donc à chaque fois, un seul des 12 spectres moyennés va être pris
+  boss(X = spectres_moy10 , Y = don , nrep = nrep , nout = nout)
+  
+  res$nb_sp <- "10"
+  res$sp <- ite
+  
+  phenomique_grain_lot_2 <- rbind(phenomique_grain_lot_2 , res)
+}
+
+rm(spectres_moy10)
+
+save(phenomique_grain_lot_2 , file = "phenomique_grain_lot_2")
+
+
+
+
+
+# avec spectres individuels
+load("../donnees/spectres")
+
+
+for (ite in 1:12){
+  don <- BLUP %>% select(prot_semis)
+  row.names(don) <- paste0(row.names(BLUP),"_",ite)
+  
+  # la fonction ne traite que les rownames en commun entre X et Y donc à chaque fois, un seul des 12 spectres moyennés va être pris
+  boss(X = spectres , Y = don , nrep = nrep , nout = nout)
+  
+  res$nb_sp <- "1"
+  res$sp <- ite
+  
+  phenomique_grain_lot_2 <- rbind(phenomique_grain_lot_2 , res)
+}
+
+rm(spectres)
+
+save(phenomique_grain_lot_2 , file = "phenomique_grain_lot_2")
+
+
+
+
+
+
+
+
+
+ggplot(phenomique_grain_lot_2 , aes(x = factor(nb_sp , levels = c("1","2","4","6","8","10","12")) , y = accuracy^2)) + geom_boxplot() + facet_wrap(~pretraitement) + labs(x = "Nombre de spectres moyennes" , y = "R2" , title = "Pouvoir prédictif en fonction du nombre de spectres moyenne")
+
+
+ggplot(phenomique_grain_lot_2 %>% filter(nb_sp == "10") , aes(x = sp , y = accuracy^2)) + geom_boxplot() + facet_wrap(~pretraitement)
+
+ggplot(phenomique_grain_lot_2 %>% filter(nb_sp == "1") , aes(x = sp , y = accuracy^2)) + geom_boxplot() + facet_wrap(~pretraitement)
+
+
+phenomique_grain_lot_2 %>% mutate(R2 = accuracy^2) %>% filter(nb_sp == "12") %>% group_by(pretraitement , nb_sp) %>% summarise(R2 = mean(R2))
+
+phenomique_grain_lot_2 %>% mutate(R2 = accuracy^2) %>% filter(nb_sp == "1") %>% group_by(pretraitement , nb_sp) %>% summarise(R2 = mean(R2))
+
+
+
+phenomique_grain_lot_2 %>% mutate(R2 = accuracy^2) %>% filter(nb_sp == "12") %>% group_by(pretraitement , nb_sp) %>% summarise(R2 = sd(R2))
+
+phenomique_grain_lot_2 %>% mutate(R2 = accuracy^2) %>% filter(nb_sp == "1") %>% group_by(pretraitement , nb_sp) %>% summarise(R2 = sd(R2))

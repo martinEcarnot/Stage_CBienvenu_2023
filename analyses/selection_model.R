@@ -233,3 +233,73 @@ par(mfrow = c(2,2))
 plot(mod)
 drop1(mod , .~. , test = "F")
 # pas bon
+
+
+
+
+
+
+
+
+
+
+
+
+# effet du génotype sur les traits des voisin -----------------------------
+
+don <- bac %>% filter(geno != "INCONNU" & appel == "present")
+
+# hauteur
+formule <- hauteur_voisin ~ geno + semis + bordure
+
+mod <- lm(formule , data = don)
+
+drop1(mod , .~. , test = "F")
+summary(mod)$r.squared
+
+
+# preco
+formule <- preco_voisin ~ geno + semis + BAC + bordure
+
+mod <- lm(formule , data = don)
+
+drop1(mod , .~. , test = "F")
+summary(mod)$r.squared
+
+
+# N_flag
+formule <- N_flag_voisin ~ geno + semis + BAC + bordure
+
+mod <- lm(formule , data = don)
+
+drop1(mod , .~. , test = "F")
+summary(mod)$r.squared
+
+
+# nb_epi
+formule <- nb_epi_voisin ~ geno + semis + BAC + bordure
+
+mod <- lm(formule , data = don)
+
+drop1(mod , .~. , test = "F")
+summary(mod)$r.squared
+
+
+
+# poids_epis
+formule <- poids_epis_voisin ~ geno + semis + BAC + nb_epi
+
+mod <- lm(formule , data = don)
+
+drop1(mod , .~. , test = "F")
+summary(mod)$r.squared
+
+
+
+# nb_voisin
+formule <- nb_voisin ~ geno + semis + bordure
+
+mod <- lm(formule , data = don)
+
+drop1(mod , .~. , test = "F")
+summary(mod)$r.squared
