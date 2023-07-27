@@ -48,12 +48,10 @@ rm(opto)
 
 
 
-traits <- c("preco","N_flag","hauteur","nb_epi","poids_epis")
+traits <- c("preco","N_flag","hauteur","nb_epi","poids_epis","surface_recolte_moy","surface_recolte_min","surface_recolte_max","PMG","PMG2","poids_moy","poids_min","poids_max")
 
 
 # Sélection light pour bonne estimation -----------------------------------
-
-# sur grain individuel
 
 don <- data.frame()
 test <- data.frame()
@@ -136,58 +134,77 @@ wilcox.test(nb_geno$ind , nb_geno$alea , alternative = "less")
 wilcox.test(nb_geno$lot , nb_geno$ind , alternative = "less")
 
 
+resultats <- function(t){
+  graph <- don %>% select(t, paste0(t,"_ind") , paste0(t,"_lot") , BAC , i) %>% gather(variable , value , c(t, paste0(t,"_ind") , paste0(t,"_lot"))) %>% mutate(group = paste0(BAC,variable))
+  
+  g <- ggplot(graph , aes(x = i , y = value , col = variable)) + geom_point() + geom_line() + labs(y = "Moyenne des populations selectionnees" , x = "Intensite de selection" , title = t) + facet_wrap(~BAC)
+  
+  print(g)
+  
+  
+  print(test %>% filter(trait == t))
+  
+  f <- as.formula(paste(t,"~ Surface + BAC + geno"))
+  
+  mod <- lm(f , data = pop)
+  drop1(mod , .~. , test = "F")
+  
+}
+
+
+
+
 
 
 # hauteur
-t <- "hauteur"
-
-graph <- don %>% select(t, paste0(t,"_ind") , paste0(t,"_lot") , BAC , i) %>% gather(variable , value , c(t, paste0(t,"_ind") , paste0(t,"_lot"))) %>% mutate(group = paste0(BAC,variable))
-
-ggplot(graph , aes(x = i , y = value , col = variable)) + geom_point() + geom_line() + labs(y = "Moyenne des populations s?lectionn?es" , x = "Intensit? de s?lection") + facet_wrap(~BAC)
-
-test %>% filter(trait == t)
+resultats("hauteur")
 
 
 
 # N_flag
-t <- "N_flag"
-
-graph <- don %>% select(t, paste0(t,"_ind") , paste0(t,"_lot") , BAC , i) %>% gather(variable , value , c(t, paste0(t,"_ind") , paste0(t,"_lot"))) %>% mutate(group = paste0(BAC,variable))
-
-ggplot(graph , aes(x = i , y = value , col = variable)) + geom_point() + geom_line() + labs(y = "Moyenne des populations s?lectionn?es" , x = "Intensit? de s?lection") + facet_wrap(~BAC)
-
-test %>% filter(trait == t)
+resultats("N_flag")
 
 
 # preco
-t <- "preco"
-
-graph <- don %>% select(t, paste0(t,"_ind") , paste0(t,"_lot") , BAC , i) %>% gather(variable , value , c(t, paste0(t,"_ind") , paste0(t,"_lot"))) %>% mutate(group = paste0(BAC,variable))
-
-ggplot(graph , aes(x = i , y = value , col = variable)) + geom_point() + geom_line() + labs(y = "Moyenne des populations s?lectionn?es" , x = "Intensit? de s?lection") + facet_wrap(~BAC)
-
-test %>% filter(trait == t)
+resultats("preco")
 
 
 # nb_epi
-t <- "nb_epi"
-
-graph <- don %>% select(t, paste0(t,"_ind") , paste0(t,"_lot") , BAC , i) %>% gather(variable , value , c(t, paste0(t,"_ind") , paste0(t,"_lot"))) %>% mutate(group = paste0(BAC,variable))
-
-ggplot(graph , aes(x = i , y = value , col = variable)) + geom_point() + geom_line() + labs(y = "Moyenne des populations s?lectionn?es" , x = "Intensit? de s?lection") + facet_wrap(~BAC)
-
-test %>% filter(trait == t)
+resultats("nb_epi")
 
 
 # poids_epis
-t <- "poids_epis"
+resultats("poids_epis")
 
-graph <- don %>% select(t, paste0(t,"_ind") , paste0(t,"_lot") , BAC , i) %>% gather(variable , value , c(t, paste0(t,"_ind") , paste0(t,"_lot"))) %>% mutate(group = paste0(BAC,variable))
 
-ggplot(graph , aes(x = i , y = value , col = variable)) + geom_point() + geom_line() + labs(y = "Moyenne des populations s?lectionn?es" , x = "Intensit? de s?lection") + facet_wrap(~BAC)
 
-test %>% filter(trait == t)
+# surface_recolte_moy
+resultats("surface_recolte_moy")
 
+
+# surface_recolte_max
+resultats("surface_recolte_max")
+
+
+# surface_recolte_min
+resultats("surface_recolte_min")
+
+
+
+# PMG
+resultats("PMG")
+
+
+# PMG2
+resultats("PMG2")
+
+
+# poids_min
+resultats("poids_min")
+
+
+# poids_max
+resultats("poids_max")
 
 
 

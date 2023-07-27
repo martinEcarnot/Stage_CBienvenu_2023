@@ -258,7 +258,7 @@ save(spectres_moy , file = "spectres_moyens")
 rm(list = ls())
 
 
-# Donnees optomachine -----------------------------------------------------
+# Donnees optomachine grains semes -----------------------------------------------------
 
 rm(list=ls())
 
@@ -1128,6 +1128,172 @@ save(bac , file = "bac")
 
 
 
+# Ajout des donnees optomachine des grains recoltes
+
+rm(list=ls())
+
+# recuperation de tous les noms
+file_names <- list.files(path = "./data_brute/opto_recolte_bac")
+
+# vérif que tout s'est bien passe
+for (f in file_names){
+  tab <- read.table(paste0("./data_brute/opto_recolte_bac/",f,"/",f,"_METRO_CLASSIFICATION.dat") , header = T , sep = "\t" , dec = ",")
+  
+  a <- "S03" %in% tab$Réf..Ech
+  
+  if (a == T){print(f)}
+}
+# ok y'a pas eu de cafouillage
+
+
+# constitution d'un gros tableau avec toutes les donnees
+library(data.table)
+
+load("bac")
+
+opto_recolte <- data.frame()
+
+
+
+for (f in file_names){
+  tab <- read.table(paste0("./data_brute/opto_recolte_bac/",f,"/",f,"_METRO_CLASSIFICATION.dat") , header = T , sep = "\t" , dec = ",")
+  
+  # pour avoir le PMG
+  tab2 <- fread(paste0("./data_brute/opto_recolte_bac/",f,"/",f,"_METRO_STATISTIQUES.dat") , header = T , sep = "\t" , dec = "," , nrows = 2)
+  
+  # le PMG est estime en prenant en compte les grains casses mais on sait pas si cette estimation est fiable. Donc :
+  # on garde cette estimation
+  PMG2 <- tab2$PMG
+  # on met aussi le calcul classique
+  PMG <- 1000 * tab2$`Masse totale mesurée` / tab2$`Nb graines`
+  
+  
+  
+  ind <- sapply(strsplit(f , "Mecarnot_") , "[" , 2)
+  
+  # cas du 201_1_2 qui est un rate pendant mesures
+  if (ind == "201_1_2"){
+    ind <- "201_1"
+    tab$Réf..Ech <- "S02"
+  }
+  
+  geno <- sapply(strsplit(ind , "_") , "[" , 1)
+  grain <- sapply(strsplit(ind , "_") , "[" , 2)
+  
+  tab$ind <- ind
+  tab$geno <- geno 
+  tab$grain <- grain
+  tab$PMG2 <- PMG2
+  tab$PMG <- PMG
+  
+  b <- bac[which(row.names(bac) == ind ) , c("BAC","bordure","semis","luz")]
+  
+  tab$BAC <- b$BAC
+  tab$bordure <- b$bordure
+  tab$semis <- b$semis
+  tab$luz <- b$luz
+
+  tab <- tab %>% relocate(luz , .before = Réf..Ech) %>% relocate(ind , .before = luz) %>% relocate(geno , .before = luz) %>% relocate(grain , .before = luz) %>% relocate(BAC , .before = luz) %>% relocate(bordure , .before = luz) %>% relocate(semis , .before = luz) %>% relocate(PMG , .before = luz) %>% relocate(PMG2 , .before = luz)
+  
+  opto_recolte <- rbind(opto_recolte , tab)
+}
+
+
+# renommage des variables comme pour opto
+
+names(opto_recolte)[10:108] <- c("Ref.Ech"  ,              
+                 "Index",                     "Longueur"      ,       "Longueur.interieure" ,
+                 "Largeur",              "Perimetre"      ,      "Perimetre.de.Crofton",
+                 "Perimetre.convexe",    "Dimetre.Eq"     ,     "Surface"            ,
+                 "Surface.convexe"  ,   "Surface.DiffCAP" ,    "Surface.DiffCEN"    ,
+                 "Surface.DiffEAP"  ,   "Finesse"                ,   "Excentricite"             ,
+                 "F.Feret"                ,  "Compacite"               ,  "Circularite"              ,
+                 "Rugosite"                 , "Index.de.courbure",         "Moment.inertie.1"         ,
+                 "Moment.inertie.2",          "Moment.inertie.3"  ,        "Symetrie"                 ,
+                 "Moyenne.ndg"      ,         "Ecart.type.ndg"     ,       "Minimum.ndg"              ,
+                 "Maximum.ndg"       ,        "Histo.Kurtose"      ,      "Histo.Moyenne"           ,
+                 "Histo.Pic"         ,       "Histo.Assymetrie"    ,     "Histo.Ecart.type"        ,
+                 "Histo.Variance"     ,      "Cooc.Uniformite"      ,    "Cooc.Contraste"          ,
+                 "Cooc.Correlation"    ,     "Cooc.Variance.globale" ,   "Cooc.Homogeneïte"        ,
+                 "Cooc.Somme.des.moyennes",  "Cooc.Somme.des.variances", "Cooc.Somme.des.entropies",
+                 "Cooc.Entropie.globale",    "Cooc.Ecart.variance",      "Cooc.Ecart.entropie"     ,
+                 "Cooc.Correlation.IC1"  ,   "Cooc.Correlation.IC2",     "RVB.R.Moy"                ,
+                 "RVB.R.Ect"               ,  "RVB.R.Min"             ,    "RVB.R.Max"                ,
+                 "RVB.V.Moy",                 "RVB.V.Ect"              ,   "RVB.V.Min"                ,
+                 "RVB.V.Max" ,                "RVB.B.Moy"               ,  "RVB.B.Ect"                ,
+                 "RVB.B.Min"  ,               "RVB.B.Max"                , "TSI.T.Moy"                ,
+                 "TSI.T.Ect"   ,              "TSI.T.Min",                 "TSI.T.Max"                ,
+                 "TSI.S.Moy"    ,             "TSI.S.Ect" ,                "TSI.S.Min"                ,
+                 "TSI.S.Max"     ,            "TSI.I.Moy"  ,               "TSI.I.Ect"                ,
+                 "TSI.I.Min"      ,           "TSI.I.Max"   ,              "CMJ.C.Moy"                ,
+                 "CMJ.C.Ect"       ,          "CMJ.C.Min"    ,             "CMJ.C.Max"                ,
+                 "CMJ.M.Moy"        ,         "CMJ.M.Ect"     ,            "CMJ.M.Min"                ,
+                 "CMJ.M.Max"         ,        "CMJ.J.Moy"      ,           "CMJ.J.Ect"                ,
+                 "CMJ.J.Min"          ,       "CMJ.J.Max"       ,          "Lab.L.Moy"                ,
+                 "Lab.L.Ect"           ,      "Lab.L.Min"        ,         "Lab.L.Max"                ,
+                 "Lab.a.Moy"            ,     "Lab.a.Ect"         ,        "Lab.a.Min"                ,
+                 "Lab.a.Max"             ,    "Lab.b.Moy"          ,       "Lab.b.Ect"                ,
+                 "Lab.b.Min"              ,   "Lab.b.Max" , "Classe" , "Masse.surfacique.gr.mm2" , "Poids.estime.g")
+
+
+
+
+# sauvegarde de tout ça
+save(opto_recolte , file = "opto_recolte")
+
+rm(list = ls())
+
+# ajout des variables au tableau bac
+load("bac")
+load("opto_recolte")
+
+
+# on ne garder que les epis du brin maitre et on prend des stats utiles
+
+ajout <- opto_recolte %>% filter(Ref.Ech == "S01") %>% group_by(ind) %>% summarise(surface_recolte_moy = mean(Surface) , surface_recolte_min = min(Surface) , surface_recolte_max = max(Surface) , PMG = mean(PMG) , PMG2 = mean(PMG2) , poids_moy = mean(Poids.estime.g) , poids_min = min(Poids.estime.g) , poids_max = max(Poids.estime.g)) %>% column_to_rownames(var = "ind")
+
+
+bac <- merge(bac,ajout , by = "row.names" , all.x = T)
+
+save(bac , file = "bac")
+
+
+
+# estimation des variances ------------------------------------------------
+rm(list=ls())
+
+load("opto_recolte")
+
+# quels ind ont ete passes pour plusieurs epis ?
+quel <- opto_recolte %>% filter(Ref.Ech == "S02")
+
+quelind <- unique(quel$ind)
+
+# on garde que ceux la
+estim_var <- opto_recolte %>% filter(ind %in% quelind)
+
+
+
+
+# Creation d'une variable epi digne de ce nom
+
+
+estim_var[1,"epi"] <- epi <- 1
+
+for (i in 2:nrow(estim_var)){
+  
+  if (estim_var[i-1,"Index"] > estim_var[i,"Index"]){epi <- epi+1}
+  
+  estim_var[i,"epi"] <- epi
+}
+
+estim_var <- estim_var %>% relocate(epi , .after = luz) %>% mutate_at(.vars = "epi" , .funs = as.factor)
+
+save(estim_var , file = "estim_var")
+
+
+
+rm()
 # matrice genotypique et map ----------------------------------------------
 
 rm(list = ls())
@@ -1405,3 +1571,7 @@ for (i in 1:nrow(champ)){
 
 
 save(champ , file = "champ")
+
+
+
+
