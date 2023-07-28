@@ -1296,6 +1296,26 @@ save(bac , file = "bac")
 
 
 
+
+
+
+# ajout des prot des epis recoltes
+
+rm(list=ls())
+
+prot <- read.table("./data_brute/Stage_CBienvenu_Prediction_proteines_NIRS_épis.csv" , header = T , sep = ";" , dec = ".") %>% column_to_rownames(var = "Nom") %>% mutate(Carbone = NULL)
+
+names(prot)[1] <- "prot_recolte"
+
+load("bac")
+
+
+bac <- merge(bac , prot , by = "row.names" , all.x = T) %>% column_to_rownames(var = "Row.names")
+
+
+save(bac , file = "bac")
+
+
 # estimation des variances ------------------------------------------------
 rm(list=ls())
 
@@ -1804,3 +1824,149 @@ champ <- merge(champ,ajout_non_classe , by = "row.names" , all.x = T) %>%
 
 save(champ , file = "champ")
 
+
+
+
+# ajout des donnees de prot recoltees
+
+rm(list=ls())
+
+prot <- read.table("./data_brute/Stage_CBienvenu_Prediction_proteines_NIRS_épis.csv" , header = T , sep = ";" , dec = ".") %>% column_to_rownames(var = "Nom")
+
+names(prot)[1] <- "prot_recolte"
+
+
+# on garde les bonnes lignes
+prot <- prot[grep("Rep" , row.names(prot)),]
+
+
+# correspondance entre les noms des etiquettes et le nom des id. l'info est contenue dans HAUTEUR_CHAMP_brute.xlsx
+
+eti <- c("1Petit",
+         "1gros",
+         "1Non Trie",
+         "2gros",
+         "2Moyen",
+         "3Non Trie",
+         "1Moyen",
+         "3Petit",
+         "3Moyen",
+         "3gros",
+         "2Non Trie",
+         "2Petit")
+
+id <- c("1_1_Petit",
+        "3_3_gros",
+        "inconnu2_inconnu2_Non Trie",
+        "3_1_gros",
+        "2_1_Moyen",
+        "inconnu1_inconnu1_Non Trie",
+        "1_2_Moyen",
+        "1_3_Petit",
+        "3_4_Moyen",
+        "2_2_gros",
+        "1_4_Non Trie",
+        "2_4_Petit")
+
+corre <- data.frame(etiquette = eti , id = id)
+
+ind <- sapply(strsplit(row.names(prot) , "Rep ") , "[" , 2)
+
+eti <- sapply(strsplit(ind , "_") , "[" , 1)
+
+pp <- c()
+for (e in eti){
+  pp <- c(pp , corre[which(corre$etiquette == e),"id"])
+}
+
+
+epi <- sapply(strsplit(ind , "_") , "[" , 2)
+
+id <- paste0(pp,"_",epi)
+
+row.names(prot) <- id
+
+prot$Carbone <- NULL
+
+load("champ")
+
+
+champ <- merge(champ , prot , by = "row.names" , all.x = T) %>% column_to_rownames(var = "Row.names")
+
+
+save(champ , file = "champ")
+
+
+
+
+
+# calcul des dif de selection
+
+rm(list = ls())
+
+file_names <- list.files(path = "./data_brute/opto_semis_champ")
+
+
+opto_semis_champ <- data.frame()
+
+for (f in file_names){
+  
+  f2 <- list.files(path = paste0("./data_brute/opto_semis_champ/",f))[8]
+  
+  tab <- read.table(paste0("./data_brute/opto_semis_champ/",f,"/",f2) , header = T , sep = "\t" , dec = ",")
+  
+  
+  tab$taille_rep <- sapply(strsplit(f,"EPO_") , "[" , 2)
+  tab$taille <- sapply(strsplit(f,"_") , "[" , 6)
+  
+  
+  opto_semis_champ <- rbind(opto_semis_champ , tab)
+}
+
+
+
+
+names(opto_semis_champ)[1:99] <- c("Ref.Ech"  ,              
+                                     "Index",                     "Longueur"      ,       "Longueur.interieure" ,
+                                     "Largeur",              "Perimetre"      ,      "Perimetre.de.Crofton",
+                                     "Perimetre.convexe",    "Dimetre.Eq"     ,     "Surface"            ,
+                                     "Surface.convexe"  ,   "Surface.DiffCAP" ,    "Surface.DiffCEN"    ,
+                                     "Surface.DiffEAP"  ,   "Finesse"                ,   "Excentricite"             ,
+                                     "F.Feret"                ,  "Compacite"               ,  "Circularite"              ,
+                                     "Rugosite"                 , "Index.de.courbure",         "Moment.inertie.1"         ,
+                                     "Moment.inertie.2",          "Moment.inertie.3"  ,        "Symetrie"                 ,
+                                     "Moyenne.ndg"      ,         "Ecart.type.ndg"     ,       "Minimum.ndg"              ,
+                                     "Maximum.ndg"       ,        "Histo.Kurtose"      ,      "Histo.Moyenne"           ,
+                                     "Histo.Pic"         ,       "Histo.Assymetrie"    ,     "Histo.Ecart.type"        ,
+                                     "Histo.Variance"     ,      "Cooc.Uniformite"      ,    "Cooc.Contraste"          ,
+                                     "Cooc.Correlation"    ,     "Cooc.Variance.globale" ,   "Cooc.Homogeneïte"        ,
+                                     "Cooc.Somme.des.moyennes",  "Cooc.Somme.des.variances", "Cooc.Somme.des.entropies",
+                                     "Cooc.Entropie.globale",    "Cooc.Ecart.variance",      "Cooc.Ecart.entropie"     ,
+                                     "Cooc.Correlation.IC1"  ,   "Cooc.Correlation.IC2",     "RVB.R.Moy"                ,
+                                     "RVB.R.Ect"               ,  "RVB.R.Min"             ,    "RVB.R.Max"                ,
+                                     "RVB.V.Moy",                 "RVB.V.Ect"              ,   "RVB.V.Min"                ,
+                                     "RVB.V.Max" ,                "RVB.B.Moy"               ,  "RVB.B.Ect"                ,
+                                     "RVB.B.Min"  ,               "RVB.B.Max"                , "TSI.T.Moy"                ,
+                                     "TSI.T.Ect"   ,              "TSI.T.Min",                 "TSI.T.Max"                ,
+                                     "TSI.S.Moy"    ,             "TSI.S.Ect" ,                "TSI.S.Min"                ,
+                                     "TSI.S.Max"     ,            "TSI.I.Moy"  ,               "TSI.I.Ect"                ,
+                                     "TSI.I.Min"      ,           "TSI.I.Max"   ,              "CMJ.C.Moy"                ,
+                                     "CMJ.C.Ect"       ,          "CMJ.C.Min"    ,             "CMJ.C.Max"                ,
+                                     "CMJ.M.Moy"        ,         "CMJ.M.Ect"     ,            "CMJ.M.Min"                ,
+                                     "CMJ.M.Max"         ,        "CMJ.J.Moy"      ,           "CMJ.J.Ect"                ,
+                                     "CMJ.J.Min"          ,       "CMJ.J.Max"       ,          "Lab.L.Moy"                ,
+                                     "Lab.L.Ect"           ,      "Lab.L.Min"        ,         "Lab.L.Max"                ,
+                                     "Lab.a.Moy"            ,     "Lab.a.Ect"         ,        "Lab.a.Min"                ,
+                                     "Lab.a.Max"             ,    "Lab.b.Moy"          ,       "Lab.b.Ect"                ,
+                                     "Lab.b.Min"              ,   "Lab.b.Max" , "Classe" , "Masse.surfacique.gr.mm2" , "Poids.estime.g")
+
+
+# calcul
+
+diff <- opto_semis_champ %>% group_by(taille_rep) %>% summarise(surface = mean(Surface))
+
+# ok pas de diff entre les rep
+
+diff <- opto_semis_champ %>% group_by(taille) %>% summarise(surface = mean(Surface))
+
+diff
