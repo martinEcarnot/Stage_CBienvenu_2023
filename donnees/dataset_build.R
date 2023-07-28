@@ -956,6 +956,8 @@ save(bac , file = "bac")
 
 # Ajout des donnees de hauteur du brin maitre
 
+rm(list = ls())
+
 load("bac")
 
 h <- read.table("./data_brute/mesure_hauteur.csv" , header = F , sep = ";" , dec = ".")
@@ -983,6 +985,8 @@ save(bac , file = "bac")
 
 
 # ajout des donnees poids d'epi
+
+rm(list = ls())
 
 load("bac")
 
@@ -1018,6 +1022,8 @@ save(bac , file = "bac")
 
 
 # ajout variable bordure
+
+rm(list = ls())
 
 load("bac")
 
@@ -1136,13 +1142,13 @@ rm(list=ls())
 file_names <- list.files(path = "./data_brute/opto_recolte_bac")
 
 # vérif que tout s'est bien passe
-for (f in file_names){
-  tab <- read.table(paste0("./data_brute/opto_recolte_bac/",f,"/",f,"_METRO_CLASSIFICATION.dat") , header = T , sep = "\t" , dec = ",")
-  
-  a <- "S03" %in% tab$Réf..Ech
-  
-  if (a == T){print(f)}
-}
+# for (f in file_names){
+#   tab <- read.table(paste0("./data_brute/opto_recolte_bac/",f,"/",f,"_METRO_CLASSIFICATION.dat") , header = T , sep = "\t" , dec = ",")
+#   
+#   a <- "S03" %in% tab$Réf..Ech
+#   
+#   if (a == T){print(f)}
+# }
 # ok y'a pas eu de cafouillage
 
 
@@ -1151,22 +1157,16 @@ library(data.table)
 
 load("bac")
 
-opto_recolte <- data.frame()
+opto_recolte_bac <- data.frame()
 
 
 
 for (f in file_names){
-  tab <- read.table(paste0("./data_brute/opto_recolte_bac/",f,"/",f,"_METRO_CLASSIFICATION.dat") , header = T , sep = "\t" , dec = ",")
+  
+    tab <- read.table(paste0("./data_brute/opto_recolte_bac/",f,"/",f,"_METRO_CLASSIFICATION.dat") , header = T , sep = "\t" , dec = ",")
   
   # pour avoir le PMG
   tab2 <- fread(paste0("./data_brute/opto_recolte_bac/",f,"/",f,"_METRO_STATISTIQUES.dat") , header = T , sep = "\t" , dec = "," , nrows = 2)
-  
-  # le PMG est estime en prenant en compte les grains casses mais on sait pas si cette estimation est fiable. Donc :
-  # on garde cette estimation
-  PMG2 <- tab2$PMG
-  # on met aussi le calcul classique
-  PMG <- 1000 * tab2$`Masse totale mesurée` / tab2$`Nb graines`
-  
   
   
   ind <- sapply(strsplit(f , "Mecarnot_") , "[" , 2)
@@ -1183,8 +1183,6 @@ for (f in file_names){
   tab$ind <- ind
   tab$geno <- geno 
   tab$grain <- grain
-  tab$PMG2 <- PMG2
-  tab$PMG <- PMG
   
   b <- bac[which(row.names(bac) == ind ) , c("BAC","bordure","semis","luz")]
   
@@ -1192,16 +1190,24 @@ for (f in file_names){
   tab$bordure <- b$bordure
   tab$semis <- b$semis
   tab$luz <- b$luz
+  
+  
+  # sans classification cassés
+  PMG <- 1000 * tab2$`Masse totale mesurée` / tab2$`Nb graines`
+  tab$PMG <- PMG
+  
+  # Avec classification cassé
+  tab$PMG2 <- tab2$`PMG Clas. C1`
 
   tab <- tab %>% relocate(luz , .before = Réf..Ech) %>% relocate(ind , .before = luz) %>% relocate(geno , .before = luz) %>% relocate(grain , .before = luz) %>% relocate(BAC , .before = luz) %>% relocate(bordure , .before = luz) %>% relocate(semis , .before = luz) %>% relocate(PMG , .before = luz) %>% relocate(PMG2 , .before = luz)
   
-  opto_recolte <- rbind(opto_recolte , tab)
+  opto_recolte_bac <- rbind(opto_recolte_bac , tab)
 }
 
 
 # renommage des variables comme pour opto
 
-names(opto_recolte)[10:108] <- c("Ref.Ech"  ,              
+names(opto_recolte_bac)[10:108] <- c("Ref.Ech"  ,              
                  "Index",                     "Longueur"      ,       "Longueur.interieure" ,
                  "Largeur",              "Perimetre"      ,      "Perimetre.de.Crofton",
                  "Perimetre.convexe",    "Dimetre.Eq"     ,     "Surface"            ,
@@ -1239,21 +1245,52 @@ names(opto_recolte)[10:108] <- c("Ref.Ech"  ,
 
 
 # sauvegarde de tout ça
-save(opto_recolte , file = "opto_recolte")
+save(opto_recolte_bac , file = "opto_recolte_bac")
 
 rm(list = ls())
 
+
+
+
 # ajout des variables au tableau bac
 load("bac")
-load("opto_recolte")
+load("opto_recolte_bac")
 
 
 # on ne garder que les epis du brin maitre et on prend des stats utiles
 
-ajout <- opto_recolte %>% filter(Ref.Ech == "S01") %>% group_by(ind) %>% summarise(surface_recolte_moy = mean(Surface) , surface_recolte_min = min(Surface) , surface_recolte_max = max(Surface) , PMG = mean(PMG) , PMG2 = mean(PMG2) , poids_moy = mean(Poids.estime.g) , poids_min = min(Poids.estime.g) , poids_max = max(Poids.estime.g)) %>% column_to_rownames(var = "ind")
+ajout_non_classe <- opto_recolte_bac %>% 
+  mutate(count = 1) %>%
+  filter(Ref.Ech == "S01") %>% 
+  group_by(ind) %>% 
+  summarise(surface_recolte_moy = mean(Surface) , 
+            surface_recolte_min = min(Surface) , 
+            surface_recolte_max = max(Surface) , 
+            PMG = mean(PMG) , 
+            poids_moy = mean(Poids.estime.g) , 
+            poids_min = min(Poids.estime.g) , 
+            poids_max = max(Poids.estime.g),
+            nb_grain = sum(count)) %>% 
+  column_to_rownames(var = "ind")
+
+ajout_classe <- opto_recolte_bac %>% 
+  mutate(count = 1) %>%
+  filter(Ref.Ech == "S01" & Classe == 1) %>% 
+  group_by(ind) %>% 
+  summarise(surface_recolte_moy2 = mean(Surface) , 
+            surface_recolte_min2 = min(Surface) , 
+            surface_recolte_max2 = max(Surface) , 
+            PMG2 = mean(PMG2) , 
+            poids_moy2 = mean(Poids.estime.g) , 
+            poids_min2 = min(Poids.estime.g) , 
+            poids_max2 = max(Poids.estime.g)) %>%
+  column_to_rownames(var = "ind")
 
 
-bac <- merge(bac,ajout , by = "row.names" , all.x = T)
+bac <- merge(bac,ajout_non_classe , by = "row.names" , all.x = T) %>% 
+  column_to_rownames(var = "Row.names") %>%
+  merge(ajout_classe , by = "row.names" , all.x = T) %>%
+  column_to_rownames(var = "Row.names")
 
 save(bac , file = "bac")
 
@@ -1530,6 +1567,8 @@ rm(list=ls())
 
 # donnees champ -----------------------------------------------------------
 
+rm(list=ls())
+
 tab <- read.table("data_brute/hauteur_champ.csv" , header = F , sep = ";" , dec = ".")
 
 
@@ -1574,4 +1613,194 @@ save(champ , file = "champ")
 
 
 
+
+# formatage des données d'optomachine
+
+rm(list = ls())
+
+# correspondance entre les noms des etiquettes et le nom des id. l'info est contenue dans HAUTEUR_CHAMP_brute.xlsx
+
+eti <- c("1Petit",
+         "1gros",
+         "1Non Trie",
+         "2gros",
+         "2Moyen",
+         "3Non Trie",
+         "1Moyen",
+         "3Petit",
+         "3Moyen",
+         "3gros",
+         "2Non Trie",
+         "2Petit")
+
+id <- c("1_1_Petit",
+        "3_3_gros",
+        "inconnu2_inconnu2_Non Trie",
+        "3_1_gros",
+        "2_1_Moyen",
+        "inconnu1_inconnu1_Non Trie",
+        "1_2_Moyen",
+        "1_3_Petit",
+        "3_4_Moyen",
+        "2_2_gros",
+        "1_4_Non Trie",
+        "2_4_Petit")
+
+corre <- data.frame(etiquette = eti , id = id)
+
+
+file_names <- list.files(path = "./data_brute/opto_recolte_champ")
+
+opto_recolte_champ <- data.frame()
+
+for (f in file_names){
+  
+  tab <- read.table(paste0("./data_brute/opto_recolte_champ/",f,"/",f,"_METRO_CLASSIFICATION.dat") , header = T , sep = "\t" , dec = ",")
+  
+  # pour avoir le PMG
+  tab2 <- fread(paste0("./data_brute/opto_recolte_champ/",f,"/",f,"_METRO_STATISTIQUES.dat") , header = T , sep = "\t" , dec = "," , nrows = 2)
+  
+  
+  ind <- sapply(strsplit(f , "Rep ") , "[" , 2)
+  
+  eti <- sapply(strsplit(ind , "_") , "[" , 1)
+  pp <- corre[which(corre$etiquette == eti),"id"]
+  epi <- sapply(strsplit(ind , "_") , "[" , 2)
+  
+  id <- paste0(pp,"_",epi)
+  
+  pas <- sapply(strsplit(id , "_") , "[" , 1)
+  
+  pl <- sapply(strsplit(id , "_") , "[" , 2)
+  
+  tab$id <- id
+  tab$passage <- pas
+  tab$planche <- pl
+  
+  # sans classification cassés
+  PMG <- 1000 * tab2$`Masse totale mesurée` / tab2$`Nb graines`
+  tab$PMG <- PMG
+  
+  # Avec classification cassé
+  tab$PMG2 <- tab2$`PMG Clas. C1`
+  
+  opto_recolte_champ <- rbind(opto_recolte_champ , tab)
+}
+
+names(opto_recolte_champ)[1:99] <- c("Ref.Ech"  ,              
+                 "Index",                     "Longueur"      ,       "Longueur.interieure" ,
+                 "Largeur",              "Perimetre"      ,      "Perimetre.de.Crofton",
+                 "Perimetre.convexe",    "Dimetre.Eq"     ,     "Surface"            ,
+                 "Surface.convexe"  ,   "Surface.DiffCAP" ,    "Surface.DiffCEN"    ,
+                 "Surface.DiffEAP"  ,   "Finesse"                ,   "Excentricite"             ,
+                 "F.Feret"                ,  "Compacite"               ,  "Circularite"              ,
+                 "Rugosite"                 , "Index.de.courbure",         "Moment.inertie.1"         ,
+                 "Moment.inertie.2",          "Moment.inertie.3"  ,        "Symetrie"                 ,
+                 "Moyenne.ndg"      ,         "Ecart.type.ndg"     ,       "Minimum.ndg"              ,
+                 "Maximum.ndg"       ,        "Histo.Kurtose"      ,      "Histo.Moyenne"           ,
+                 "Histo.Pic"         ,       "Histo.Assymetrie"    ,     "Histo.Ecart.type"        ,
+                 "Histo.Variance"     ,      "Cooc.Uniformite"      ,    "Cooc.Contraste"          ,
+                 "Cooc.Correlation"    ,     "Cooc.Variance.globale" ,   "Cooc.Homogeneïte"        ,
+                 "Cooc.Somme.des.moyennes",  "Cooc.Somme.des.variances", "Cooc.Somme.des.entropies",
+                 "Cooc.Entropie.globale",    "Cooc.Ecart.variance",      "Cooc.Ecart.entropie"     ,
+                 "Cooc.Correlation.IC1"  ,   "Cooc.Correlation.IC2",     "RVB.R.Moy"                ,
+                 "RVB.R.Ect"               ,  "RVB.R.Min"             ,    "RVB.R.Max"                ,
+                 "RVB.V.Moy",                 "RVB.V.Ect"              ,   "RVB.V.Min"                ,
+                 "RVB.V.Max" ,                "RVB.B.Moy"               ,  "RVB.B.Ect"                ,
+                 "RVB.B.Min"  ,               "RVB.B.Max"                , "TSI.T.Moy"                ,
+                 "TSI.T.Ect"   ,              "TSI.T.Min",                 "TSI.T.Max"                ,
+                 "TSI.S.Moy"    ,             "TSI.S.Ect" ,                "TSI.S.Min"                ,
+                 "TSI.S.Max"     ,            "TSI.I.Moy"  ,               "TSI.I.Ect"                ,
+                 "TSI.I.Min"      ,           "TSI.I.Max"   ,              "CMJ.C.Moy"                ,
+                 "CMJ.C.Ect"       ,          "CMJ.C.Min"    ,             "CMJ.C.Max"                ,
+                 "CMJ.M.Moy"        ,         "CMJ.M.Ect"     ,            "CMJ.M.Min"                ,
+                 "CMJ.M.Max"         ,        "CMJ.J.Moy"      ,           "CMJ.J.Ect"                ,
+                 "CMJ.J.Min"          ,       "CMJ.J.Max"       ,          "Lab.L.Moy"                ,
+                 "Lab.L.Ect"           ,      "Lab.L.Min"        ,         "Lab.L.Max"                ,
+                 "Lab.a.Moy"            ,     "Lab.a.Ect"         ,        "Lab.a.Min"                ,
+                 "Lab.a.Max"             ,    "Lab.b.Moy"          ,       "Lab.b.Ect"                ,
+                 "Lab.b.Min"              ,   "Lab.b.Max" , "Classe" , "Masse.surfacique.gr.mm2" , "Poids.estime.g")
+
+
+# creation d'une variable parcelle
+
+
+opto_recolte_champ$parcelle <- paste0(opto_recolte_champ$passage,opto_recolte_champ$planche)
+
+for (i in 1:nrow(opto_recolte_champ)){
+  if (opto_recolte_champ[i,"parcelle"] == "11"){opto_recolte_champ[i,"parcelle"] <- "1"}
+  if (opto_recolte_champ[i,"parcelle"] == "21"){opto_recolte_champ[i,"parcelle"] <- "2"}
+  if (opto_recolte_champ[i,"parcelle"] == "31"){opto_recolte_champ[i,"parcelle"] <- "3"}
+  if (opto_recolte_champ[i,"parcelle"] == "12"){opto_recolte_champ[i,"parcelle"] <- "4"}
+  if (opto_recolte_champ[i,"parcelle"] == "22"){opto_recolte_champ[i,"parcelle"] <- "5"}
+  if (opto_recolte_champ[i,"parcelle"] == "inconnu1inconnu1"){opto_recolte_champ[i,"parcelle"] <- "6"}
+  if (opto_recolte_champ[i,"parcelle"] == "13"){opto_recolte_champ[i,"parcelle"] <- "7"}
+  if (opto_recolte_champ[i,"parcelle"] == "inconnu2inconnu2"){opto_recolte_champ[i,"parcelle"] <- "8"}
+  if (opto_recolte_champ[i,"parcelle"] == "33"){opto_recolte_champ[i,"parcelle"] <- "9"}
+  if (opto_recolte_champ[i,"parcelle"] == "14"){opto_recolte_champ[i,"parcelle"] <- "10"}
+  if (opto_recolte_champ[i,"parcelle"] == "24"){opto_recolte_champ[i,"parcelle"] <- "11"}
+  if (opto_recolte_champ[i,"parcelle"] == "34"){opto_recolte_champ[i,"parcelle"] <- "12"}
+}
+
+
+opto_recolte_champ <- opto_recolte_champ %>% 
+  relocate(PMG2 , .before = Ref.Ech) %>% 
+  relocate(id , .before = PMG2) %>%
+  relocate(parcelle , .before = PMG2) %>%
+  relocate(passage , .before = PMG2) %>%
+  relocate(planche , .before = PMG2) %>%
+  relocate(PMG , .before = PMG2)
+
+
+save(opto_recolte_champ , file = "opto_recolte_champ")
+
+
+
+
+
+
+# ajout des variables au tableau champ
+
+rm(list=ls())
+load("champ")
+load("opto_recolte_champ")
+
+
+
+ajout_non_classe <- opto_recolte_champ %>% 
+  mutate(count = 1) %>%
+  group_by(id) %>% 
+  summarise(surface_recolte_moy = mean(Surface) , 
+            surface_recolte_min = min(Surface) , 
+            surface_recolte_max = max(Surface) , 
+            PMG = mean(PMG) , 
+            poids_moy = mean(Poids.estime.g) , 
+            poids_min = min(Poids.estime.g) , 
+            poids_max = max(Poids.estime.g),
+            nb_grain = sum(count)) %>% 
+  column_to_rownames(var = "id")
+
+ajout_classe <- opto_recolte_champ %>% 
+  mutate(count = 1) %>%
+  filter(Classe == 1) %>% 
+  group_by(id) %>% 
+  summarise(surface_recolte_moy2 = mean(Surface) , 
+            surface_recolte_min2 = min(Surface) , 
+            surface_recolte_max2 = max(Surface) , 
+            PMG2 = mean(PMG2) , 
+            poids_moy2 = mean(Poids.estime.g) , 
+            poids_min2 = min(Poids.estime.g) , 
+            poids_max2 = max(Poids.estime.g)) %>%
+  column_to_rownames(var = "id")
+
+
+
+champ <- merge(champ,ajout_non_classe , by = "row.names" , all.x = T) %>% 
+  column_to_rownames(var = "Row.names") %>%
+  merge(ajout_classe , by = "row.names" , all.x = T) %>%
+  column_to_rownames(var = "Row.names")
+
+
+
+save(champ , file = "champ")
 
