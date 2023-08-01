@@ -13,6 +13,8 @@ library(ggpubr)
 
 
 
+H2 <- data.frame()
+
 
 # H2 des donnees optomachine ----------------------------------------------
 
@@ -27,11 +29,11 @@ calcul_H2_opto <- function(i , don){
 # données simples
 load("../donnees/opto")
 
-traits <- c("Longueur" , "Largeur" , "Perimetre" , "Surface" , "Finesse" , "prot_semis")
+traits <- c("Longueur" , "Largeur" , "Perimetre" , "Surface" , "Finesse" , "prot_semis.x")
 
-apply(X = opto[,traits] , MARGIN = 2 , FUN = calcul_H2_opto , don = opto)
+a <- apply(X = opto[,traits] , MARGIN = 2 , FUN = calcul_H2_opto , don = opto)
 
-
+H2[traits,"H2"] <- a
 
 # # variance du grain
 # opto$vgrain <- ifelse(opto$grain <= 6 , "1" , "bis")
@@ -60,19 +62,31 @@ calcul_H2 <- function(f,don){
 
 load("../donnees/bac")
 
-don <- bac %>% filter(geno != "INCONNU" & appel == "present")
+ggplot(bac , aes(x = hauteur)) + geom_histogram()
+
+don <- bac %>% filter(geno != "INCONNU" & appel == "present" & hauteur > 50)
+
+don$h <- (don$hauteur - don$hauteur_voisin)/don$hauteur
+plot(hauteur~h  , data = don)
+hist(don$h)
+mean(don$h)
 
 # Hauteur
 # model selectionne
-f <- hauteur ~ (1|geno) + semis + bordure + hauteur_voisin
+f <- poids_epis ~ (1|geno) + semis + bordure + h
 
-calcul_H2(f = f , don = don)
+mod <-lmer(f , data = don)
+
+H2["hauteur","H2"] <- calcul_H2(f = f , don = don)
 
 
 # preco
 # model selectionne
-f <- preco ~ (1|geno) + semis + BAC + bordure + preco_voisin
-calcul_H2(f = f , don = don)
+f <- preco ~ (1|geno) + semis + BAC + bordure + nb_voisin + preco_voisin
+
+mod <- lmer(f,data=don)
+
+H2["preco","H2"] <- calcul_H2(f = f , don = don)
 
 
 # N_flag
@@ -81,7 +95,7 @@ f <- N_flag ~ semis + BAC + bordure + N_flag_voisin + nb_voisin # pas d'effet ge
 
 f <- N_flag ~ semis + BAC + bordure + N_flag_voisin + (1|geno)
 
-calcul_H2(f = f , don = don)
+H2["N_flag","H2"] <- calcul_H2(f = f , don = don)
 
 
 # nb_epi
@@ -89,20 +103,63 @@ calcul_H2(f = f , don = don)
 f <- nb_epi ~ semis + BAC + bordure + nb_epi_voisin # pas geno, on essaye quand même pour voir
 f <- nb_epi ~ semis + BAC + bordure + nb_epi_voisin + (1|geno) 
 
-calcul_H2(f = f , don = don)
+mod <- lmer(f , data=don)
 
+H2["nb_epi","H2"] <- calcul_H2(f = f , don = don)
 
+ggplot(bac , aes(x = X , y = Y , fill = nb_epi)) + geom_tile() + facet_wrap(~BAC)
 
 # poids_epis
 # mod sel 
 f <- poids_epis ~ semis + BAC + nb_epi # pas geno, on essaye quand même pour voir
-f <- poids_epis ~ semis + BAC + nb_epi + (1|geno)
+f <- poids_epis ~ semis + BAC + (1|geno) + nb_voisin + hauteur_voisin
 
-calcul_H2(f = f , don = don)
+mod <- lmer(f,data=don)
+
+H2["poids_epis","H2"] <- calcul_H2(f = f , don = don)
 
 
 
 
+# PMG
+f <- PMG ~ semis + BAC + bordure + nb_epi + (1|geno)
+H2["PMG","H2"] <- calcul_H2(f = f , don = don)
+
+
+
+# GSV
+f <- GSV ~ bordure + nb_epi + (1|geno)
+H2["GSV","H2"] <- calcul_H2(f = f , don = don)
+
+
+# surface
+f <- surface_recolte_moy ~ (1|geno) + semis + BAC + bordure + nb_epi
+H2["surface","H2"] <- calcul_H2(f = f , don = don)
+
+
+
+# prot_recolte
+f <- prot_recolte ~ semis + BAC + bordure + nb_epi + BAC:bordure + (1|geno)
+H2["prot_recolte","H2"] <- calcul_H2(f = f , don = don)
+
+
+save(H2 , file="../donnees/H2")
+
+
+
+
+
+
+don <- bac %>% filter(geno != "INCONNU")
+
+hist(table(bac$geno,bac$appel)[,1])
+table(bac$geno,bac$appel)[,1] + table(bac$geno,bac$appel)[,2]
+hist(table(bac$geno,bac$appel)[,2])
+
+
+hist(table(don$geno,don$appel)[,1])
+table(don$geno,don$appel)[,1] + table(don$geno,don$appel)[,2]
+hist(table(don$geno,don$appel)[,2])
 
 
 

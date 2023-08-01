@@ -54,6 +54,7 @@ ggplot(don , aes(x = poids_epis_voisin , y = poids_epis)) + geom_point() + geom_
 
 don <- bac %>% filter(geno != "INCONNU" & appel == "present")
 
+ggplot(don , aes(x = hauteur)) + geom_histogram()
 
 # hauteur
 formule1 <- hauteur ~ geno + semis + luz + BAC + bordure + luz/BAC + BAC/bordure + hauteur_voisin
@@ -158,6 +159,54 @@ step(lm(formule3 , data=don), direction="both")
 
 step(lm(formule4 , data=don), direction="both")
 #  poids_epis ~ semis + luz + nb_epi   AIC=1198.19
+
+
+
+
+# PMG
+formule1 <- PMG ~ geno + semis + BAC + luz + bordure + luz:BAC + BAC:bordure + nb_epi
+step(lm(formule1 , data=don), direction="both")
+# PMG ~ semis + BAC + bordure + nb_epi  AIC=4217
+
+
+
+# surface_recolte_moy
+formule1 <- surface_recolte_moy ~ geno + semis + BAC + luz + bordure + luz:BAC + BAC:bordure + nb_epi
+step(lm(formule1 , data=don), direction="both")
+# surface_recolte_moy ~ geno + semis + BAC + bordure + nb_epi  AIC=4217
+
+
+
+# surface_recolte_min
+formule1 <- surface_recolte_min ~ geno + semis + BAC + luz + bordure + luz:BAC + BAC:bordure + nb_epi
+step(lm(formule1 , data=don), direction="both")
+# surface_recolte_min ~ BAC + nb_epi  AIC=4217
+
+
+
+# surface_recolte_max
+formule1 <- surface_recolte_max ~ geno + semis + BAC + luz + bordure + luz:BAC + BAC:bordure + nb_epi
+step(lm(formule1 , data=don), direction="both")
+# surface_recolte_max ~ semis + BAC + bordure + nb_epi  AIC=4217
+
+
+# GSV
+formule1 <- GSV ~ geno + semis + BAC + luz + bordure + luz:BAC + BAC:bordure + nb_epi
+step(lm(formule1 , data=don), direction="both")
+# GSV ~ bordure + nb_epi  AIC=4217
+
+
+
+# prot_recolte
+formule1 <- prot_recolte ~ geno + semis + BAC + luz + bordure + luz:BAC + BAC:bordure + nb_epi
+step(lm(formule1 , data=don), direction="both")
+# prot_recolte ~ bordure + nb_epi  AIC=4217
+
+
+
+
+
+
 
 
 

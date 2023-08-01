@@ -1711,6 +1711,8 @@ for (f in file_names){
   tab$PMG2 <- tab2$`PMG Clas. C1`
   tab$GSV2 <- sd(subset(tab , Classe == 1)$Surface..mm2.)
   
+  tab$nb_grain <- nrow(tab)
+  
   opto_recolte_champ <- rbind(opto_recolte_champ , tab)
 }
 
@@ -1778,6 +1780,7 @@ opto_recolte_champ <- opto_recolte_champ %>%
   relocate(planche , .before = PMG2) %>%
   relocate(GSV , .before = PMG2) %>%
   relocate(GSV2 , .before = PMG2) %>%
+  relocate(nb_grain , .before = PMG2) %>%
   relocate(PMG , .before = PMG2)
 
 
@@ -2019,3 +2022,5 @@ row.names(S)[1] <- "gros"
 S <- S[-2,]
 
 save(S , file = "S")
+save(opto_semis_champ , file = "opto_semis_champ")
+

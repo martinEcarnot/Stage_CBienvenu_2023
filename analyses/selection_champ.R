@@ -10,47 +10,58 @@ library(ggplot2)
 #library(multcomp)
 library(lme4)
 library(lmerTest)
+#library(FactoMineR)
 
 
 
-# fonctions ---------------------------------------------------------------
+# que est ce qui a ete selectionne ----------------------------------------
 
 
-tri.to.squ<-function(x)
-{
-  rn <- row.names(x)
-  cn <- colnames(x)
-  an <- unique(c(cn,rn))
-  myval <-  x[!is.na(x)]
-  mymat <-  matrix(1,nrow=length(an),ncol=length(an),dimnames=list(an,an))
-  for(ext in 1:length(cn))
-  {
-    for(int in 1:length(rn))
-    {
-      if(is.na(x[row.names(x)==rn[int],colnames(x)==cn[ext]])) next
-      mymat[row.names(mymat)==rn[int],colnames(mymat)==cn[ext]]<-x[row.names(x)==rn[int],colnames(x)==cn[ext]]
-      mymat[row.names(mymat)==cn[ext],colnames(mymat)==rn[int]]<-x[row.names(x)==rn[int],colnames(x)==cn[ext]]
-    }
-    
-  }
-  return(mymat)
+load("../donnees/opto_semis_champ")
+
+
+# qu'est-ce qui a ete selectionne
+traits <- c("Surface","Longueur","Largeur","Perimetre","Finesse","Circularite","Excentricite","Index.de.courbure")
+
+NT <- opto_semis_champ %>% filter(taille == "NonTrie")
+sel <- opto_semis_champ %>% filter(taille != "NonTrie")
+
+diff <- sel %>% group_by(taille) %>% summarise_at(.vars = traits , .funs = mean) %>% column_to_rownames(var = "taille")
+
+mu <- apply(X = NT[,traits] , MARGIN = 2 , FUN = mean)
+
+sigma <- apply(X = NT[,traits] , MARGIN = 2 , FUN = sd)
+
+i <- data.frame()
+
+for (t in c("Gros","moyen","petit")){
+  i[t,traits] <- (diff[t,] - mu)/sigma
 }
 
 
+ggplot(opto_semis_champ , aes(x = Surface)) + geom_histogram()
+ggplot(opto_semis_champ , aes(y = Surface , x = taille)) + geom_boxplot()
 
-wilcox_letters <- function(y,x,donnees){
-  a <- pairwise.wilcox.test(donnees[,y] , donnees[,x] , p.adjust.method ="holm")
-  
-  b <-tri.to.squ(a$p.value)
-  
-  c <- multcompLetters(b,compare="<=",threshold=0.05,Letters=letters)
-  
-  tab <- data.frame(a = names(c$Letters), groups = c$Letters)
-  
-  names(tab)[1] <- x
-  
-  return(tab)
-}
+
+ggplot(champ , aes(x = surface_recolte_moy)) + geom_histogram()
+
+ggplot(champ , aes(x = PMG)) + geom_histogram()
+
+ggplot(champ , aes(x = GSV)) + geom_histogram()
+
+
+
+# ACP des grains tamises --------------------------------------------------
+
+rm(list=ls())
+
+load("../donnees/opto_semis_champ")
+
+# ça donne rien
+
+# ACP des epis recoltes
+load("../donnees/champ")
+
 
 
 
@@ -74,7 +85,10 @@ ggplot(champ , aes(x = hauteur , y = nb_epillets)) + geom_point() + geom_smooth(
 
 # effet de la selection ? -------------------------------------------------
 
+rm(list = ls())
 
+load("../donnees/champ")
+champ$selection <- relevel(as.factor(champ$selection) , ref = "NT")
 
 ggplot(champ , aes(x = surface_recolte_moy , col = selection , fill = selection)) + geom_density(alpha = 0.3)
 
@@ -88,14 +102,25 @@ ggplot(champ , aes(x = PMG2 , col = selection , fill = selection)) + geom_densit
 
 ggplot(champ , aes(x = prot_recolte , col = selection , fill = selection)) + geom_density(alpha = 0.3)
 
+ggplot(champ , aes(x = GSV , col = selection , fill = selection)) + geom_density(alpha = 0.3)
+
+ggplot(champ , aes(x = GSV2 , col = selection , fill = selection)) + geom_density(alpha = 0.3)
+
+ggplot(champ , aes(x = nb_grain , y = PMG)) + geom_point() + geom_smooth(method = "lm")
+cor(champ$PMG , champ$nb_grain)
+
+ggplot(champ , aes(x = nb_grain)) + geom_histogram()
+
+
+
 # avec effet fixe
 
 res <- data.frame()
 
-for (v in names(champ)[c(1,2,7:22)]){
-  f <- as.formula(paste(v , "~ selection"))
+for (v in names(champ)[c(1,2,7:24)]){
+  f <- as.formula(paste(v , "~ nb_grain + selection  + passage"))
   
-  mod <- lm(f , data = champ)
+  mod <- lm(f , data = champ , weights = nb_grain)
   
   # tab <- data.frame(resid=mod$residuals , fit=mod$fitted.values)
   # 
@@ -119,6 +144,8 @@ res %>% filter(pval < 0.05)
 
 # tests de tuckey
 
+library(multcomp)
+
 # PMG
 mod <- lm(PMG ~ selection , data = champ)
 
@@ -132,7 +159,7 @@ ggplot(champ , aes(x=selection , y=PMG , col=selection, fill=selection))+
   geom_boxplot(alpha = 0.5)+
   theme(legend.position="none") +
   geom_text(data = lettres, aes(label = groups, y = 70 ), size=5) +
-  labs(title = "PMG en fonction de la selection" , x = "selection" , y = "PMG")
+  labs(title = "PMG en fonction de la selection" , x = "selection" , y = "PMG") + stat_mean(col = "black")
 
 
 
@@ -169,6 +196,29 @@ ggplot(champ , aes(x=selection , y=prot_recolte , col=selection, fill=selection)
   geom_text(data = lettres, aes(label = groups, y = 20 ), size=5) +
   labs(title = "prot_recolte en fonction de la selection" , x = "selection" , y = "prot_recolte")
 
+plot(prot_recolte~PMG , data = champ)
+plot(prot_recolte~nb_grain , data = champ)
+boxplot(GSV~selection , data = champ)
+
+
+
+
+# prot_recolte
+mod <- lm(surface_recolte_moy ~ selection , data = champ)
+
+lettres <- as.data.frame(cld(glht(model = mod , mcp(selection = "Tukey")) , level = 0.05)$mcletters$Letters)
+
+names(lettres)[1] <- "groups"
+
+lettres$selection <- row.names(lettres)
+
+ggplot(champ , aes(x=selection , y=surface_recolte_moy , col=selection, fill=selection))+
+  geom_boxplot(alpha = 0.5)+
+  theme(legend.position="none") +
+  geom_text(data = lettres, aes(label = groups, y = 20 ), size=5) +
+  labs(title = "prot_recolte en fonction de la selection" , x = "selection" , y = "prot_recolte") + stat_mean(col="black")
+
+
 
 
 # effet sur PMG et prot ! (les anova sont valides, vérifié par les plots)
@@ -181,7 +231,7 @@ ggplot(champ , aes(x=selection , y=prot_recolte , col=selection, fill=selection)
 
 res <- data.frame()
 
-for (v in names(champ)[c(1,2,7:22)]){
+for (v in names(champ)[c(1,2,7:24)]){
   f <- as.formula(paste(v , "~ selection"))
   
   mod <- kruskal.test(f , data = champ)
@@ -198,7 +248,7 @@ res %>% filter(pval < 0.05)
 # test de Dunnet pour comparer les selections au temoin
 
 # réalisation de toutes les comparaisons deux à deux sans ajuster les p-values
-pp_all <- pairwise.wilcox.test(champ$nb_epillets , champ$selection , p.adjust.method ="none" )
+pp_all <- pairwise.wilcox.test(champ$PMG , champ$selection , p.adjust.method ="none" )
 
 pp_all
 
@@ -260,7 +310,6 @@ champ %>% group_by(parcelle , selection) %>% summarise(surface = mean(surface_re
 load("../donnees/S")
 
 
-
 # En moyennant tout
 moy <- champ %>% group_by(selection) %>% summarise(surface = mean(surface_recolte_moy , na.rm = T) , PMG = mean(PMG , na.rm = T) , PMG2 = mean(PMG2 , na.rm = T)) %>% column_to_rownames(var = "selection")
 
@@ -298,6 +347,9 @@ for (r in row.names(moy)){
   sel <- moy[r,"selection"]
   S2[r,c("surface","PMG","PMG2")] <- S[sel,]
 }
+
+R2 <- R2[sort(row.names(R2)),]
+S2 <- S2[sort(row.names(S2)),]
 
 H22 <- R2/S2
 
