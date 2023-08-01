@@ -963,7 +963,7 @@ load("bac")
 h <- read.table("./data_brute/mesure_hauteur.csv" , header = F , sep = ";" , dec = ".")
 names(h) <- c("geno" , "hauteur")
 
-h <- h %>% column_to_rownames(var = "geno")
+# h <- h %>% column_to_rownames(var = "geno")
 # mince y'a des genotypes sur lesquels on s'est trompe. On les enlève
 
 h <- h[-which(h$geno == "112_5" | h$geno == "130_5" | h$geno == "INCONNU_10"),]
@@ -1196,10 +1196,13 @@ for (f in file_names){
   PMG <- 1000 * tab2$`Masse totale mesurée` / tab2$`Nb graines`
   tab$PMG <- PMG
   
+  tab$GSV <- sd(tab$Surface..mm2.)
+  
   # Avec classification cassé
   tab$PMG2 <- tab2$`PMG Clas. C1`
+  tab$GSV2 <- sd(subset(tab , Classe == 1)$Surface..mm2.)
 
-  tab <- tab %>% relocate(luz , .before = Réf..Ech) %>% relocate(ind , .before = luz) %>% relocate(geno , .before = luz) %>% relocate(grain , .before = luz) %>% relocate(BAC , .before = luz) %>% relocate(bordure , .before = luz) %>% relocate(semis , .before = luz) %>% relocate(PMG , .before = luz) %>% relocate(PMG2 , .before = luz)
+  tab <- tab %>% relocate(luz , .before = Réf..Ech) %>% relocate(ind , .before = luz) %>% relocate(geno , .before = luz) %>% relocate(grain , .before = luz) %>% relocate(BAC , .before = luz) %>% relocate(bordure , .before = luz) %>% relocate(semis , .before = luz) %>% relocate(PMG , .before = luz) %>% relocate(PMG2 , .before = luz) %>% relocate(GSV , .before = luz) %>% relocate(GSV2 , .before = luz)
   
   opto_recolte_bac <- rbind(opto_recolte_bac , tab)
 }
@@ -1207,7 +1210,7 @@ for (f in file_names){
 
 # renommage des variables comme pour opto
 
-names(opto_recolte_bac)[10:108] <- c("Ref.Ech"  ,              
+names(opto_recolte_bac)[12:110] <- c("Ref.Ech"  ,              
                  "Index",                     "Longueur"      ,       "Longueur.interieure" ,
                  "Largeur",              "Perimetre"      ,      "Perimetre.de.Crofton",
                  "Perimetre.convexe",    "Dimetre.Eq"     ,     "Surface"            ,
@@ -1267,6 +1270,7 @@ ajout_non_classe <- opto_recolte_bac %>%
             surface_recolte_min = min(Surface) , 
             surface_recolte_max = max(Surface) , 
             PMG = mean(PMG) , 
+            GSV = mean(GSV) ,
             poids_moy = mean(Poids.estime.g) , 
             poids_min = min(Poids.estime.g) , 
             poids_max = max(Poids.estime.g),
@@ -1281,6 +1285,7 @@ ajout_classe <- opto_recolte_bac %>%
             surface_recolte_min2 = min(Surface) , 
             surface_recolte_max2 = max(Surface) , 
             PMG2 = mean(PMG2) , 
+            GSV2 = mean(GSV2) ,
             poids_moy2 = mean(Poids.estime.g) , 
             poids_min2 = min(Poids.estime.g) , 
             poids_max2 = max(Poids.estime.g)) %>%
@@ -1700,9 +1705,11 @@ for (f in file_names){
   # sans classification cassés
   PMG <- 1000 * tab2$`Masse totale mesurée` / tab2$`Nb graines`
   tab$PMG <- PMG
+  tab$GSV <- sd(tab$Surface..mm2.)
   
   # Avec classification cassé
   tab$PMG2 <- tab2$`PMG Clas. C1`
+  tab$GSV2 <- sd(subset(tab , Classe == 1)$Surface..mm2.)
   
   opto_recolte_champ <- rbind(opto_recolte_champ , tab)
 }
@@ -1769,6 +1776,8 @@ opto_recolte_champ <- opto_recolte_champ %>%
   relocate(parcelle , .before = PMG2) %>%
   relocate(passage , .before = PMG2) %>%
   relocate(planche , .before = PMG2) %>%
+  relocate(GSV , .before = PMG2) %>%
+  relocate(GSV2 , .before = PMG2) %>%
   relocate(PMG , .before = PMG2)
 
 
@@ -1794,6 +1803,7 @@ ajout_non_classe <- opto_recolte_champ %>%
             surface_recolte_min = min(Surface) , 
             surface_recolte_max = max(Surface) , 
             PMG = mean(PMG) , 
+            GSV = mean(GSV) ,
             poids_moy = mean(Poids.estime.g) , 
             poids_min = min(Poids.estime.g) , 
             poids_max = max(Poids.estime.g),
@@ -1808,6 +1818,7 @@ ajout_classe <- opto_recolte_champ %>%
             surface_recolte_min2 = min(Surface) , 
             surface_recolte_max2 = max(Surface) , 
             PMG2 = mean(PMG2) , 
+            GSV2 = mean(GSV2) ,
             poids_moy2 = mean(Poids.estime.g) , 
             poids_min2 = min(Poids.estime.g) , 
             poids_max2 = max(Poids.estime.g)) %>%
@@ -1897,6 +1908,20 @@ champ <- merge(champ , prot , by = "row.names" , all.x = T) %>% column_to_rownam
 save(champ , file = "champ")
 
 
+# homogeneosation des noms
+
+load("champ")
+
+champ$selection <- ifelse(champ$selection == "Petit" , "petit" , 
+                          ifelse(champ$selection == "Non Trie" , "NT" , 
+                                 ifelse(champ$selection == "Moyen" , "moyen" , champ$selection)))
+
+unique(champ$selection)
+#ok
+
+save(champ , file = "champ")
+
+
 
 
 
@@ -1916,8 +1941,17 @@ for (f in file_names){
   tab <- read.table(paste0("./data_brute/opto_semis_champ/",f,"/",f2) , header = T , sep = "\t" , dec = ",")
   
   
+  f2 <- list.files(path = paste0("./data_brute/opto_semis_champ/",f))[9]
+  
+  tab2 <- fread(paste0("./data_brute/opto_semis_champ/",f,"/",f2) , header = T , sep = "\t" , dec = "," , nrows = 2)
+  
+  
+  
+  
   tab$taille_rep <- sapply(strsplit(f,"EPO_") , "[" , 2)
   tab$taille <- sapply(strsplit(f,"_") , "[" , 6)
+  tab$PMG <- tab2$PMG
+  tab$PMG2 <- tab2$`PMG Clas. C1`
   
   
   opto_semis_champ <- rbind(opto_semis_champ , tab)
@@ -1963,10 +1997,25 @@ names(opto_semis_champ)[1:99] <- c("Ref.Ech"  ,
 
 # calcul
 
-diff <- opto_semis_champ %>% group_by(taille_rep) %>% summarise(surface = mean(Surface))
+diff <- opto_semis_champ %>% group_by(taille_rep) %>% summarise(surface = mean(Surface) , PMG = mean(PMG) , PMG2 = mean(PMG2))
 
 # ok pas de diff entre les rep
 
-diff <- opto_semis_champ %>% group_by(taille) %>% summarise(surface = mean(Surface))
+diff <- opto_semis_champ %>% group_by(taille) %>% summarise(surface = mean(Surface) , PMG = mean(PMG) , PMG2 = mean(PMG2)) %>% column_to_rownames(var = "taille")
 
-diff
+
+tmp <- apply(X = diff , MARGIN = 1 , FUN = function(x){x - diff["NonTrie",]} , simplify = T)
+
+S <- data.frame()
+ct <- 1
+for (i in tmp){
+  S[names(tmp)[ct],c("surface","PMG","PMG2")] <- c(i$surface,i$PMG,i$PMG2)
+  ct <- ct+1
+}
+
+S["NT",] <- diff["NonTrie",]
+row.names(S)[1] <- "gros"
+
+S <- S[-2,]
+
+save(S , file = "S")

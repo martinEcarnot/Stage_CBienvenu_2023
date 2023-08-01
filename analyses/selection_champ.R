@@ -3,11 +3,58 @@ rm(list=ls())
 setwd("~/Stage/Analyses")
 
 load("../donnees/champ")
+champ$selection <- relevel(as.factor(champ$selection) , ref = "NT")
 
 library(tidyverse)
+library(ggplot2)
+#library(multcomp)
+library(lme4)
+library(lmerTest)
 
 
 
+# fonctions ---------------------------------------------------------------
+
+
+tri.to.squ<-function(x)
+{
+  rn <- row.names(x)
+  cn <- colnames(x)
+  an <- unique(c(cn,rn))
+  myval <-  x[!is.na(x)]
+  mymat <-  matrix(1,nrow=length(an),ncol=length(an),dimnames=list(an,an))
+  for(ext in 1:length(cn))
+  {
+    for(int in 1:length(rn))
+    {
+      if(is.na(x[row.names(x)==rn[int],colnames(x)==cn[ext]])) next
+      mymat[row.names(mymat)==rn[int],colnames(mymat)==cn[ext]]<-x[row.names(x)==rn[int],colnames(x)==cn[ext]]
+      mymat[row.names(mymat)==cn[ext],colnames(mymat)==rn[int]]<-x[row.names(x)==rn[int],colnames(x)==cn[ext]]
+    }
+    
+  }
+  return(mymat)
+}
+
+
+
+wilcox_letters <- function(y,x,donnees){
+  a <- pairwise.wilcox.test(donnees[,y] , donnees[,x] , p.adjust.method ="holm")
+  
+  b <-tri.to.squ(a$p.value)
+  
+  c <- multcompLetters(b,compare="<=",threshold=0.05,Letters=letters)
+  
+  tab <- data.frame(a = names(c$Letters), groups = c$Letters)
+  
+  names(tab)[1] <- x
+  
+  return(tab)
+}
+
+
+
+# gradient spatial ? ------------------------------------------------------
 
 don <- champ %>% filter(!passage %in% c("inconnu1","inconnu2") & !planche %in% c("inconnu1","inconnu2"))
 
@@ -23,11 +70,235 @@ ggplot(moy , aes(x = passage , y = planche , fill = nb_epillets)) + geom_tile()
 ggplot(champ , aes(x = hauteur , y = nb_epillets)) + geom_point() + geom_smooth(method = "lm" , col = "red")
 
 
-mod <- lm(hauteur ~ selection , data = champ)
-summary(mod)
-drop1(mod , .~. , test = "F")
 
 
-mod <- lm(nb_epillets ~ selection , data = champ)
-summary(mod)
-drop1(mod , .~. , test = "F")
+# effet de la selection ? -------------------------------------------------
+
+
+
+ggplot(champ , aes(x = surface_recolte_moy , col = selection , fill = selection)) + geom_density(alpha = 0.3)
+
+ggplot(champ , aes(x = surface_recolte_min , col = selection , fill = selection)) + geom_density(alpha = 0.3)
+
+ggplot(champ , aes(x = surface_recolte_max , col = selection , fill = selection)) + geom_density(alpha = 0.3)
+
+ggplot(champ , aes(x = PMG , col = selection , fill = selection)) + geom_density(alpha = 0.3)
+
+ggplot(champ , aes(x = PMG2 , col = selection , fill = selection)) + geom_density(alpha = 0.3)
+
+ggplot(champ , aes(x = prot_recolte , col = selection , fill = selection)) + geom_density(alpha = 0.3)
+
+# avec effet fixe
+
+res <- data.frame()
+
+for (v in names(champ)[c(1,2,7:22)]){
+  f <- as.formula(paste(v , "~ selection"))
+  
+  mod <- lm(f , data = champ)
+  
+  # tab <- data.frame(resid=mod$residuals , fit=mod$fitted.values)
+  # 
+  # print(ggplot(tab , aes(x = fit , y = resid)) + geom_point() + labs(x = "Fitted values" , y = "Residuals" , title = paste(v,"Residuals vs Fitted")))
+  # 
+  # print(ggplot(tab , aes(sample = resid)) + geom_qq() + geom_qq_line(col = "red") + labs(x = "Theoretical Quantiles" , y = "Residuals" , title = paste(v,"Normal Q-Q")))
+  
+  
+  a <- drop1(mod , .~. , test = "F")["selection" , "Pr(>F)"]
+  
+  res[v,"pval"] <- a
+  res[v,"petit"] <- mod$coefficients["selectionpetit"]
+  res[v,"moyen"] <- mod$coefficients["selectionmoyen"]
+  res[v,"gros"] <- mod$coefficients["selectiongros"]
+}
+
+
+
+res %>% filter(pval < 0.05)
+
+
+# tests de tuckey
+
+# PMG
+mod <- lm(PMG ~ selection , data = champ)
+
+lettres <- as.data.frame(cld(glht(model = mod , mcp(selection = "Tukey")) , level = 0.05)$mcletters$Letters)
+
+names(lettres)[1] <- "groups"
+
+lettres$selection <- row.names(lettres)
+
+ggplot(champ , aes(x=selection , y=PMG , col=selection, fill=selection))+
+  geom_boxplot(alpha = 0.5)+
+  theme(legend.position="none") +
+  geom_text(data = lettres, aes(label = groups, y = 70 ), size=5) +
+  labs(title = "PMG en fonction de la selection" , x = "selection" , y = "PMG")
+
+
+
+# PMG2
+mod <- lm(PMG2 ~ selection , data = champ)
+
+lettres <- as.data.frame(cld(glht(model = mod , mcp(selection = "Tukey")) , level = 0.05)$mcletters$Letters)
+
+names(lettres)[1] <- "groups"
+
+lettres$selection <- row.names(lettres)
+
+ggplot(champ , aes(x=selection , y=PMG2 , col=selection, fill=selection))+
+  geom_boxplot(alpha = 0.5)+
+  theme(legend.position="none") +
+  geom_text(data = lettres, aes(label = groups, y = 70 ), size=5) +
+  labs(title = "PMG2 en fonction de la selection" , x = "selection" , y = "PMG2")
+
+
+
+
+# prot_recolte
+mod <- lm(prot_recolte ~ selection , data = champ)
+
+lettres <- as.data.frame(cld(glht(model = mod , mcp(selection = "Tukey")) , level = 0.05)$mcletters$Letters)
+
+names(lettres)[1] <- "groups"
+
+lettres$selection <- row.names(lettres)
+
+ggplot(champ , aes(x=selection , y=prot_recolte , col=selection, fill=selection))+
+  geom_boxplot(alpha = 0.5)+
+  theme(legend.position="none") +
+  geom_text(data = lettres, aes(label = groups, y = 20 ), size=5) +
+  labs(title = "prot_recolte en fonction de la selection" , x = "selection" , y = "prot_recolte")
+
+
+
+# effet sur PMG et prot ! (les anova sont valides, vérifié par les plots)
+
+
+
+
+# on va esayer avec des tests de kruskal pour le reste
+
+
+res <- data.frame()
+
+for (v in names(champ)[c(1,2,7:22)]){
+  f <- as.formula(paste(v , "~ selection"))
+  
+  mod <- kruskal.test(f , data = champ)
+  
+  res[v,"pval"] <- mod$p.value
+}
+
+
+
+res %>% filter(pval < 0.05)
+
+
+
+# test de Dunnet pour comparer les selections au temoin
+
+# réalisation de toutes les comparaisons deux à deux sans ajuster les p-values
+pp_all <- pairwise.wilcox.test(champ$nb_epillets , champ$selection , p.adjust.method ="none" )
+
+pp_all
+
+# récupération des pvalues des tests de wilcoxon entre la moyenne du groupe contrôle et toutes les autres moyennes.
+pp_dunn <- c(pp_all[[3]][,"NT"])
+pp_dunn
+
+
+# ajustement de ces p-values par la méthode de Holm
+pp_dunn_adjust <- p.adjust(pp_dunn,method="holm")
+pp_dunn_adjust
+
+
+
+
+
+
+# avec effet aleatoire
+
+res <- data.frame()
+
+for (v in names(champ)[c(1,2,7:24)]){
+  f <- as.formula(paste(v , "~ selection + (1|selection:parcelle)"))
+  
+  mod <- lmer(f , data = champ)
+  
+  a <- anova(mod)
+  b <- summary(mod)$coefficients
+  
+  res[v,"pval"] <- a["selection" , "Pr(>F)"]
+  res[v,"petit"] <- b["selectionpetit","Estimate"]
+  res[v,"moyen"] <- b["selectionmoyen","Estimate"]
+  res[v,"gros"] <- b["selectiongros","Estimate"]
+}
+
+
+
+res %>% filter(pval < 0.05)
+
+
+
+
+
+
+# H2 realise --------------------------------------------------------------
+
+
+champ %>% group_by(parcelle , selection) %>% summarise(surface = mean(surface_recolte_moy , na.rm = T)) %>% filter(selection == "petit")
+
+champ %>% group_by(parcelle , selection) %>% summarise(surface = mean(surface_recolte_moy , na.rm = T)) %>% filter(selection == "moyen")
+
+champ %>% group_by(parcelle , selection) %>% summarise(surface = mean(surface_recolte_moy , na.rm = T)) %>% filter(selection == "gros")
+
+champ %>% group_by(parcelle , selection) %>% summarise(surface = mean(surface_recolte_moy , na.rm = T)) %>% filter(selection == "NT")
+
+# c'est assez homogène entre les parcelles
+
+
+load("../donnees/S")
+
+
+
+# En moyennant tout
+moy <- champ %>% group_by(selection) %>% summarise(surface = mean(surface_recolte_moy , na.rm = T) , PMG = mean(PMG , na.rm = T) , PMG2 = mean(PMG2 , na.rm = T)) %>% column_to_rownames(var = "selection")
+
+
+R <- data.frame()
+
+for (t in c("surface","PMG","PMG2")){
+  R["gros",t] <- moy["gros",t] - S["NT",t] 
+  R["petit",t] <- moy["petit",t] - S["NT",t]
+  R["moyen",t] <- moy["moyen",t] - S["NT",t]
+}
+
+S <- S[-4,]
+
+S <- S[sort(row.names(S)),]
+R <- R[sort(row.names(R)),]
+
+H2 <- R/S
+
+
+
+
+# parcelle par parcelle
+
+load("../donnees/S")
+
+moy <- champ %>% group_by(selection,parcelle) %>% summarise(surface = mean(surface_recolte_moy , na.rm = T) , PMG = mean(PMG , na.rm = T) , PMG2 = mean(PMG2 , na.rm = T)) %>% mutate(rn = paste0(selection,parcelle)) %>% column_to_rownames(var = "rn")
+
+
+R2 <- data.frame()
+S2 <- data.frame()
+
+for (r in row.names(moy)){
+  R2[r,c("surface","PMG","PMG2")] <- moy[r,c("surface","PMG","PMG2")] - S["NT" , ]
+  sel <- moy[r,"selection"]
+  S2[r,c("surface","PMG","PMG2")] <- S[sel,]
+}
+
+H22 <- R2/S2
+
+
