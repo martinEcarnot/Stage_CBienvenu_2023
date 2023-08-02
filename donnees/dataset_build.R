@@ -2024,3 +2024,61 @@ S <- S[-2,]
 save(S , file = "S")
 save(opto_semis_champ , file = "opto_semis_champ")
 
+
+
+
+
+
+
+
+# SPATs des donnes bac ----------------------------------------------------
+
+rm(list=ls())
+library(SpATS)
+load("bac")
+
+don <- bac %>% filter(geno != "INCONNU" & appel == "present" & hauteur > 50) %>% mutate_at(.vars = c("BAC","semis","bordure","luz") , .funs = as.factor)
+
+
+# variable x et y adaptees
+
+don$X_spats <- ifelse(don$BAC2 == "x09y04" | don$BAC2 == "x10y04", don$X + 19 , 
+                      ifelse(don$BAC2 == "x09y03" | don$BAC2 == "x10y03" , don$X + 39 , don$X))
+
+don$Y_spats <- ifelse(don$BAC2 == "x10y03" | don$BAC2 == "x10y04" | don$BAC2 == "x10y05" , don$Y + 19 , don$Y)
+
+# verif
+ggplot(don , aes(x = X_spats , y = Y_spats , fill = BAC2 , col = luz)) + geom_tile()
+# c'est good
+
+
+# La fonction Spats déclare un modèle mixte, en fonction des effets fixes déclarés dans fixed
+# Les génotypes sont en aléatoire, les données obtenues sont alors des blups
+# si les génotypes sont en fixe, alors les données obtenues sont des blues.
+
+
+model_spat<-SpATS(response = "prot_recolte", 
+                  genotype = "geno",
+                  spatial = ~ SAP(X_spats, Y_spats, nseg = c(10,10), degree = 3, pord = c(2,2)),
+                  genotype.as.random=T, 
+                  fixed = ~ semis,
+                  random = ~ BAC,
+                  data = don)
+
+# timing : avec ces paramètres, uniquement 322.81 seconds par variable.
+# voir le nombre de segments à fixer
+#nseg = c(max(as.numeric(Table$x))-n,max(as.numeric(Table$x))-n)
+
+
+# h² estimée par Spats
+getHeritability(model_spat)
+
+
+# récupération des blues ou blups
+Coeff<-as.data.frame(model_spat$coeff)
+coeff_f<-data.frame(ID_Number=rownames(Coeff)[1:(which(rownames(Coeff)=="Intercept")-1)],
+                    coeff=as.numeric(Coeff[1:(which(rownames(Coeff)=="Intercept")-1),]))
+
+hist(coeff_f$coeff)
+
+

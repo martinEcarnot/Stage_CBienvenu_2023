@@ -18,9 +18,6 @@ load("../donnees/opto")
 
 pop <- bac %>% filter(geno != "INCONNU" & is.na(Surface)==F & appel == "present" & semis == "06/01")
 
-opto <- opto[,-c(98:100)]
-
-
 moy_geno <- opto %>% group_by(geno) %>% summarise(Surface = mean(Surface , na.rm = T))
 
 moy_geno <- moy_geno[which(moy_geno$geno %in% unique(pop$geno)),]

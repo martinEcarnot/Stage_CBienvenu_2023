@@ -4,7 +4,6 @@ setwd("~/Stage/Analyses")
 
 library(ggplot2)
 library(tidyverse)
-library(ggpubr)
 
 
 load("../donnees/bac")

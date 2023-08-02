@@ -4,12 +4,11 @@ setwd("~/Stage/Analyses")
 
 library(ggplot2)
 library(tidyverse)
-library(FactoMineR)
-library(GGally)
+#library(FactoMineR)
+#library(GGally)
 library(lme4)
 library(lmerTest)
-library(rchemo)
-library(ggpubr)
+#library(rchemo)
 
 
 
@@ -64,7 +63,7 @@ load("../donnees/bac")
 
 ggplot(bac , aes(x = hauteur)) + geom_histogram()
 
-don <- bac %>% filter(geno != "INCONNU" & appel == "present" & hauteur > 50)
+don <- bac %>% filter(geno != "INCONNU" & appel == "present" & hauteur > 50 & nb_grain > 10)
 
 don$h <- (don$hauteur - don$hauteur_voisin)/don$hauteur
 plot(hauteur~h  , data = don)
@@ -112,7 +111,7 @@ ggplot(bac , aes(x = X , y = Y , fill = nb_epi)) + geom_tile() + facet_wrap(~BAC
 # poids_epis
 # mod sel 
 f <- poids_epis ~ semis + BAC + nb_epi # pas geno, on essaye quand même pour voir
-f <- poids_epis ~ semis + BAC + (1|geno) + nb_voisin + hauteur_voisin
+f <- poids_epis ~ semis + BAC + (1|geno)
 
 mod <- lmer(f,data=don)
 
@@ -139,9 +138,16 @@ H2["surface","H2"] <- calcul_H2(f = f , don = don)
 
 
 # prot_recolte
-f <- prot_recolte ~ semis + BAC + bordure + nb_epi + BAC:bordure + (1|geno)
+f <- prot_recolte ~ BAC + semis + N_flag_voisin + nb_epi_voisin + 
+  poids_epis_voisin + nb_voisin + (1|geno)
 H2["prot_recolte","H2"] <- calcul_H2(f = f , don = don)
 
+mod <- lmer(f , data = don)
+
+don$geno2 <- sample(don$geno)
+
+mod2 <- lmer(prot_recolte ~ BAC + semis + N_flag_voisin + nb_epi_voisin + 
+               poids_epis_voisin + nb_voisin + (1|geno2) , data = don)
 
 save(H2 , file="../donnees/H2")
 
@@ -163,7 +169,60 @@ hist(table(don$geno,don$appel)[,2])
 
 
 
-# extraction des BLUPs pour pred pheno ------------------------------------
+
+
+# H2 bac avec spats -------------------------------------------------------
+
+rm(list=ls())
+library(SpATS)
+load("../donnees/bac")
+
+don <- bac %>% filter(geno != "INCONNU" & appel == "present") %>% mutate_at(.vars = c("BAC","semis","bordure", "luz") , .funs = as.factor)
+
+
+# variable x et y adaptees
+don$X_spats <- ifelse(don$BAC2 == "x09y04" | don$BAC2 == "x10y04", don$X + 19 , 
+                      ifelse(don$BAC2 == "x09y03" | don$BAC2 == "x10y03" , don$X + 39 , don$X))
+
+don$Y_spats <- ifelse(don$BAC2 == "x10y03" | don$BAC2 == "x10y04" | don$BAC2 == "x10y05" , don$Y + 19 , don$Y)
+
+# verif
+ggplot(don , aes(x = X_spats , y = Y_spats , fill = BAC2 , col = luz)) + geom_tile()
+# c'est good
+
+
+traits <- names(don[c(9,12,14:17,19:23,26:43)])
+
+H2 <- data.frame()
+
+for (t in traits){
+  
+  # restrictions pour certaines variables
+  
+  don2 <- don
+  
+  if (t == "hauteur"){don2 <- don %>% filter(hauteur > 50)}
+  
+  if (t == "prot_recolte"){don2 <- don %>% filter(prot_recolte < 20 & nb_grain > 10) }
+  
+  model_spat <-SpATS(response = t , 
+                      genotype = "geno",
+                      spatial = ~ SAP(X_spats, Y_spats, nseg = c(10,10), degree = 3, pord = c(2,2)),
+                      genotype.as.random=T, 
+                      fixed = ~ semis + BAC,
+                      data = don2)
+  
+  H2[t,"H2"] <- getHeritability(model_spat)
+}
+
+
+
+don2 <- don %>% filter(hauteur > 50)
+t <- "preco"
+
+
+
+# extraction des BLUPs pour pred pheno lmer ------------------------------------
 
 # Surface
 mod <- lmer(Surface ~ (1|geno), data = opto)
@@ -220,6 +279,68 @@ save(BLUP , file = "../donnees/BLUP")
 
 
 
+
+
+
+
+
+
+
+# extraction BLUP spats ---------------------------------------------------
+
+rm(list=ls())
+library(SpATS)
+load("../donnees/bac")
+
+don <- bac %>% filter(geno != "INCONNU" & appel == "present") %>% mutate_at(.vars = c("BAC","semis","bordure", "luz") , .funs = as.factor)
+
+
+# variable x et y adaptees
+don$X_spats <- ifelse(don$BAC2 == "x09y04" | don$BAC2 == "x10y04", don$X + 19 , 
+                      ifelse(don$BAC2 == "x09y03" | don$BAC2 == "x10y03" , don$X + 39 , don$X))
+
+don$Y_spats <- ifelse(don$BAC2 == "x10y03" | don$BAC2 == "x10y04" | don$BAC2 == "x10y05" , don$Y + 19 , don$Y)
+
+# verif
+ggplot(don , aes(x = X_spats , y = Y_spats , fill = BAC2 , col = luz)) + geom_tile()
+# c'est good
+
+
+traits <- names(don[c(9,12,14:17,19:23,26:43)])
+
+
+BLUP_spats <- data.frame()
+
+for (t in traits){
+  
+  # restrictions pour certaines variables
+  
+  don2 <- don
+  
+  if (t == "hauteur"){don2 <- don %>% filter(hauteur > 50)}
+  
+  if (t == "prot_recolte"){don2 <- don %>% filter(prot_recolte < 20 & nb_grain > 10) }
+  
+  model_spat <-SpATS(response = t , 
+                     genotype = "geno",
+                     spatial = ~ SAP(X_spats, Y_spats, nseg = c(10,10), degree = 3, pord = c(2,2)),
+                     genotype.as.random=T, 
+                     fixed = ~ semis + BAC,
+                     data = don2)
+  
+  
+  Coeff<-as.data.frame(model_spat$coeff)
+  coeff_f<-data.frame(geno=rownames(Coeff)[1:(which(rownames(Coeff)=="Intercept")-1)],
+                      BLUP=as.numeric(Coeff[1:(which(rownames(Coeff)=="Intercept")-1),]))
+  
+  
+  coeff_f$variable <- t
+  
+  BLUP_spats <- rbind(BLUP_spats , coeff_f)
+}
+
+
+save(BLUP_spats , file = "../donnees/BLUP_spats")
 
 
 # H2 des axes de l'ACP des spectres ---------------------------------------
