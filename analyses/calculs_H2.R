@@ -209,10 +209,37 @@ for (t in traits){
                       genotype = "geno",
                       spatial = ~ SAP(X_spats, Y_spats, nseg = c(10,10), degree = 3, pord = c(2,2)),
                       genotype.as.random=T, 
-                      fixed = ~ semis + BAC,
+                      fixed = ~ semis,
                       data = don2)
   
+  plot(model_spat)
+  
   H2[t,"H2"] <- getHeritability(model_spat)
+  H2[t,"vg"] <- model_spat$var.comp["geno"]
+  H2[t,"vx"] <- model_spat$var.comp[1]
+  H2[t,"vy"] <- model_spat$var.comp[2]
+  
+  # 
+  # model_spat <-SpATS(response = t , 
+  #                    genotype = "geno",
+  #                    spatial = ~ SAP(X_spats, Y_spats, nseg = c(10,10), degree = 3, pord = c(2,2)),
+  #                    genotype.as.random=T, 
+  #                    fixed = ~ semis + BAC,
+  #                    data = don2)
+  # 
+  # plot(model_spat)
+  # 
+  # 
+  # model_spat <-SpATS(response = t , 
+  #                    genotype = "geno",
+  #                    spatial = ~ SAP(X_spats, Y_spats, nseg = c(10,10), degree = 3, pord = c(2,2)),
+  #                    genotype.as.random=T, 
+  #                    fixed = ~ semis,
+  #                    data = don2)
+  # 
+  # plot(model_spat)
+  # 
+  # H2[t,"H2_sans_bac"] <- getHeritability(model_spat)
 }
 
 
@@ -299,7 +326,7 @@ don <- bac %>% filter(geno != "INCONNU" & appel == "present") %>% mutate_at(.var
 don$X_spats <- ifelse(don$BAC2 == "x09y04" | don$BAC2 == "x10y04", don$X + 19 , 
                       ifelse(don$BAC2 == "x09y03" | don$BAC2 == "x10y03" , don$X + 39 , don$X))
 
-don$Y_spats <- ifelse(don$BAC2 == "x10y03" | don$BAC2 == "x10y04" | don$BAC2 == "x10y05" , don$Y + 19 , don$Y)
+don$Y_spats <- ifelse(don$BAC2 == "x10y03" | don$BAC2 == "x10y04" | don$BAC2 == "x10y05" , don$Y + 15 , don$Y)
 
 # verif
 ggplot(don , aes(x = X_spats , y = Y_spats , fill = BAC2 , col = luz)) + geom_tile()
@@ -309,7 +336,7 @@ ggplot(don , aes(x = X_spats , y = Y_spats , fill = BAC2 , col = luz)) + geom_ti
 traits <- names(don[c(9,12,14:17,19:23,26:43)])
 
 
-BLUP_spats <- data.frame()
+BLUP_spats <- data.frame(row.names = unique(don$geno))
 
 for (t in traits){
   
@@ -328,15 +355,16 @@ for (t in traits){
                      fixed = ~ semis + BAC,
                      data = don2)
   
+  #plot(model_spat)
   
   Coeff<-as.data.frame(model_spat$coeff)
   coeff_f<-data.frame(geno=rownames(Coeff)[1:(which(rownames(Coeff)=="Intercept")-1)],
                       BLUP=as.numeric(Coeff[1:(which(rownames(Coeff)=="Intercept")-1),]))
   
+  coeff_f <- coeff_f %>% column_to_rownames(var = "geno")
+  names(coeff_f) <- t
   
-  coeff_f$variable <- t
-  
-  BLUP_spats <- rbind(BLUP_spats , coeff_f)
+  BLUP_spats <- merge(BLUP_spats , coeff_f , by = "row.names") %>% column_to_rownames(var = "Row.names")
 }
 
 

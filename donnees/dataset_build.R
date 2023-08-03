@@ -484,6 +484,7 @@ save(opto , file = "opto")
 rm(g,i,df,file_names,opto)
 
 
+
 # Donnees des bacs --------------------------------------------------------
 {
   
@@ -728,6 +729,8 @@ for (i in 1:nrow(bac)){
 }
 }
 
+
+
 # Ajout des donnees de luzerne
 {
 bac$luz <- ifelse(bac$BAC==1 | bac$BAC==4 , "catera" ,
@@ -869,9 +872,9 @@ N2$key <- paste0(N2$BAC , "_" , N2$X , "_" , N2$Y)
 
 N2$X <- N2$Y <- N2$BAC <- la2$X <- la2$Y <- la2$BAC <- la2$BAC2 <- NULL
 
-bac <- merge(bac , N2 , by = "key" , all = T)
+bac <- merge(bac , N2 , by = "key" , all.x = T)
 
-bac <- merge(bac , la2 , by = "key" , all = T)
+bac <- merge(bac , la2 , by = "key" , all.x = T)
 
 bac$key <- NULL
 
@@ -880,6 +883,15 @@ row.names(bac) <- ifelse(is.na(bac$semis_2)==T,bac$semis_1,bac$semis_2)
 bac$N_flag <- ifelse(bac$id == 0 , NA , bac$N_flag)
 
 bac$id <- NULL
+
+
+which(is.na(bac$BAC2)==T)
+# il manque l'info pour certains bac. on fait la correspondance à la main
+bac$BAC2 <- ifelse(bac$BAC == "1" , "x09y03" ,
+                  ifelse(bac$BAC == "2" , "x09y04" ,
+                         ifelse(bac$BAC == "3" , "x09y05" ,
+                                ifelse(bac$BAC == "4" , "x10y03" ,
+                                       ifelse(bac$BAC == "5" , "x10y04" , "x10y05")))))
 
 
 save(bac , file = "bac")
@@ -947,6 +959,8 @@ load("bac")
 load("opto")
 
 a <- opto %>% select("Surface")
+
+b <- which(!row.names(bac) %in% row.names(a))
 
 bac <- merge(bac,a,by = "row.names" , all.x = T) %>% column_to_rownames(var = "Row.names")
 

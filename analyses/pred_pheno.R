@@ -208,17 +208,30 @@ save(resultats_phenomique , file = "resultats_phenomique")
 
 
 
+# donnees BAC avec BLUP spats ---------------------------------------------
+
+load("../donnees/BLUP_spats")
+
+load("../donnees/spectres_moyens")
 
 
 
 
+nrep <- 10
+nout <- 40
+traits <- names(BLUP_spats)
 
+boss(X = spectres_moy , Y = BLUP_spats , nrep=nrep , nout=nout)
 
+pheno_spats <- res
 
+save(pheno_spats , file = "pheno_spats")
 
+load("pheno_spats")
 
-
-
+t <- c("hauteur" , "preco" , "N_flag" , "poids_epis" , "nb_grain" , "surface_recolte_moy" , "PMG" , "prot_recolte")
+  
+ggplot(pheno_spats %>% filter(trait %in% t) , aes(x = pretraitement , y = accuracy^2)) + geom_boxplot() + facet_wrap(~trait)
 
 
 
