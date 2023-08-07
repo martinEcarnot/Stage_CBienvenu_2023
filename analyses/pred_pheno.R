@@ -229,9 +229,32 @@ save(pheno_spats , file = "pheno_spats")
 
 load("pheno_spats")
 
-t <- c("hauteur" , "preco" , "N_flag" , "poids_epis" , "nb_grain" , "surface_recolte_moy" , "PMG" , "prot_recolte")
+
+length(unique(pheno_spats$trait))
+
+t <- sort(unique(pheno_spats$trait))[1:9]
   
 ggplot(pheno_spats %>% filter(trait %in% t) , aes(x = pretraitement , y = accuracy^2)) + geom_boxplot() + facet_wrap(~trait)
+
+
+
+t <- sort(unique(pheno_spats$trait))[10:18]
+
+ggplot(pheno_spats %>% filter(trait %in% t) , aes(x = pretraitement , y = accuracy^2)) + geom_boxplot() + facet_wrap(~trait)
+
+
+
+t <- sort(unique(pheno_spats$trait))[19:27]
+
+ggplot(pheno_spats %>% filter(trait %in% t) , aes(x = pretraitement , y = accuracy^2)) + geom_boxplot() + facet_wrap(~trait)
+
+
+
+t <- sort(unique(pheno_spats$trait))[28:29]
+
+ggplot(pheno_spats %>% filter(trait %in% t) , aes(x = pretraitement , y = accuracy^2)) + geom_boxplot() + facet_wrap(~trait)
+
+
 
 
 

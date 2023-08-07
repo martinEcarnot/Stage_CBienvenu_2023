@@ -229,126 +229,140 @@ test <- data.frame()
 ngl <- 5 # nombre de grains par lot, equivalent a nb de grain par epi dans eq theorique
 traits <- c("preco","N_flag","hauteur","nb_epi","poids_epis","surface_recolte_moy","surface_recolte_min","surface_recolte_max","PMG","PMG2","poids_moy","poids_min","poids_max")
 
+n_sel <- seq(100,600,50)
 
 
-for (nsel in c(500,400,300,200,100)){
-  
-  # caracteristiques de la population selectionnee sur grains
-  sel_ind <- pop[1:nsel,]
-  
-  sel_ind$selection <- "IND"
-  
-  # intensite de selection ind
-  i_ind <- i_p(nsel/nrow(pop))
-  
-  
-  par_bac <- pop %>% group_by(BAC) %>% summarise_at(.vars = traits , .funs = mean , na.rm = T)
-  
-  tmp <- sel_ind %>% group_by(BAC) %>% summarise_at(.vars = traits , .funs = mean , na.rm = T)
-  par_bac[,paste0(traits,"_ind")] <- tmp[,traits]
-  
-  a <- pop %>% group_by(BAC,geno) %>% summarise(count = 1) %>% group_by(BAC) %>% summarise(nb_geno = sum(count)) %>% merge(par_bac , by = "BAC")
-  
-  b <- sel_ind %>% group_by(BAC,geno) %>% summarise(count = 1) %>% group_by(BAC) %>% summarise(nb_geno_ind = sum(count)) %>% merge(a , by = "BAC")
-  
-  par_bac <- b
-  rm(a,b)
-  
-  
-  for (neo in c(seq(round(nsel/ngl) , nrow(moy_geno) , 10) , nrow(moy_geno))){
+
+
+for (r in 1:50) {
+
+  for (nsel in n_sel){
     
-    # choix au hasard des lots observés
-    obs <- sample(row.names(moy_geno) , neo)
+    # caracteristiques de la population selectionnee sur grains
+    sel_ind <- pop[1:nsel,]
     
-    # constitution de la population de lots observes
-    pop_lot <- moy_geno[obs,] %>% arrange(desc(Surface)) #population d'epi observe sur laquelle on selectionne
+    sel_ind$selection <- "IND"
     
-    # sélection des meilleurs lots dans la population de lots observes
-    sel_pop_lot <- pop_lot[1:round(nsel/ngl),]
-    
-    # caracteristiques de la population selectionnee par lot
-    sel_lot <- pop[which(pop$geno %in% sel_pop_lot$geno),]
-    
-    # intensite de selection lot
-    i_lot <- i_p(nrow(sel_pop_lot)/neo)
+    # intensite de selection ind
+    i_ind <- i_p(nsel/nrow(pop))
     
     
-    # donnees pour test de wilcoxon apparié
-    ## ajout des donnes par bac
-    tmp <- sel_lot %>% group_by(BAC) %>% summarise_at(.vars = traits , .funs = mean , na.rm = T)
-    par_bac[,paste0(traits,"_lot")] <- tmp[,traits]
-    a <- as.data.frame(par_bac)
+    par_bac <- pop %>% group_by(BAC) %>% summarise_at(.vars = traits , .funs = mean , na.rm = T)
     
-    a$nb_geno_lot <- NULL
-    par_bac <- sel_lot %>% group_by(BAC,geno) %>% summarise(count = 1) %>% group_by(BAC) %>% summarise(nb_geno_lot = sum(count)) %>% merge(a , by = "BAC")
+    tmp <- sel_ind %>% group_by(BAC) %>% summarise_at(.vars = traits , .funs = mean , na.rm = T)
+    par_bac[,paste0(traits,"_ind")] <- tmp[,traits]
     
-    rm(a)
+    a <- pop %>% group_by(BAC,geno) %>% summarise(count = 1) %>% group_by(BAC) %>% summarise(nb_geno = sum(count)) %>% merge(par_bac , by = "BAC")
     
+    b <- sel_ind %>% group_by(BAC,geno) %>% summarise(count = 1) %>% group_by(BAC) %>% summarise(nb_geno_ind = sum(count)) %>% merge(a , by = "BAC")
     
-    
-    # donnees pour test student
-    sel_lot$selection <- "LOT"
-    don_t <- rbind(pop,sel_ind,sel_lot)
-    don_t$selection <- relevel(as.factor(don_t$selection) , ref = "NON")
+    par_bac <- b
+    rm(a,b)
     
     
-    # tests et remplissage du tableau de resultats
-    
-    for (t in c(traits,"nb_geno")){
+    for (neo in c(seq(round(nsel/ngl) , nrow(moy_geno) , 10) , nrow(moy_geno))){
       
-      test[i,"trait"] <- t
-      test[i,"i_ind"] <- i_ind
-      test[i,"i_lot"] <- i_lot
-      test[i,"NEO"] <- neo/nrow(moy_geno)
-      test[i,"nsel"] <- nsel
+      # choix au hasard des lots observés
+      obs <- sample(row.names(moy_geno) , neo)
       
-      # w.test entre selection et pas de selection
-      alt <- "less"
-      if (mean(par_bac[,paste0(t,"_ind")]) > mean(par_bac[,t])){alt <- "greater"}
+      # constitution de la population de lots observes
+      pop_lot <- moy_geno[obs,] %>% arrange(desc(Surface)) #population d'epi observe sur laquelle on selectionne
       
-      test[i,"w.test_ind"] <- wilcox.test(par_bac[,paste0(t,"_ind")] , par_bac[,t] , paired = T , alternative = alt)$p.value
+      # sélection des meilleurs lots dans la population de lots observes
+      sel_pop_lot <- pop_lot[1:round(nsel/ngl),]
       
-      test[i,"w.test_lot"] <- wilcox.test(par_bac[,paste0(t,"_lot")] , par_bac[,t] , paired = T , alternative = alt)$p.value
+      # caracteristiques de la population selectionnee par lot
+      sel_lot <- pop[which(pop$geno %in% sel_pop_lot$geno),]
+      
+      # intensite de selection lot
+      i_lot <- i_p(nrow(sel_pop_lot)/neo)
       
       
-      # w.test entre selection sur lot et selection sur grain
-      alt <- "less"
-      if (mean(par_bac[,paste0(t,"_ind")]) > mean(par_bac[,paste0(t,"_lot")])){alt <- "greater"}
+      # donnees pour test de wilcoxon apparié
+      ## ajout des donnes par bac
+      tmp <- sel_lot %>% group_by(BAC) %>% summarise_at(.vars = traits , .funs = mean , na.rm = T)
+      par_bac[,paste0(traits,"_lot")] <- tmp[,traits]
+      a <- as.data.frame(par_bac)
       
-      test[i,"w.test_ind_lot"] <- wilcox.test(par_bac[,paste0(t,"_ind")] , par_bac[,paste0(t,"_lot")] , paired = T , alternative = alt)$p.value
-    
-    
-    
-    # t.test
-    if (t != "nb_geno"){
-      f <- as.formula(paste(t,"~ BAC + selection"))
-      mod <- summary(lm(f , data = don_t))$coefficients
+      a$nb_geno_lot <- NULL
+      par_bac <- sel_lot %>% group_by(BAC,geno) %>% summarise(count = 1) %>% group_by(BAC) %>% summarise(nb_geno_lot = sum(count)) %>% merge(a , by = "BAC")
       
-      test[i,"t.test_ind"] <- mod["selectionIND","Pr(>|t|)"]
-      test[i,"t.test_lot"] <- mod["selectionIND","Pr(>|t|)"]
-      test[i,"R_ind"] <- mod["selectionIND","Estimate"]
-      test[i,"R_lot"] <- mod["selectionLOT","Estimate"]
-      test[i,"R%_ind"] <- mod["selectionIND","Estimate"] * 100 / sd(pop[,t] , na.rm = T)
-      test[i,"R%_lot"] <- mod["selectionLOT","Estimate"] * 100 / sd(pop[,t] , na.rm = T)
-    
+      rm(a)
+      
+      
+      
+      # donnees pour test student
+      sel_lot$selection <- "LOT"
+      don_t <- rbind(pop,sel_ind,sel_lot)
+      don_t$selection <- relevel(as.factor(don_t$selection) , ref = "NON")
+      
+      
+      # tests et remplissage du tableau de resultats
+      
+      for (t in c(traits,"nb_geno")){
+        
+        test[i,"trait"] <- t
+        test[i,"i_ind"] <- i_ind
+        test[i,"i_lot"] <- i_lot
+        test[i,"NEO"] <- neo/nrow(moy_geno)
+        test[i,"nsel"] <- nsel
+        test[i,"rep"] <- r
+        
+        # w.test entre selection et pas de selection
+        alt <- "less"
+        if (mean(par_bac[,paste0(t,"_ind")]) > mean(par_bac[,t])){alt <- "greater"}
+        
+        test[i,"w.test_ind"] <- wilcox.test(par_bac[,paste0(t,"_ind")] , par_bac[,t] , paired = T , alternative = alt)$p.value
+        
+        test[i,"w.test_lot"] <- wilcox.test(par_bac[,paste0(t,"_lot")] , par_bac[,t] , paired = T , alternative = alt)$p.value
+        
+        
+        # w.test entre selection sur lot et selection sur grain
+        alt <- "less"
+        if (mean(par_bac[,paste0(t,"_ind")]) > mean(par_bac[,paste0(t,"_lot")])){alt <- "greater"}
+        
+        test[i,"w.test_ind_lot"] <- wilcox.test(par_bac[,paste0(t,"_ind")] , par_bac[,paste0(t,"_lot")] , paired = T , alternative = alt)$p.value
+      
+      
+      
+      # t.test
+      if (t != "nb_geno"){
+        f <- as.formula(paste(t,"~ BAC + selection"))
+        mod <- summary(lm(f , data = don_t))$coefficients
+        
+        test[i,"t.test_ind"] <- mod["selectionIND","Pr(>|t|)"]
+        test[i,"t.test_lot"] <- mod["selectionLOT","Pr(>|t|)"]
+        test[i,"R_ind"] <- mod["selectionIND","Estimate"]
+        test[i,"R_lot"] <- mod["selectionLOT","Estimate"]
+        test[i,"R%_ind"] <- mod["selectionIND","Estimate"] * 100 / sd(pop[,t] , na.rm = T)
+        test[i,"R%_lot"] <- mod["selectionLOT","Estimate"] * 100 / sd(pop[,t] , na.rm = T)
+      
+        }
+        
+        
+        if (t == "nb_geno"){
+          test[i,"nb_geno"] <- mean(par_bac$nb_geno)
+          test[i,"nb_geno_ind"] <- mean(par_bac$nb_geno_ind)
+          test[i,"nb_geno_lot"] <- mean(par_bac$nb_geno_lot)
+        }
+        
+        
+        i <- i+1
+      
+      
       }
       
-      
-      if (t == "nb_geno"){
-        test[i,"nb_geno"] <- mean(par_bac$nb_geno)
-        test[i,"nb_geno_ind"] <- mean(par_bac$nb_geno_ind)
-        test[i,"nb_geno_lot"] <- mean(par_bac$nb_geno_lot)
-      }
-      
-      
-      i <- i+1
-    
-    
     }
-    
+  
   }
 
 }
+
+
+
+sel_in_silico <- test
+
+save(sel_in_silico , file = "../donnees/sel_in_silico")
 
 test2 <- test
 test <- test2 %>% filter(nsel == 400)
@@ -356,7 +370,7 @@ test <- test2 %>% filter(nsel == 400)
 # nb genotypes selectionnes
 a <- test %>% filter(trait == "nb_geno") %>% gather(variable , value , c("nb_geno_lot","nb_geno_ind","nb_geno"))
 
-ggplot(a , aes(x = NEO , y = value , col = variable)) + geom_line() + geom_point()
+ggplot(a , aes(x = NEO , y = value , col = variable)) + geom_line() + geom_point() + labs(y = "nb_geno")
 
 
 # intensites de selection
@@ -418,7 +432,7 @@ resultat(t="poids_max")
 
 # comparaison avec la theorie
 
-rm(list=setdiff(ls(), c("test2","pop","bac","moy_geno","ngl")))
+rm(list=setdiff(ls(), c("test2","pop","bac","moy_geno","ngl","n_sel")))
 
 
 # Repi/Rgrain
@@ -440,7 +454,7 @@ vintra <- 2.677^2
 RR_test <- data.frame()
 i <- 1
 
-for (nsel in c(500,400,300,200,100)){
+for (nsel in n_sel){
   for (neo in c(seq(round(nsel/ngl) , nrow(moy_geno) , 10) , nrow(moy_geno))){
     
     RR_test[i,"RR_th"] <- RR(NE_O=neo , NG_O=NG_O , vg=vg , vinter=vinter , vintra=vintra , vpos=vpos , NG_E=ngl , nsel=nsel)
@@ -464,10 +478,18 @@ row.names(RR_test) <- paste(RR_test$NEO,RR_test$nsel)
 RR_test <- merge(RR_test,tmp , by = "row.names") %>% mutate(nsel = as.factor(nsel))
 
 
-ggplot(RR_test , aes(x = RR_th , y = RR_exp)) + geom_point() + geom_smooth(method = "lm" , se = F) + geom_abline(slope = 1 , intercept = 0 , col = "red")
+ggplot(RR_test , aes(x = RR_th , y = RR_exp)) + geom_point(aes(col=nsel)) + geom_smooth(method = "lm" , se = F) + geom_abline(slope = 1 , intercept = 0 , col = "red") + labs(x = "Repi/Rgrain theorique" , y = "Repi/Rgrain empirique" , title = "Comparaison entre l'approche théorique et la sélection in silico")
+
+# en enlevant les trucs random quand Repi = 0
+RR_test_2 <- RR_test %>% filter(RR_th != 0)
+ggplot(RR_test_2 , aes(x = RR_th , y = RR_exp)) + geom_point() + geom_smooth(method = "lm" , se = F) + geom_abline(slope = 1 , intercept = 0 , col = "red") + labs(x = "Repi/Rgrain theorique" , y = "Repi/Rgrain empirique" , title = "Comparaison entre l'approche théorique et la sélection in silico")
+
 
 cor(RR_test$RR_th,RR_test$RR_exp)
 cor(RR_test$RR_th,RR_test$RR_exp)^2
+
+# cor(RR_test_2$RR_th,RR_test_2$RR_exp)
+# cor(RR_test_2$RR_th,RR_test_2$RR_exp)^2
 
 long <- RR_test %>% gather(variable,value,c("RR_th","RR_exp"))
 
@@ -477,9 +499,99 @@ ggplot(long , aes(x = NEO , y = value , col = variable)) + geom_point() + geom_l
 
 RR_test$diff <- RR_test$RR_th - RR_test$RR_exp
 
-qqnorm(RR_test$diff)
+ggplot(RR_test , aes(sample = diff)) + geom_qq() + geom_qq_line(col = "red")
 
 t.test(RR_test$RR_th , RR_test$RR_exp , paired = T)
 
 wilcox.test(RR_test$RR_th , RR_test$RR_exp , paired = T)
 
+
+
+
+
+
+
+
+
+
+
+load("../donnees/sel_in_silico")
+
+don <- sel_in_silico %>% filter(trait == "surface_recolte_moy") %>% rename(R_rela_lot = "R%_lot" , R_rela_ind = "R%_ind") %>% mutate(NEO = as.factor(NEO*177)) 
+
+hline <- don %>% group_by(nsel) %>% summarise(R_ind = mean(R_rela_ind))
+
+ggplot(don , aes(x = NEO , y = R_rela_lot)) + geom_boxplot() + geom_hline(data = hline , aes(yintercept = R_ind , col = "R% grain")) + facet_wrap(~nsel) + labs(x = "Nombre d'épi observé" , y = "progrès génétique en % de l'écart-type" , title = "Comparaison de la sélection sur grain et de la sélection sur lot pour la taille du grain") + theme(axis.text.x = element_text(angle = 90 , size = 7) , legend.title = element_blank())
+
+
+
+
+
+
+
+don <- sel_in_silico %>% filter(trait == "surface_recolte_moy") %>% mutate(RR_exp = R_lot/R_ind , NEO = NEO*177) %>% group_by(nsel,NEO) %>% summarise(RR_exp = mean(RR_exp)) %>% as.data.frame()
+
+#don <- sel_in_silico %>% filter(trait == "surface_recolte_moy") %>% group_by(nsel,NEO) %>% summarise(R_ind = mean(R_ind) , R_lot = mean(R_lot)) %>% mutate(RR_exp = R_lot/R_ind , NEO = NEO*177) %>% as.data.frame()
+
+row.names(don) <- paste(don$NEO,don$nsel)
+
+tmp <- don %>% select(RR_exp)
+
+
+# Rgrain/Repi
+RR <- function(NE_O , NG_O , vg , vinter , vintra , vpos , NG_E , nsel){
+  (NG_E * NE_O * sqrt(vg+vinter+vpos+vintra) * exp((qnorm(1-nsel/NG_O)^2 - qnorm(1-nsel/(NG_E*NE_O))^2) / 2)) / (NG_O * sqrt(vg+vinter+vpos+vintra/NG_E))
+}
+
+Rg <- function(NE_O , NG_O , vg , vinter , vintra , vpos , NG_E , nsel){
+  NG_E * NE_O * sqrt(vg+vinter+vpos+vintra) * exp((qnorm(1-nsel/NG_O)^2 - qnorm(1-nsel/(NG_E*NE_O))^2) / 2) / (NG_O * sqrt(vg+vinter+vpos+vintra/NG_E))
+}
+
+Re <- function(NE_O , NG_O , vg , vinter , vintra , vpos , NG_E , nsel){
+  NG_E * NE_O * sqrt(vg+vinter+vpos+vintra) * exp((qnorm(1-nsel/NG_O)^2 - qnorm(1-nsel/(NG_E*NE_O))^2) / 2) / (NG_O * sqrt(vg+vinter+vpos+vintra/NG_E))
+}
+
+
+
+NG_O <- nrow(pop)
+
+# variances estimees dans estimation_variance.R pour la taille des grains
+
+vg <- 1.303^2
+vinter <- 1.423^2
+vpos <- 1.229^2
+vintra <- 2.677^2
+
+
+RR_test <- data.frame()
+i <- 1
+
+for (nsel in n_sel){
+  for (neo in c(seq(round(nsel/ngl) , nrow(moy_geno) , 10) , nrow(moy_geno))){
+    
+    RR_test[i,"RR_th"] <- RR(NE_O=neo , NG_O=NG_O , vg=vg , vinter=vinter , vintra=vintra , vpos=vpos , NG_E=ngl , nsel=nsel)
+    
+    RR_test[i,"NEO"] <- neo
+    
+    RR_test[i,"nsel"] <- nsel
+    
+    i <- i+1
+  }
+}
+
+
+row.names(RR_test) <- paste(RR_test$NEO,RR_test$nsel)
+
+RR_test <- merge(RR_test,tmp , by = "row.names") %>% mutate(nsel = as.factor(nsel))
+
+RR_test$aby <- RR_test$abx <- seq(min(RR_test$RR_th) , max(RR_test$RR_th) , length = nrow(RR_test))
+
+ggplot(RR_test , aes(x = RR_th , y = RR_exp)) + geom_point() + geom_smooth(method = "lm" , se = F , aes(col = "Regression")) + geom_line(aes(x = abx , y = aby , col = "y=x") , linewidth = 1) + labs(x = "Repi/Rgrain theorique" , y = "Repi/Rgrain empirique" , title = "Comparaison entre l'approche théorique et la sélection in silico") + scale_colour_manual(values = c( "#619CFF","#F8766D"))
+
+
+
+cor(RR_test$RR_th , RR_test$RR_exp)
+cor(RR_test$RR_th , RR_test$RR_exp)^2
+
+mod <- lm(RR_th~RR_exp , data = RR_test)
+summary(mod)

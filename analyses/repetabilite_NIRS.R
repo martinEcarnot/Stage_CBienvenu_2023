@@ -1,5 +1,7 @@
 rm(list = ls())
 
+library(tidyverse)
+
 setwd("C:/Users/bienvenu/Documents/Stage/Analyses")
 
 prot_tmp <- read.table("../donnees/data_brute/Stage_CBienvenu_Prediction_proteines_NIRS_épis.csv" , header = T , sep = ";" , dec = ".") %>% column_to_rownames(var = "Nom") 
@@ -28,8 +30,20 @@ prot3 <- prot3 %>% filter(ind %in% prot2$ind)
 
 prot <- rbind(prot2,prot3)
 
+rm(prot2,prot3,prot_tmp)
 
-mod <- lm(Proteines ~ ind , data = prot)
+
+
+load("../donnees/estim_var")
+
+prot2 <- filter(prot , !ind %in% estim_var$ind)
+
+
+
+
+
+
+mod <- lm(Proteines ~ ind , data = prot2)
 
 mod
 
@@ -39,3 +53,5 @@ plot(mod)
 
 
 #R2 a 0.8
+
+anova(mod)

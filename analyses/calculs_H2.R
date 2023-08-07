@@ -4,7 +4,7 @@ setwd("~/Stage/Analyses")
 
 library(ggplot2)
 library(tidyverse)
-#library(FactoMineR)
+library(FactoMineR)
 #library(GGally)
 library(lme4)
 library(lmerTest)
@@ -244,8 +244,6 @@ for (t in traits){
 
 
 
-don2 <- don %>% filter(hauteur > 50)
-t <- "preco"
 
 
 
@@ -404,10 +402,8 @@ ggplot(H2 , aes(x = dim , y = value)) + geom_col() + facet_wrap(~key) + labs(y =
 
 
 
-
-
-
-
+H2_ACP_sp <- res
+save(H2_ACP_sp , file = "../donnees/H2_ACP_sp")
 
 
 

@@ -2018,22 +2018,25 @@ diff <- opto_semis_champ %>% group_by(taille_rep) %>% summarise(surface = mean(S
 
 # ok pas de diff entre les rep
 
-diff <- opto_semis_champ %>% group_by(taille) %>% summarise(surface = mean(Surface) , PMG = mean(PMG) , PMG2 = mean(PMG2)) %>% column_to_rownames(var = "taille")
+diff <- opto_semis_champ %>% group_by(taille) %>% summarise(surface_recolte_moy = mean(Surface) , PMG = mean(PMG) , PMG2 = mean(PMG2) , surface_recolte_min = min(Surface) , surface_recolte_max = max(Surface)) %>% column_to_rownames(var = "taille")
 
+diff2 <- opto_semis_champ %>% filter(Classe == 1) %>% group_by(taille) %>% summarise(surface_recolte_moy2 = mean(Surface) , surface_recolte_min2 = min(Surface) , surface_recolte_max2 = max(Surface)) %>% column_to_rownames(var = "taille")
+
+diff <- merge(diff , diff2 , by = "row.names") %>% column_to_rownames(var = "Row.names")
 
 tmp <- apply(X = diff , MARGIN = 1 , FUN = function(x){x - diff["NonTrie",]} , simplify = T)
 
 S <- data.frame()
 ct <- 1
 for (i in tmp){
-  S[names(tmp)[ct],c("surface","PMG","PMG2")] <- c(i$surface,i$PMG,i$PMG2)
+  S[names(tmp)[ct],names(diff)] <- c(i$surface_recolte_moy,i$PMG,i$PMG2,i$surface_recolte_min , i$surface_recolte_max , i$surface_recolte_moy2 , i$surface_recolte_min2 , i$surface_recolte_max2)
   ct <- ct+1
 }
 
 S["NT",] <- diff["NonTrie",]
 row.names(S)[1] <- "gros"
 
-S <- S[-2,]
+S <- S[-3,]
 
 save(S , file = "S")
 save(opto_semis_champ , file = "opto_semis_champ")

@@ -7,7 +7,8 @@ champ$selection <- relevel(as.factor(champ$selection) , ref = "NT")
 
 library(tidyverse)
 library(ggplot2)
-#library(multcomp)
+library(ggpubr)
+library(multcomp)
 library(lme4)
 library(lmerTest)
 #library(FactoMineR)
@@ -44,6 +45,11 @@ ggplot(opto_semis_champ , aes(y = Surface , x = taille)) + geom_boxplot()
 
 
 ggplot(champ , aes(x = surface_recolte_moy)) + geom_histogram()
+
+ggplot(opto_semis_champ , aes(x = Surface , y = Largeur)) + geom_point()
+ggplot(opto_semis_champ , aes(x = Surface , y = Longueur)) + geom_point()
+ggplot(opto_semis_champ , aes(x = Longueur , y = Largeur)) + geom_point()
+
 
 ggplot(champ , aes(x = PMG)) + geom_histogram()
 
@@ -354,3 +360,217 @@ S2 <- S2[sort(row.names(S2)),]
 H22 <- R2/S2
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Model lineaire avec planche et NT au hasard -----------------------------
+
+rm(list=ls())
+
+
+load("../donnees/champ")
+
+
+# On regarde si pour les non trié, le plot a un effet
+{
+don <- champ %>% filter(selection == "NT")
+
+mod <- lm(PMG ~ parcelle , data = don)
+par(mfrow = c(2,2))
+plot(mod)
+summary(mod)
+anova(mod)
+
+mod <- lm(PMG2 ~ parcelle , data = don)
+plot(mod)
+summary(mod)
+anova(mod)
+
+
+
+mod <- lm(surface_recolte_moy ~ parcelle , data = don)
+plot(mod)
+summary(mod)
+anova(mod)
+
+
+mod <- lm(surface_recolte_moy2 ~ parcelle , data = don)
+plot(mod)
+summary(mod)
+anova(mod)
+
+
+
+
+mod <- lm(surface_recolte_min ~ parcelle , data = don)
+plot(mod)
+summary(mod)
+anova(mod)
+
+
+mod <- lm(surface_recolte_min2 ~ parcelle , data = don)
+plot(mod)
+summary(mod)
+anova(mod)
+
+
+
+
+mod <- lm(prot_recolte ~ parcelle , data = don)
+plot(mod)
+summary(mod)
+anova(mod)
+
+
+mod <- lm(poids_max ~ parcelle , data = don)
+plot(mod)
+summary(mod)
+anova(mod)
+
+
+
+mod <- lm(poids_min ~ parcelle , data = don)
+plot(mod)
+summary(mod)
+anova(mod)
+
+
+mod <- lm(GSV ~ parcelle , data = don)
+plot(mod)
+summary(mod)
+anova(mod)
+
+mod <- lm(GSV2 ~ parcelle , data = don)
+plot(mod)
+summary(mod)
+anova(mod)
+
+}
+
+# okay, bon globalement y'a pas d'effet parcelle pour les NT, donc pour les deux NT inconnus, on peut repartir les observations au hasard entre les parcelles pour avoir planche et passage pour toutes les observations et estimer les R
+
+
+
+
+# repartition au hasard entre pas2 pl3 ou pl3 ps2
+
+tmp <- champ %>% filter(planche == "inconnu1" | planche == "inconnu2")
+
+ps2pl3 <- seq(1,nrow(tmp),2)
+ps3pl2 <- setdiff(1:nrow(tmp) , ps2pl3)
+
+for (i in ps2pl3){
+  tmp[i , c("passage" , "planche")] <- c(2,3)
+}
+
+for (i in ps3pl2){
+  tmp[i , c("passage" , "planche")] <- c(3,2)
+}
+
+don <- champ
+don[row.names(tmp),] <- tmp
+
+don$selection <- relevel(as.factor(don$selection) , ref = "NT")
+
+ggplot(don , aes(x = passage , y = planche , fill = selection)) + geom_tile()
+
+
+
+
+# quels effets significatifs ?
+
+traits <- c("surface_recolte_moy" , "surface_recolte_min" , "surface_recolte_max" , "PMG" , "GSV" , "nb_grain" , "surface_recolte_moy2" , "surface_recolte_min2" ,  "surface_recolte_max2" , "PMG2" , "GSV2" , "poids_moy2" , "poids_min2" , "poids_max2" , "prot_recolte")
+
+res <- data.frame()
+
+for (t in traits){
+  f <- as.formula(paste(t , "~ selection + passage + planche"))
+  
+  mod <- lm(f , data = don)
+  
+  a <- step(mod , direction = "both")
+  
+  res[t,"effet1"] <- names(a$xlevels)[1]
+  res[t,"effet2"] <- names(a$xlevels)[2]
+  res[t,"effet3"] <- names(a$xlevels)[3]
+  
+}
+
+
+
+# effet de selection : 
+
+traits <- res %>% filter(effet1 == "selection" | effet2 == "selection") %>% row.names()
+
+
+
+R <- data.frame()
+
+for (t in traits){
+  ef1 <- res[t , "effet1"]
+  ef2 <- res[t , "effet2"]
+  
+  f <- as.formula(paste(t,"~",ef1,"+",ef2))
+  
+  mod <- lm(f , data = don)
+  
+  R[t,"gros"] <- mod$coefficients["selectiongros"]
+  R[t,"petit"] <- mod$coefficients["selectionpetit"]
+  R[t,"moyen"] <- mod$coefficients["selectionmoyen"]
+  
+  
+  lettres <- as.data.frame(cld(glht(model = mod , mcp(selection = "Tukey")) , level = 0.05)$mcletters$Letters)
+  
+  names(lettres)[1] <- "groups"
+  
+  lettres$selection <- row.names(lettres)
+  
+  print(
+  ggplot(don , aes(x=selection , y=don[,t] , col=selection, fill=selection))+
+    geom_boxplot(alpha = 0.5)+
+    theme(legend.position="none") +
+    geom_text(data = lettres, aes(label = groups, y = max(don[,t] , na.rm = T) ), size=5) +
+    labs(title = paste(t,"en fonction de la selection") , x = "selection" , y = t) + stat_mean(col = "black")
+  )
+  
+}
+
+
+
+
+load("../donnees/S")
+
+
+R <- as.data.frame(t(R))
+S <- S[-4,]
+
+R <- R[sort(row.names(R)) , sort(names(R))]
+R <- R[,-3]
+S <- S[sort(row.names(S)) , sort(names(S))]
+
+
+H2 <- R/S
+
+
+ggplot(champ , aes(x=PMG , y=prot_recolte)) + geom_point()
+ggplot(champ , aes(x=surface_recolte_moy , y=prot_recolte)) + geom_point()

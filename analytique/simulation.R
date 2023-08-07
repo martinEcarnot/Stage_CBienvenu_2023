@@ -12,8 +12,8 @@ i_p <- function(p){
 }
 
 
-RR <- function(NE_O , NG_O , vg , vinter , vintra , vpos , NG_E , nsel){
-  NG_E * NE_O * sqrt(vg+vinter+vpos+vintra) * exp((qnorm(1-nsel/NG_O)^2 - qnorm(1-nsel/(NG_E*NE_O))^2) / 2) / (NG_O * sqrt(vg+vinter+vpos+vintra/NG_E))
+RR <- function(NEO , NGO , vg , vinter , vintra , vpos , NGE , nsel){
+  NGE * NEO * sqrt(vg+vinter+vpos+vintra) * exp((qnorm(1-nsel/NGO)^2 - qnorm(1-nsel/(NGE*NEO))^2) / 2) / (NGO * sqrt(vg+vinter+vpos+vintra/NGE))
 }
 
 
@@ -421,10 +421,10 @@ z <- outer(X = ngo , Y = neo , FUN = invisuri , NG_E = 70 , nsel = 3000)
 zvalue <- t(z*sqrt(5+5/70)/sqrt(10))
 
 axy <- list(
-  title = "Nombre d'épis observés")
+  title = "Nombre d'?pis observ?s")
 
 axx <- list(
-  title = "Nombre grains observés")
+  title = "Nombre grains observ?s")
 
 axz <- list(
   title = "Rgrain/Repi")
@@ -482,6 +482,25 @@ fig
 
 # brute force pour trouver l'espace paramÃ©trique --------------------------
 
+setwd("~/Stage/Analyses")
+
+load("../donnees/champ")
+
+mean(champ$nb_grain , na.rm = T)
+aggregate(champ$nb_grain~champ$selection , FUN = mean , na.rm = T)
+
+load("../donnees/bac")
+aggregate(bac$nb_grain ~ bac$BAC , FUN = mean , na.rm = T)
+
+
+# On fixe NGE Ã  40
+
+vg <- 1.303^2
+vinter <- 1.423^2
+vpos <- 1.229^2
+vintra <- 2.677^2
+
+
 # on y va par tranche d'ordre de grandeur
 tot <- 70560
 param_v_fixe <- data.frame()
@@ -489,26 +508,101 @@ i <- 1
 for (neo in c(seq(10,100,10),seq(200,1000,100),seq(1250,3000,250))){
   for (ngo in c(seq(10000,100000,10000) , seq(150000,1000000,50000))){
     for (nge in seq(20,100,10)){
-      for (nsel in seq(neo*nge*0.05,neo*nge,length=10)){
+      for (nsel in c(100 , 200 , 300 , 400 , 1000 , 2000 , 5000 , 10000 , 50000 , 100000)){
+        
+        if (nsel < neo*nge & nsel < ngo){
         param_v_fixe[i,"NEO"] <- neo
         param_v_fixe[i,"NGO"] <- ngo
         param_v_fixe[i,"NGE"] <- nge
         param_v_fixe[i,"nsel"] <- nsel
-        param_v_fixe[i,"vg"] <- 2
-        param_v_fixe[i,"vintra"] <- 5
-        param_v_fixe[i,"vinter"] <- 1
-        param_v_fixe[i,"vpos"] <- 2
-        param_v_fixe[i,"ReRg"] <- RR(NE_O = neo , NG_O = ngo , vg = 2 , vinter = 1 , vintra  = 5 , vpos = 2 , NG_E = nge , nsel = nsel)
+        param_v_fixe[i,"vg"] <- vg
+        param_v_fixe[i,"vintra"] <- vintra
+        param_v_fixe[i,"vinter"] <- vinter
+        param_v_fixe[i,"vpos"] <- vpos
         
         i <- i+1
-        
-       
-        
         print(round(i*100/tot , 2))
+        }
+        
       }
     }
   }
 }
 
 
+
+param_v_fixe$ReRg <- RR(NEO = param_v_fixe$NEO , 
+                        NGO = param_v_fixe$NGO ,
+                        NGE = param_v_fixe$NGE , 
+                        nsel = param_v_fixe$nsel , 
+                        vg = param_v_fixe$vg , 
+                        vinter = param_v_fixe$vinter ,
+                        vintra = param_v_fixe$vintra , 
+                        vpos = param_v_fixe$vpos)
+
+
+table(is.na(param_v_fixe$ReRg))
+
 save(param_v_fixe , file = "param_v_fixe")
+
+
+
+
+
+rm(list = ls())
+
+load("param_v_fixe")
+
+
+# conditions du champ/bac
+
+don <- param_v_fixe %>% filter(NGE == 40)
+
+don$RgRe <- 1/don$ReRg
+
+
+# quand grain > epi
+
+dong <- don %>% filter(RgRe > 1)
+
+
+summary(dong$nsel)
+
+ggplot(dong , aes(x = NEO , y = NGO)) + geom_point()
+ggplot(dong , aes(x = RgRe , y = NGO)) + geom_point()
+ggplot(dong , aes(x = NEO , y = RgRe)) + geom_point()
+
+
+# quand epi > grain
+done <- don %>% filter(ReRg > 1)
+
+
+ggplot(done , aes(x = NEO , y = NGO)) + geom_point()
+ggplot(done , aes(x = RgRe , y = NGO)) + geom_point()
+ggplot(done , aes(x = NEO , y = RgRe)) + geom_point()
+
+
+
+
+
+
+
+don$nsel <- as.factor(don$nsel)
+
+donplot <- don %>% filter(nsel %in% c(100 , 400 , 1000 , 5000 , 10000 , 50000)) %>% filter(NGO %in% c(10000 , 50000 , 100000 , 500000 , 1000000)) %>% mutate(NGO = as.factor(NGO))
+
+ggplot(donplot , aes(x = NEO , y = RgRe , col = NGO)) + geom_line() + geom_hline(yintercept = 1 , col = "red") + facet_wrap(~nsel)
+
+
+
+donplot2 <- don %>% filter(nsel %in% c(100 , 400 , 1000 , 5000 , 10000 , 50000)) %>% filter(NEO %in% c(10 , 50 , 100 , 500 , 1000 , 2000 , 3000)) %>% mutate(NEO = as.factor(NEO))
+
+ggplot(donplot2 , aes(x = NGO , y = RgRe , col = NEO)) + geom_line() + geom_hline(yintercept = 1 , col = "red") + facet_wrap(~nsel)
+
+
+
+
+
+donplot3 <- param_v_fixe %>% mutate_at(.vars = c("NEO","nsel","NGE") , .funs = as.factor) %>% mutate(RgRe = 1/ReRg) %>% filter(RgRe < 5) %>% filter(nsel %in% c(100,400,2000,10000)) %>% filter(NGE %in% c(40,60,80)) %>% filter(NEO %in% c(100 , 500 , 1000 , 3000))
+
+ggplot(donplot3 , aes(x = NGO , y = RgRe , col = NEO)) + geom_line(linewidth = 1) + geom_hline(yintercept = 1 , col = "red") + facet_grid(NGE~nsel)
