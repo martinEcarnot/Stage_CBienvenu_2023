@@ -349,18 +349,22 @@ for (r in 1:50) {
         
         i <- i+1
       
+        
       
       }
       
     }
   
   }
-
+  print(r)
 }
 
 
 
-sel_in_silico <- test
+load("../donnees/sel_in_silico")
+
+sel_in_silico <- rbind(sel_in_silico , test)
+
 
 save(sel_in_silico , file = "../donnees/sel_in_silico")
 
@@ -430,88 +434,10 @@ resultat(t="poids_max")
 
 
 
-# comparaison avec la theorie
+# comparaison avec la theorie ---------------------------------------------
+
 
 rm(list=setdiff(ls(), c("test2","pop","bac","moy_geno","ngl","n_sel")))
-
-
-# Repi/Rgrain
-RR <- function(NE_O , NG_O , vg , vinter , vintra , vpos , NG_E , nsel){
-  NG_E * NE_O * sqrt(vg+vinter+vpos+vintra) * exp((qnorm(1-nsel/NG_O)^2 - qnorm(1-nsel/(NG_E*NE_O))^2) / 2) / (NG_O * sqrt(vg+vinter+vpos+vintra/NG_E))
-}
-
-
-NG_O <- nrow(pop)
-
-# variances estimees dans estimation_variance.R pour la taille des grains
-
-vg <- 1.303^2
-vinter <- 1.423^2
-vpos <- 1.229^2
-vintra <- 2.677^2
-
-
-RR_test <- data.frame()
-i <- 1
-
-for (nsel in n_sel){
-  for (neo in c(seq(round(nsel/ngl) , nrow(moy_geno) , 10) , nrow(moy_geno))){
-    
-    RR_test[i,"RR_th"] <- RR(NE_O=neo , NG_O=NG_O , vg=vg , vinter=vinter , vintra=vintra , vpos=vpos , NG_E=ngl , nsel=nsel)
-    
-    RR_test[i,"NEO"] <- neo
-    
-    RR_test[i,"nsel"] <- nsel
-    
-    i <- i+1
-  }
-}
-
-
-
-tmp <- test2 %>% filter(trait == "surface_recolte_moy") %>% mutate(methode = "empirique" , RR_exp = R_lot/R_ind , NEO = NEO*177) %>% select(RR_exp,NEO,nsel)
-
-row.names(tmp) <- paste(tmp$NEO,tmp$nsel)
-tmp$NEO <- tmp$nsel <- NULL
-row.names(RR_test) <- paste(RR_test$NEO,RR_test$nsel)
-
-RR_test <- merge(RR_test,tmp , by = "row.names") %>% mutate(nsel = as.factor(nsel))
-
-
-ggplot(RR_test , aes(x = RR_th , y = RR_exp)) + geom_point(aes(col=nsel)) + geom_smooth(method = "lm" , se = F) + geom_abline(slope = 1 , intercept = 0 , col = "red") + labs(x = "Repi/Rgrain theorique" , y = "Repi/Rgrain empirique" , title = "Comparaison entre l'approche théorique et la sélection in silico")
-
-# en enlevant les trucs random quand Repi = 0
-RR_test_2 <- RR_test %>% filter(RR_th != 0)
-ggplot(RR_test_2 , aes(x = RR_th , y = RR_exp)) + geom_point() + geom_smooth(method = "lm" , se = F) + geom_abline(slope = 1 , intercept = 0 , col = "red") + labs(x = "Repi/Rgrain theorique" , y = "Repi/Rgrain empirique" , title = "Comparaison entre l'approche théorique et la sélection in silico")
-
-
-cor(RR_test$RR_th,RR_test$RR_exp)
-cor(RR_test$RR_th,RR_test$RR_exp)^2
-
-# cor(RR_test_2$RR_th,RR_test_2$RR_exp)
-# cor(RR_test_2$RR_th,RR_test_2$RR_exp)^2
-
-long <- RR_test %>% gather(variable,value,c("RR_th","RR_exp"))
-
-ggplot(long , aes(x = NEO , y = value , col = variable)) + geom_point() + geom_line() + facet_wrap(~nsel)
-
-
-
-RR_test$diff <- RR_test$RR_th - RR_test$RR_exp
-
-ggplot(RR_test , aes(sample = diff)) + geom_qq() + geom_qq_line(col = "red")
-
-t.test(RR_test$RR_th , RR_test$RR_exp , paired = T)
-
-wilcox.test(RR_test$RR_th , RR_test$RR_exp , paired = T)
-
-
-
-
-
-
-
-
 
 
 
@@ -529,26 +455,26 @@ ggplot(don , aes(x = NEO , y = R_rela_lot)) + geom_boxplot() + geom_hline(data =
 
 
 
-don <- sel_in_silico %>% filter(trait == "surface_recolte_moy") %>% mutate(RR_exp = R_lot/R_ind , NEO = NEO*177) %>% group_by(nsel,NEO) %>% summarise(RR_exp = mean(RR_exp)) %>% as.data.frame()
+don <- sel_in_silico %>% filter(trait == "surface_recolte_moy") %>% mutate(RR_exp = R_lot/R_ind , NEO = NEO*177) %>% group_by(nsel,NEO) %>% summarise(RR_exp = mean(RR_exp) , Rlot_exp = mean(R_lot) , Rind_exp = mean(R_ind)) %>% as.data.frame()
 
 #don <- sel_in_silico %>% filter(trait == "surface_recolte_moy") %>% group_by(nsel,NEO) %>% summarise(R_ind = mean(R_ind) , R_lot = mean(R_lot)) %>% mutate(RR_exp = R_lot/R_ind , NEO = NEO*177) %>% as.data.frame()
 
 row.names(don) <- paste(don$NEO,don$nsel)
 
-tmp <- don %>% select(RR_exp)
+
 
 
 # Rgrain/Repi
-RR <- function(NE_O , NG_O , vg , vinter , vintra , vpos , NG_E , nsel){
-  (NG_E * NE_O * sqrt(vg+vinter+vpos+vintra) * exp((qnorm(1-nsel/NG_O)^2 - qnorm(1-nsel/(NG_E*NE_O))^2) / 2)) / (NG_O * sqrt(vg+vinter+vpos+vintra/NG_E))
+RR <- function(NEO , NGO , vg , vinter , vintra , vpos , NGE , nsel){
+  (NGE * NEO * sqrt(vg+vinter+vpos+vintra) * exp((qnorm(1-nsel/NGO)^2 - qnorm(1-nsel/(NGE*NEO))^2) / 2)) / (NGO * sqrt(vg+vinter+vpos+vintra/NGE))
 }
 
-Rg <- function(NE_O , NG_O , vg , vinter , vintra , vpos , NG_E , nsel){
-  NG_E * NE_O * sqrt(vg+vinter+vpos+vintra) * exp((qnorm(1-nsel/NG_O)^2 - qnorm(1-nsel/(NG_E*NE_O))^2) / 2) / (NG_O * sqrt(vg+vinter+vpos+vintra/NG_E))
+Rg <- function(NGO , vg , vinter , vintra , vpos , nsel){
+  vg * exp(-(qnorm(1-nsel/NGO)^2)/2) * NGO / (nsel * sqrt(2*pi) * sqrt(vg+vinter+vpos+vintra))
 }
 
-Re <- function(NE_O , NG_O , vg , vinter , vintra , vpos , NG_E , nsel){
-  NG_E * NE_O * sqrt(vg+vinter+vpos+vintra) * exp((qnorm(1-nsel/NG_O)^2 - qnorm(1-nsel/(NG_E*NE_O))^2) / 2) / (NG_O * sqrt(vg+vinter+vpos+vintra/NG_E))
+Re <- function(NEO , vg , vinter , vintra , vpos , NGE , nsel){
+  vg * exp(-(qnorm(1-nsel/(NGE*NEO))^2)/2) * NGE * NEO / (nsel* sqrt(2*pi) * sqrt(vg+vinter+vpos+vintra/NGE))
 }
 
 
@@ -562,14 +488,21 @@ vinter <- 1.423^2
 vpos <- 1.229^2
 vintra <- 2.677^2
 
+ngl <- 5
 
+
+n_sel <- seq(100,600,50)
 RR_test <- data.frame()
 i <- 1
 
 for (nsel in n_sel){
   for (neo in c(seq(round(nsel/ngl) , nrow(moy_geno) , 10) , nrow(moy_geno))){
     
-    RR_test[i,"RR_th"] <- RR(NE_O=neo , NG_O=NG_O , vg=vg , vinter=vinter , vintra=vintra , vpos=vpos , NG_E=ngl , nsel=nsel)
+    RR_test[i,"RR_th"] <- RR(NEO=neo , NGO=NG_O , vg=vg , vinter=vinter , vintra=vintra , vpos=vpos , NGE=ngl , nsel=nsel)
+    
+    RR_test[i,"Rlot_th"] <- Re(NEO=neo , vg=vg , vinter=vinter , vintra=vintra , vpos=vpos , NGE=ngl , nsel=nsel)
+    
+    RR_test[i,"Rind_th"] <- Rg(NGO=NG_O , vg=vg , vinter=vinter , vintra=vintra , vpos=vpos , nsel=nsel)
     
     RR_test[i,"NEO"] <- neo
     
@@ -581,14 +514,24 @@ for (nsel in n_sel){
 
 
 row.names(RR_test) <- paste(RR_test$NEO,RR_test$nsel)
+RR_test$nsel <- RR_test$NEO <- NULL
 
-RR_test <- merge(RR_test,tmp , by = "row.names") %>% mutate(nsel = as.factor(nsel))
+RR_test <- merge(RR_test, don , by = "row.names") %>% mutate(nsel = as.factor(nsel))
 
+{
 RR_test$aby <- RR_test$abx <- seq(min(RR_test$RR_th) , max(RR_test$RR_th) , length = nrow(RR_test))
-
 ggplot(RR_test , aes(x = RR_th , y = RR_exp)) + geom_point() + geom_smooth(method = "lm" , se = F , aes(col = "Regression")) + geom_line(aes(x = abx , y = aby , col = "y=x") , linewidth = 1) + labs(x = "Repi/Rgrain theorique" , y = "Repi/Rgrain empirique" , title = "Comparaison entre l'approche théorique et la sélection in silico") + scale_colour_manual(values = c( "#619CFF","#F8766D"))
+}
 
+{
+RR_test$aby <- RR_test$abx <- seq(min(RR_test$Rlot_th) , max(RR_test$Rlot_th) , length = nrow(RR_test))
+ggplot(RR_test , aes(x = Rlot_th , y = Rlot_exp)) + geom_point() + geom_smooth(method = "lm" , se = F , aes(col = "Regression")) + geom_line(aes(x = abx , y = aby , col = "y=x") , linewidth = 1) + labs(x = "Repi theorique" , y = "Repi empirique" , title = "Comparaison entre l'approche théorique et la sélection in silico") + scale_colour_manual(values = c( "#619CFF","#F8766D"))
+}
 
+{
+RR_test$aby <- RR_test$abx <- seq(min(RR_test$Rind_th) , max(RR_test$Rind_th) , length = nrow(RR_test))
+ggplot(RR_test , aes(x = Rind_th , y = Rind_exp)) + geom_point() + geom_smooth(method = "lm" , se = F , aes(col = "Regression")) + geom_line(aes(x = abx , y = aby , col = "y=x") , linewidth = 1) + labs(x = "Rgrain theorique" , y = "Rgrain empirique" , title = "Comparaison entre l'approche théorique et la sélection in silico") + scale_colour_manual(values = c( "#619CFF","#F8766D"))
+}
 
 cor(RR_test$RR_th , RR_test$RR_exp)
 cor(RR_test$RR_th , RR_test$RR_exp)^2
