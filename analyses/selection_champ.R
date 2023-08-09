@@ -492,7 +492,8 @@ don[row.names(tmp),] <- tmp
 
 don$selection <- relevel(as.factor(don$selection) , ref = "NT")
 
-ggplot(don , aes(x = passage , y = planche , fill = selection)) + geom_tile()
+graph <- don %>% group_by(planche,passage,selection) %>% summarise()
+ggplot(graph , aes(x = passage , y = planche , fill = selection)) + geom_tile() + geom_text(aes(label = selection) , col = "white") + theme(legend.position = "none") + labs(title = "Parcelles au champ")
 
 
 
