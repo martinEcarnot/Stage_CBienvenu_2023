@@ -11,6 +11,7 @@ library(ggpubr)
 library(multcomp)
 library(lme4)
 library(lmerTest)
+library(pander)
 #library(FactoMineR)
 
 
@@ -487,20 +488,23 @@ for (i in ps3pl2){
   tmp[i , c("passage" , "planche")] <- c(3,2)
 }
 
-don <- champ
+don <- champ %>% filter(hauteur > 25)
 don[row.names(tmp),] <- tmp
 
 don$selection <- relevel(as.factor(don$selection) , ref = "NT")
 
-graph <- don %>% group_by(planche,passage,selection) %>% summarise()
-ggplot(graph , aes(x = passage , y = planche , fill = selection)) + geom_tile() + geom_text(aes(label = selection) , col = "white") + theme(legend.position = "none") + labs(title = "Parcelles au champ")
+graph <- don %>% group_by(planche,passage,selection) %>% summarise() %>% mutate(selection = as.character(selection))
 
+graph$selection2 <- ifelse(graph$selection == "NT" , "t?moin" , graph$selection)
 
+ggplot(graph , aes(x = passage , y = planche , fill = selection)) + geom_tile() + geom_text(aes(label = selection2) , col = "white") + theme(legend.position = "none") + labs(title = "Parcelles au champ")
+
+rm(tmp,graph,i,ps2pl3,ps3pl2)
 
 
 # quels effets significatifs ?
 
-traits <- c("surface_recolte_moy" , "surface_recolte_min" , "surface_recolte_max" , "PMG" , "GSV" , "nb_grain" , "surface_recolte_moy2" , "surface_recolte_min2" ,  "surface_recolte_max2" , "PMG2" , "GSV2" , "poids_moy2" , "poids_min2" , "poids_max2" , "prot_recolte")
+traits <- c("hauteur" , "nb_epillets" , "surface_recolte_moy" , "surface_recolte_min" , "surface_recolte_max" , "PMG" , "GSV" , "nb_grain" , "surface_recolte_moy2" , "surface_recolte_min2" ,  "surface_recolte_max2" , "PMG2" , "GSV2" , "poids_moy2" , "poids_min2" , "poids_max2" , "prot_recolte")
 
 res <- data.frame()
 
@@ -517,15 +521,18 @@ for (t in traits){
   
 }
 
-
+res
 
 # effet de selection : 
 
 traits <- res %>% filter(effet1 == "selection" | effet2 == "selection") %>% row.names()
 
 
+l <- data.frame()
 
 R <- data.frame()
+
+pval <- data.frame()
 
 for (t in traits){
   ef1 <- res[t , "effet1"]
@@ -534,11 +541,13 @@ for (t in traits){
   f <- as.formula(paste(t,"~",ef1,"+",ef2))
   
   mod <- lm(f , data = don)
+  a <- drop1(mod , .~. , test = "F")
   
   R[t,"gros"] <- mod$coefficients["selectiongros"]
   R[t,"petit"] <- mod$coefficients["selectionpetit"]
   R[t,"moyen"] <- mod$coefficients["selectionmoyen"]
   
+  pval[t,"p-value"] <- a["selection","Pr(>F)"]
   
   lettres <- as.data.frame(cld(glht(model = mod , mcp(selection = "Tukey")) , level = 0.05)$mcletters$Letters)
   
@@ -546,16 +555,58 @@ for (t in traits){
   
   lettres$selection <- row.names(lettres)
   
-  print(
-  ggplot(don , aes(x=selection , y=don[,t] , col=selection, fill=selection))+
-    geom_boxplot(alpha = 0.5)+
-    theme(legend.position="none") +
-    geom_text(data = lettres, aes(label = groups, y = max(don[,t] , na.rm = T) ), size=5) +
-    labs(title = paste(t,"en fonction de la selection") , x = "selection" , y = t) + stat_mean(col = "black")
-  )
+  lettres$variable <- t
+  
+  lettres$y <- max(don[,t] , na.rm = T) +1
+  
+  l <- rbind(l , lettres)
+  
+  # g <- ggplot(don , aes(x=selection , y=don[,t] , col=selection, fill=selection))+
+  #   geom_boxplot(alpha = 0.5)+
+  #   theme(legend.position="none") +
+  #   geom_text(data = lettres, aes(label = groups, y = max(don[,t] , na.rm = T) ), size=5) + stat_mean(col = "black")
+  # 
+  # print(g)
+  # 
+  # graphs[[t]] <- g
   
 }
 
+
+# graph et tableau rapport
+
+pander(pval)
+
+
+don_graph <- don[,c("hauteur","surface_recolte_moy2","surface_recolte_min2","surface_recolte_max2","PMG","prot_recolte","selection")] %>% gather(variable,value,1:6)
+
+don_graph$variable2 <- ifelse(don_graph$variable == "hauteur" , "Hauteur" ,
+                             ifelse(don_graph$variable == "prot_recolte" , "Taux de protéines",
+                                    ifelse(don_graph$variable == "surface_recolte_max2" , "Taille du plus gros grain" , ifelse(don_graph$variable == "surface_recolte_min2" , "Taille du plus petit grain", ifelse(don_graph$variable == "surface_recolte_moy2" , "Taille moyenne des grains" , "PMG")))))
+
+l_graph <- subset(l , variable %in% c("hauteur","surface_recolte_moy2","surface_recolte_min2","surface_recolte_max2","PMG","prot_recolte"))
+
+l_graph$variable2 <- ifelse(l_graph$variable == "hauteur" , "Hauteur" ,
+                              ifelse(l_graph$variable == "prot_recolte" , "Taux de protéines",
+                                     ifelse(l_graph$variable == "surface_recolte_max2" , "Taille du plus gros grain" , ifelse(l_graph$variable == "surface_recolte_min2" , "Taille du plus petit grain", ifelse(l_graph$variable == "surface_recolte_moy2" , "Taille moyenne des grains" , "PMG")))))
+
+
+don_graph$variable3 <- factor(don_graph$variable2 , levels = c("Taille moyenne des grains" , "Taille du plus petit grain" , "Taille du plus gros grain" , "Hauteur" , "Taux de protéines" , "PMG"))
+
+l_graph$variable3 <- factor(l_graph$variable2 , levels = c("Taille moyenne des grains" , "Taille du plus petit grain" , "Taille du plus gros grain" , "Hauteur" , "Taux de protéines" , "PMG"))
+
+ggplot(don_graph , aes(x=selection , y = value , fill = selection , col = selection)) + geom_boxplot(alpha = 0.5) + stat_mean(col = "black") + facet_wrap(~variable3 , scales = "free") + theme(legend.position = "none") + geom_text(data = l_graph , aes(label = groups, y = y )) + labs(x = "Modalité de sélection" , y = "Valeur des traits" , title = "Effet de la sélection sur différents traits")
+
+
+
+tab <- merge(R,pval , by = "row.names") %>% column_to_rownames(var = "Row.names")
+
+tab <- tab[c("surface_recolte_moy2","surface_recolte_min2","surface_recolte_max2","hauteur","prot_recolte","PMG"),]
+
+rownames(tab) <- c("Taille moyenne des grains" , "Taille du plus petit grain" , "Taille du plus gros grain" , "Hauteur" , "Taux de protéines" , "PMG")
+
+
+write.table(round(tab,3) , file = "C:/Users/bienvenu/Documents/Stage_CBienvenu_2023/tables/progres_champ.csv" , sep = ";" , dec = "." , row.names = T , col.names = T)
 
 
 
@@ -566,12 +617,22 @@ R <- as.data.frame(t(R))
 S <- S[-4,]
 
 R <- R[sort(row.names(R)) , sort(names(R))]
-R <- R[,-3]
 S <- S[sort(row.names(S)) , sort(names(S))]
+R <- R[,-c(1,2,5)]
 
 
 H2 <- R/S
 
+H2 <- as.data.frame(t(H2))
+
+H2 <- H2[c("surface_recolte_moy2","surface_recolte_min2","surface_recolte_max2","PMG"),]
+
+rownames(H2) <- c("Taille moyenne des grains" , "Taille du plus petit grain" , "Taille du plus gros grain" ,"PMG")
+
+
+H2
+
+write.table(round(H2,3) , file = "C:/Users/bienvenu/Documents/Stage_CBienvenu_2023/tables/H2_champ.csv" , sep = ";" , dec = "." , row.names = T , col.names = T)
 
 ggplot(champ , aes(x=PMG , y=prot_recolte)) + geom_point()
 ggplot(champ , aes(x=surface_recolte_moy , y=prot_recolte)) + geom_point()

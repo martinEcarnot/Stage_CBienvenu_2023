@@ -227,14 +227,14 @@ test <- data.frame()
 # on fait par bac a chaque fois
 
 ngl <- 5 # nombre de grains par lot, equivalent a nb de grain par epi dans eq theorique
-traits <- c("preco","N_flag","hauteur","nb_epi","poids_epis","surface_recolte_moy","surface_recolte_min","surface_recolte_max","PMG","PMG2","poids_moy","poids_min","poids_max")
+traits <- c("preco","N_flag","hauteur","nb_epi","poids_epis","surface_recolte_moy","surface_recolte_min","surface_recolte_max","surface_recolte_moy2","surface_recolte_min2","surface_recolte_max2","PMG","PMG2","poids_moy","poids_min","poids_max","poids_moy2","poids_min2","poids_max2","GSV","GSV2","prot_recolte")
 
 n_sel <- seq(100,600,50)
 
 
 
 
-for (r in 1:50) {
+for (r in 1:100) {
 
   for (nsel in n_sel){
     
@@ -251,6 +251,12 @@ for (r in 1:50) {
     
     tmp <- sel_ind %>% group_by(BAC) %>% summarise_at(.vars = traits , .funs = mean , na.rm = T)
     par_bac[,paste0(traits,"_ind")] <- tmp[,traits]
+    
+    tmp <- pop %>% group_by(BAC) %>% summarise(rdt = sum(poids_epis , na.rm = T))
+    par_bac[,"rdt"] <- tmp[,"rdt"]
+    
+    tmp <- sel_ind %>% group_by(BAC) %>% summarise(rdt = sum(poids_epis , na.rm = T))
+    par_bac[,"rdt_ind"] <- tmp[,"rdt"]
     
     a <- pop %>% group_by(BAC,geno) %>% summarise(count = 1) %>% group_by(BAC) %>% summarise(nb_geno = sum(count)) %>% merge(par_bac , by = "BAC")
     
@@ -286,6 +292,11 @@ for (r in 1:50) {
       
       a$nb_geno_lot <- NULL
       par_bac <- sel_lot %>% group_by(BAC,geno) %>% summarise(count = 1) %>% group_by(BAC) %>% summarise(nb_geno_lot = sum(count)) %>% merge(a , by = "BAC")
+      a <- as.data.frame(par_bac)
+      
+      a$rdt_lot <- NULL
+      par_bac <- sel_lot %>% group_by(BAC) %>% summarise(rdt_lot = sum(poids_epis , na.rm = T)) %>% merge(a , by = "BAC")
+      
       
       rm(a)
       
@@ -299,7 +310,7 @@ for (r in 1:50) {
       
       # tests et remplissage du tableau de resultats
       
-      for (t in c(traits,"nb_geno")){
+      for (t in c(traits,"nb_geno","rdt")){
         
         test[i,"trait"] <- t
         test[i,"i_ind"] <- i_ind
@@ -326,16 +337,26 @@ for (r in 1:50) {
       
       
       # t.test
-      if (t != "nb_geno"){
+      if (t != "nb_geno" & t != "rdt"){
         f <- as.formula(paste(t,"~ BAC + selection"))
-        mod <- summary(lm(f , data = don_t))$coefficients
+        model <- lm(f , data = don_t)
+        mod <- summary(model)$coefficients
+        conf <- confint(model)
         
         test[i,"t.test_ind"] <- mod["selectionIND","Pr(>|t|)"]
         test[i,"t.test_lot"] <- mod["selectionLOT","Pr(>|t|)"]
         test[i,"R_ind"] <- mod["selectionIND","Estimate"]
         test[i,"R_lot"] <- mod["selectionLOT","Estimate"]
-        test[i,"R%_ind"] <- mod["selectionIND","Estimate"] * 100 / sd(pop[,t] , na.rm = T)
-        test[i,"R%_lot"] <- mod["selectionLOT","Estimate"] * 100 / sd(pop[,t] , na.rm = T)
+        test[i,"conf_ind_bas"] <- conf["selectionIND",1]
+        test[i,"conf_ind_haut"] <- conf["selectionIND",2]
+        test[i,"conf_lot_bas"] <- conf["selectionLOT",1]
+        test[i,"conf_lot_haut"] <- conf["selectionLOT",2]
+        test[i,"Rp100_ind"] <- mod["selectionIND","Estimate"] * 100 / sd(pop[,t] , na.rm = T)
+        test[i,"Rp100_lot"] <- mod["selectionLOT","Estimate"] * 100 / sd(pop[,t] , na.rm = T)
+        test[i,"confp100_ind_bas"] <- conf["selectionIND",1] * 100 / sd(pop[,t] , na.rm = T)
+        test[i,"confp100_ind_haut"] <- conf["selectionIND",2] * 100 / sd(pop[,t] , na.rm = T)
+        test[i,"confp100_lot_bas"] <- conf["selectionLOT",1] * 100 / sd(pop[,t] , na.rm = T)
+        test[i,"confp100_lot_haut"] <- conf["selectionLOT",2] * 100 / sd(pop[,t] , na.rm = T)
       
         }
         
@@ -345,6 +366,17 @@ for (r in 1:50) {
           test[i,"nb_geno_ind"] <- mean(par_bac$nb_geno_ind)
           test[i,"nb_geno_lot"] <- mean(par_bac$nb_geno_lot)
         }
+        
+        if (t == "rdt"){
+          test[i,"rdt"] <- mean(par_bac$rdt)
+          test[i,"rdt_ind"] <- mean(par_bac$rdt_ind)
+          test[i,"rdt_lot"] <- mean(par_bac$rdt_lot)
+        }
+        
+        
+        
+        
+        
         
         
         i <- i+1
@@ -361,20 +393,20 @@ for (r in 1:50) {
 
 
 
-load("../donnees/sel_in_silico")
-
-sel_in_silico <- rbind(sel_in_silico , test)
+sel_in_silico <- test
 
 
-save(sel_in_silico , file = "../donnees/sel_in_silico")
+#save(sel_in_silico , file = "../donnees/sel_in_silico")
 
 test2 <- test
 test <- test2 %>% filter(nsel == 400)
 
 # nb genotypes selectionnes
-a <- test %>% filter(trait == "nb_geno") %>% gather(variable , value , c("nb_geno_lot","nb_geno_ind","nb_geno"))
+a <- sel_in_silico %>% filter(trait == "nb_geno") %>% gather(variable , value , c("nb_geno_lot","nb_geno_ind","nb_geno"))
 
-ggplot(a , aes(x = NEO , y = value , col = variable)) + geom_line() + geom_point() + labs(y = "nb_geno")
+a$NEO <- as.factor(a$NEO)
+
+ggplot(a , aes(x = NEO , y = value , col = variable , fill = variable)) + geom_boxplot() + labs(y = "nb_geno") + facet_wrap(~nsel)
 
 
 # intensites de selection
@@ -384,26 +416,25 @@ ggplot(a , aes(x = NEO , y = value , col = variable)) + geom_point() + geom_line
 
 
 
-resultat <- function(t){
-  a <- test %>% filter(trait == t) %>% gather(variable,value,c("R_ind","R_lot"))
+
+
+
+
+resultat <- function(t , NSEL , neo){
+  a <- sel_in_silico %>% filter(trait == t & nsel == NSEL & NEO == neo) #%>% gather(variable,value,c("R%_ind","R%_lot"))
   
-  b <- ggplot(a , aes(x = NEO , y = value , col = variable))  + geom_point() + geom_line() + labs(x = "NEO" , y = t , title = paste("progrès effectué pour",t)) #+ facet_wrap(~nsel) 
-  
-  print(b)
-  
-  a <- test %>% filter(trait == t) %>% gather(variable,value,c("R%_ind","R%_lot"))
-  
-  b <- ggplot(a , aes(x = i_lot , y = value , col = variable))  + geom_point() + geom_line() + labs(x = "intensite de selection sur epi" , y = t , title = paste("progrès effectué pour",t,"en % de l'ecart type")) #+ facet_wrap(~nsel) 
+  b <- ggplot(a , aes(x = i_lot , y = value , col = variable))  + geom_boxplot() + labs(x = "intensite de selection sur epi" , y = t , title = paste("progrès effectué pour",t,"en % de l'ecart type")) + facet_wrap(~nsel) 
   
   print(b)
   
-  print(test %>% filter(trait == t) %>% select(!c("i_ind","i_lot","nb_geno","nb_geno_ind","nb_geno_lot")) %>% filter(w.test_ind < 0.05))
+  print(sel_in_silico %>% filter(trait == t & nsel == nsel) %>% select(!c("i_ind","i_lot","nb_geno","nb_geno_ind","nb_geno_lot")) %>% filter(w.test_ind < 0.05))
 }
 
 
+sel_in_silico$NEO <- sel_in_silico$NEO * 177
 
 
-resultat(t="surface_recolte_moy") #
+resultat(t="surface_recolte_moy" , sel_in_silico) #
 
 resultat(t="PMG") #
 
@@ -431,6 +462,61 @@ resultat(t="poids_max")
 
 
 
+
+
+
+pval <- sel_in_silico %>% group_by(NEO,nsel,trait) %>% summarise(pval_ind = mean(t.test_ind, na.rm = T) , pval_lot = mean(t.test_lot , na.rm = T)) %>% gather(variable,value,c("pval_ind","pval_lot"))
+
+
+signif <- function(t){
+don <- pval %>% filter(trait == t)
+ggplot(don , aes(x = NEO , y = value , col = variable)) + geom_point() + geom_line() + facet_wrap(~nsel) + geom_hline(yintercept = 0.05 , col = "red")
+}
+
+
+
+
+
+
+signif(t="surface_recolte_moy") #
+
+signif(t="PMG") #
+
+signif(t="PMG2") #
+
+signif(t="hauteur") #?
+
+signif(t="preco")
+
+signif(t="N_flag")
+
+signif(t="nb_epi")
+
+signif(t="poids_epis") #?
+
+signif(t="surface_recolte_min") #
+
+signif(t="surface_recolte_max") #
+
+signif(t="poids_moy")
+
+signif(t="poids_min")
+
+signif(t="poids_max")
+
+
+
+lettres <- sel_in_silico %>% filter(nsel == 400 & NEO == 177 & trait != "nb_geno") %>% group_by(trait) %>% summarise(pval_ind = mean(t.test_ind, na.rm = T) , pval_lot = mean(t.test_lot , na.rm = T)) %>% gather(variable,value,c("pval_ind","pval_lot"))
+
+lettres$l <- ifelse(lettres$value < 0.05 , "*" , NA)
+
+
+don <- sel_in_silico %>% filter(nsel == 400 & NEO == 100 & trait != "nb_geno") %>% group_by(trait) %>% summarise(R_ind = mean(`R%_ind`, na.rm = T) , R_lot = mean(`R%_lot` , na.rm = T)) %>% gather(variable,value,c("R_ind","R_lot"))
+
+don$lettres <- lettres$l
+
+
+ggplot(don , aes(x = variable , y = value , fill = variable)) + geom_col() + facet_wrap(~trait) + geom_text(aes(label = lettres , y = value + 1  ))
 
 
 
