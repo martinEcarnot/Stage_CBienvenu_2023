@@ -2,7 +2,6 @@ rm(list=ls())
 
 setwd("~/Stage/Analyses")
 
-set.seed(123)
 
 load("../donnees/bac")
 
@@ -398,8 +397,7 @@ sel_in_silico <- test
 
 #save(sel_in_silico , file = "../donnees/sel_in_silico")
 
-test2 <- test
-test <- test2 %>% filter(nsel == 400)
+
 
 # nb genotypes selectionnes
 a <- sel_in_silico %>% filter(trait == "nb_geno") %>% gather(variable , value , c("nb_geno_lot","nb_geno_ind","nb_geno"))
