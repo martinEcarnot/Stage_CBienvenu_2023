@@ -12,7 +12,7 @@ i_p <- function(p){
 }
 
 
-RR <- function(NEO , NGO , vg , vinter , vintra , vpos , NGE , nsel){
+ReRg <- function(NEO , NGO , vg , vinter , vintra , vpos , NGE , nsel){
   NGE * NEO * sqrt(vg+vinter+vpos+vintra) * exp((qnorm(1-nsel/NGO)^2 - qnorm(1-nsel/(NGE*NEO))^2) / 2) / (NGO * sqrt(vg+vinter+vpos+vintra/NGE))
 }
 
@@ -505,8 +505,8 @@ vintra <- 2.677^2
 tot <- 70560
 param_v_fixe <- data.frame()
 i <- 1
-for (neo in c(seq(10,100,10),seq(200,1000,100),seq(1250,3000,250))){
-  for (ngo in c(seq(10000,100000,10000) , seq(150000,1000000,50000))){
+for (neo in c(seq(10,100,10),seq(200,1000,100),seq(1250,3000,250),4000,5000)){
+  for (ngo in c(seq(10000,100000,10000) , seq(150000,1000000,50000) , seq(1500000,4000000,500000))){
     for (nge in seq(20,100,10)){
       for (nsel in c(100 , 200 , 300 , 400 , 1000 , 2000 , 5000 , 10000 , 50000 , 100000)){
         
@@ -531,27 +531,123 @@ for (neo in c(seq(10,100,10),seq(200,1000,100),seq(1250,3000,250))){
 
 
 
-param_v_fixe$ReRg <- RR(NEO = param_v_fixe$NEO , 
-                        NGO = param_v_fixe$NGO ,
-                        NGE = param_v_fixe$NGE , 
-                        nsel = param_v_fixe$nsel , 
-                        vg = param_v_fixe$vg , 
-                        vinter = param_v_fixe$vinter ,
-                        vintra = param_v_fixe$vintra , 
-                        vpos = param_v_fixe$vpos)
+param_v_fixe$ReRg <- ReRg(NEO = param_v_fixe$NEO , 
+                          NGO = param_v_fixe$NGO ,
+                          NGE = param_v_fixe$NGE , 
+                          nsel = param_v_fixe$nsel , 
+                          vg = param_v_fixe$vg , 
+                          vinter = param_v_fixe$vinter ,
+                          vintra = param_v_fixe$vintra , 
+                          vpos = param_v_fixe$vpos)
 
 
 table(is.na(param_v_fixe$ReRg))
 
-save(param_v_fixe , file = "param_v_fixe")
+save(param_v_fixe , file = "../donnees/param_v_fixe")
 
+
+
+# ajout des NGO jusqu'à 4 000 000
+
+addi <- data.frame()
+i <- 1
+for (neo in c(4000 , 5000)){
+  for (ngo in c(seq(10000,100000,10000) , seq(150000,1000000,50000) , seq(1500000 , 4000000 , 500000))){
+    for (nge in seq(20,100,10)){
+      for (nsel in c(100 , 200 , 300 , 400 , 1000 , 2000 , 5000 , 10000 , 50000 , 100000)){
+        
+        if (nsel < neo*nge & nsel < ngo){
+          addi[i,"NEO"] <- neo
+          addi[i,"NGO"] <- ngo
+          addi[i,"NGE"] <- nge
+          addi[i,"nsel"] <- nsel
+          addi[i,"vg"] <- vg
+          addi[i,"vintra"] <- vintra
+          addi[i,"vinter"] <- vinter
+          addi[i,"vpos"] <- vpos
+          
+          i <- i+1
+        }
+        
+      }
+    }
+  }
+}
+
+
+addi$ReRg<- ReRg(NEO = addi$NEO , 
+               NGO = addi$NGO ,
+               NGE = addi$NGE , 
+               nsel = addi$nsel , 
+               vg = addi$vg , 
+               vinter = addi$vinter ,
+               vintra = addi$vintra , 
+               vpos = addi$vpos)
+
+
+
+load("../donnees/param_v_fixe")
+
+
+param_v_fixe <- rbind(param_v_fixe , addi)
+
+save(param_v_fixe , file = "../donnees/param_v_fixe")
+
+
+
+
+# ajout des NEO jusqu'à 5000
+
+addi <- data.frame()
+i <- 1
+for (neo in c(seq(10,100,10),seq(200,1000,100),seq(1250,3000,250))){
+  for (ngo in c(seq(1500000 , 4000000 , 500000))){
+    for (nge in seq(20,100,10)){
+      for (nsel in c(100 , 200 , 300 , 400 , 1000 , 2000 , 5000 , 10000 , 50000 , 100000)){
+        
+        if (nsel < neo*nge & nsel < ngo){
+          addi[i,"NEO"] <- neo
+          addi[i,"NGO"] <- ngo
+          addi[i,"NGE"] <- nge
+          addi[i,"nsel"] <- nsel
+          addi[i,"vg"] <- vg
+          addi[i,"vintra"] <- vintra
+          addi[i,"vinter"] <- vinter
+          addi[i,"vpos"] <- vpos
+          
+          i <- i+1
+        }
+        
+      }
+    }
+  }
+}
+
+
+addi$ReRg<- ReRg(NEO = addi$NEO , 
+                 NGO = addi$NGO ,
+                 NGE = addi$NGE , 
+                 nsel = addi$nsel , 
+                 vg = addi$vg , 
+                 vinter = addi$vinter ,
+                 vintra = addi$vintra , 
+                 vpos = addi$vpos)
+
+
+
+load("../donnees/param_v_fixe")
+
+
+param_v_fixe <- rbind(param_v_fixe , addi)
+
+save(param_v_fixe , file = "../donnees/param_v_fixe")
 
 
 
 
 rm(list = ls())
 
-load("param_v_fixe")
+load("../donnees/param_v_fixe")
 
 
 # conditions du champ/bac
@@ -603,6 +699,10 @@ ggplot(donplot2 , aes(x = NGO , y = RgRe , col = NEO)) + geom_line() + geom_hlin
 
 
 
-donplot3 <- param_v_fixe %>% mutate_at(.vars = c("NEO","nsel","NGE") , .funs = as.factor) %>% mutate(RgRe = 1/ReRg) %>% filter(RgRe < 5) %>% filter(nsel %in% c(100,400,2000,10000)) %>% filter(NGE %in% c(40,60,80)) %>% filter(NEO %in% c(100 , 500 , 1000 , 3000))
+donplot3 <- param_v_fixe %>% mutate_at(.vars = c("NEO","nsel","NGE") , .funs = as.factor) %>% mutate(RgRe = 1/ReRg) %>% filter(RgRe < 5) %>% filter(nsel %in% c(400,1000,10000,50000)) %>% filter(NGE %in% c(40,60,80)) %>% filter(NEO %in% c(100 , 500 , 1000 , 3000 , 4000 , 5000)) %>% mutate(nsel2 = paste("nsel =",nsel) , NGE2 = paste("NGE =",NGE))
 
-ggplot(donplot3 , aes(x = NGO , y = RgRe , col = NEO)) + geom_line(linewidth = 1) + geom_hline(yintercept = 1 , col = "red") + facet_grid(NGE~nsel)
+donplot3$nsel3 <- factor(donplot3$nsel2 , levels = c("nsel = 400","nsel = 1000","nsel = 10000","nsel = 50000"))
+
+ggplot(donplot3 , aes(x = NGO , y = RgRe , col = NEO)) + geom_line(linewidth = 1) + geom_hline(yintercept = 1 , col = "black" , size = 1) + facet_grid(NGE2~nsel3) + theme(axis.text.x = element_text(angle = 45 , hjust = 1) , panel.border = element_rect(colour = "black" , fill=NA)) + labs(y = "R_grain / R_épi" , title = "Valeurs de R_grain / R_épi pour différents jeux de paramètres")
+
+

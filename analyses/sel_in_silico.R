@@ -233,7 +233,7 @@ n_sel <- seq(100,600,50)
 
 
 
-for (r in 1:100) {
+for (r in 1:3) {
 
   for (nsel in n_sel){
     
@@ -391,11 +391,16 @@ for (r in 1:100) {
 }
 
 
+# load("../donnees/sel_in_silico")
+# 
+# sel_in_silico <- rbind(sel_in_silico , test)
+# 
+# 
+# sel_in_silico$NEO <- sel_in_silico$NEO * 177
+# 
+# 
+# save(sel_in_silico , file = "../donnees/sel_in_silico")
 
-sel_in_silico <- test
-
-
-#save(sel_in_silico , file = "../donnees/sel_in_silico")
 
 
 
@@ -408,55 +413,13 @@ ggplot(a , aes(x = NEO , y = value , col = variable , fill = variable)) + geom_b
 
 
 # intensites de selection
-a <- test %>% filter(trait == "nb_geno")  %>% gather(variable , value , c("i_ind","i_lot"))
-ggplot(a , aes(x = NEO , y = value , col = variable)) + geom_point() + geom_line() + labs(y = "intensite de selection" , title = "intensite de selection en fonction du nombre d'epi observe")
+a <- sel_in_silico %>% filter(trait == "nb_geno")  %>% gather(variable , value , c("i_ind","i_lot")) %>% mutate(disc = paste(variable , nsel))
+ggplot(a , aes(x = NEO , y = value , col = variable)) + geom_point() + geom_line() + labs(y = "intensite de selection" , title = "intensite de selection en fonction du nombre d'epi observe") + facet_wrap(~nsel)
 
 
 
 
 
-
-
-
-resultat <- function(t , NSEL , neo){
-  a <- sel_in_silico %>% filter(trait == t & nsel == NSEL & NEO == neo) #%>% gather(variable,value,c("R%_ind","R%_lot"))
-  
-  b <- ggplot(a , aes(x = i_lot , y = value , col = variable))  + geom_boxplot() + labs(x = "intensite de selection sur epi" , y = t , title = paste("progrès effectué pour",t,"en % de l'ecart type")) + facet_wrap(~nsel) 
-  
-  print(b)
-  
-  print(sel_in_silico %>% filter(trait == t & nsel == nsel) %>% select(!c("i_ind","i_lot","nb_geno","nb_geno_ind","nb_geno_lot")) %>% filter(w.test_ind < 0.05))
-}
-
-
-sel_in_silico$NEO <- sel_in_silico$NEO * 177
-
-
-resultat(t="surface_recolte_moy" , sel_in_silico) #
-
-resultat(t="PMG") #
-
-resultat(t="PMG2") #
-
-resultat(t="hauteur") #?
-
-resultat(t="preco")
-
-resultat(t="N_flag")
-
-resultat(t="nb_epi")
-
-resultat(t="poids_epis") #?
-
-resultat(t="surface_recolte_min") #
-
-resultat(t="surface_recolte_max") #
-
-resultat(t="poids_moy")
-
-resultat(t="poids_min")
-
-resultat(t="poids_max")
 
 
 
@@ -477,10 +440,21 @@ ggplot(don , aes(x = NEO , y = value , col = variable)) + geom_point() + geom_li
 
 
 signif(t="surface_recolte_moy") #
+signif(t="surface_recolte_moy2") #
+
+signif(t="surface_recolte_min") #
+signif(t="surface_recolte_min2")
+
+signif(t="surface_recolte_max") #
+signif(t="surface_recolte_max2") #
+
+signif(t="GSV")
+signif(t="GSV2") #
 
 signif(t="PMG") #
-
 signif(t="PMG2") #
+
+signif(t="prot_recolte")
 
 signif(t="hauteur") #?
 
@@ -490,31 +464,67 @@ signif(t="N_flag")
 
 signif(t="nb_epi")
 
-signif(t="poids_epis") #?
+signif(t="poids_epis")
 
-signif(t="surface_recolte_min") #
-
-signif(t="surface_recolte_max") #
 
 signif(t="poids_moy")
+signif(t="poids_moy2")
 
 signif(t="poids_min")
+signif(t="poids_min2")
 
 signif(t="poids_max")
+signif(t="poids_max2")
+
+
+ 
 
 
 
-lettres <- sel_in_silico %>% filter(nsel == 400 & NEO == 177 & trait != "nb_geno") %>% group_by(trait) %>% summarise(pval_ind = mean(t.test_ind, na.rm = T) , pval_lot = mean(t.test_lot , na.rm = T)) %>% gather(variable,value,c("pval_ind","pval_lot"))
 
-lettres$l <- ifelse(lettres$value < 0.05 , "*" , NA)
+neo <- 177
+NSEL <- 400
 
 
-don <- sel_in_silico %>% filter(nsel == 400 & NEO == 100 & trait != "nb_geno") %>% group_by(trait) %>% summarise(R_ind = mean(`R%_ind`, na.rm = T) , R_lot = mean(`R%_lot` , na.rm = T)) %>% gather(variable,value,c("R_ind","R_lot"))
+lettres <- sel_in_silico %>% filter(nsel == NSEL & NEO == neo & !trait %in% c("nb_geno",'rdt')) %>% group_by(trait) %>% summarise(pval_ind = mean(t.test_ind, na.rm = T) , pval_lot = mean(t.test_lot , na.rm = T)) %>% gather(variable,value,c("pval_ind","pval_lot"))
+
+lettres$l <- ifelse(lettres$value < 0.001 , "***" , 
+                    ifelse(lettres$value < 0.01 , "**",
+                           ifelse(lettres$value < 0.05 , "*",NA)))
+
+
+
+garde <- c("PMG","GSV","hauteur","N_flag","nb_epi","poids_epis","preco","prot_recolte","surface_recolte_moy","surface_recolte_min","surface_recolte_max")
+
+
+
+don <- sel_in_silico %>% 
+  filter(nsel == NSEL & NEO == neo & trait %in% garde) %>% 
+  group_by(trait) %>% 
+  summarise(R_ind = mean(Rp100_ind, na.rm = T) , R_lot = mean(Rp100_lot , na.rm = T) , conf_ind_bas = mean(confp100_ind_bas) , conf_ind_haut = mean(confp100_ind_haut) , conf_lot_bas = mean(confp100_lot_bas) , conf_lot_haut = mean(confp100_lot_haut) , sd_ind = sd(Rp100_ind , na.rm = T) , sd_lot = sd(Rp100_lot , na.rm = T)) %>% 
+gather(variable,value,c("R_ind","R_lot")) %>%
+  mutate(conf_bas = ifelse(variable == "R_ind" , conf_ind_bas , conf_lot_bas) , conf_haut = ifelse(value == "R_ind" , conf_ind_haut , conf_lot_haut) , conf_sd = ifelse(variable == "R_ind" , sd_ind , sd_lot))
+
+lettres <- lettres %>% filter(trait %in% garde)
 
 don$lettres <- lettres$l
 
+don$variable2 <- ifelse(don$variable == "R_ind" , "R grain" , "R epi")
 
-ggplot(don , aes(x = variable , y = value , fill = variable)) + geom_col() + facet_wrap(~trait) + geom_text(aes(label = lettres , y = value + 1  ))
+don$trait2 <- ifelse(don$trait == "surface_recolte_moy" , "Taille moyenne des grains",
+                     ifelse(don$trait == "surface_recolte_min","Taille du plus petit grain",
+                            ifelse(don$trait == "surface_recolte_max" , "Taille du plus gros grain",
+                                   ifelse(don$trait == "hauteur","Hauteur",
+                                          ifelse(don$trait == "N_flag","Taux N feuille drapeau",
+                                                 ifelse(don$trait == "prot_recolte","Taux N grains",
+                                                        ifelse(don$trait == "nb_epi","Nombre d'épis",
+                                                               ifelse(don$trait == "poids_epis", "Poids total d'épis" , ifelse(don$trait == "preco" , "Précocité",don$trait)))))))))
+
+don$trait3 <- factor(don$trait2 , levels = c("PMG","Taille moyenne des grains","Taille du plus petit grain","Taille du plus gros grain","Poids total d'épis","Nombre d'épis","Taux N grains","Taux N feuille drapeau","Précocité","Hauteur","GSV"))
+
+ggplot(don , aes(x = variable2 , y = value , fill = variable2)) + geom_col() + facet_wrap(~trait3) + geom_text(aes(label = lettres , y = conf_haut + 1 )) + labs(y = "Progrès estimés (en % de l'écart-type du trait)" , x="" , title = "Progrès estimés par sélection in silico" , caption = paste("NEO = ",neo,"et nsel =",NSEL)) + geom_hline(yintercept = 0) + theme(legend.position = "none") + geom_errorbar(aes(ymin = conf_bas , ymax = conf_haut) , width = 0.3)
+
+
 
 
 
@@ -527,7 +537,7 @@ rm(list=setdiff(ls(), c("test2","pop","bac","moy_geno","ngl","n_sel")))
 
 load("../donnees/sel_in_silico")
 
-don <- sel_in_silico %>% filter(trait == "surface_recolte_moy") %>% rename(R_rela_lot = "R%_lot" , R_rela_ind = "R%_ind") %>% mutate(NEO = as.factor(NEO*177)) 
+don <- sel_in_silico %>% filter(trait == "surface_recolte_moy") %>% rename(R_rela_lot = "Rp100_lot" , R_rela_ind = "Rp100_ind") %>% mutate(NEO = as.factor(NEO*177)) 
 
 hline <- don %>% group_by(nsel) %>% summarise(R_ind = mean(R_rela_ind))
 
@@ -539,7 +549,7 @@ ggplot(don , aes(x = NEO , y = R_rela_lot)) + geom_boxplot() + geom_hline(data =
 
 
 
-don <- sel_in_silico %>% filter(trait == "surface_recolte_moy") %>% mutate(RR_exp = R_lot/R_ind , NEO = NEO*177) %>% group_by(nsel,NEO) %>% summarise(RR_exp = mean(RR_exp) , Rlot_exp = mean(R_lot) , Rind_exp = mean(R_ind)) %>% as.data.frame()
+don <- sel_in_silico %>% filter(trait == "surface_recolte_moy") %>% mutate(RR_exp = R_lot/R_ind) %>% group_by(nsel,NEO) %>% summarise(RR_exp = mean(RR_exp) , Rlot_exp = mean(R_lot) , Rind_exp = mean(R_ind)) %>% as.data.frame()
 
 #don <- sel_in_silico %>% filter(trait == "surface_recolte_moy") %>% group_by(nsel,NEO) %>% summarise(R_ind = mean(R_ind) , R_lot = mean(R_lot)) %>% mutate(RR_exp = R_lot/R_ind , NEO = NEO*177) %>% as.data.frame()
 
@@ -602,14 +612,24 @@ RR_test$nsel <- RR_test$NEO <- NULL
 
 RR_test <- merge(RR_test, don , by = "row.names") %>% mutate(nsel = as.factor(nsel))
 
+RR_test$RgRe_th <- RR_test$Rind_th / RR_test$Rlot_th
+RR_test$RgRe_exp <- RR_test$Rind_exp / RR_test$Rlot_exp
+
 {
-RR_test$aby <- RR_test$abx <- seq(min(RR_test$RR_th) , max(RR_test$RR_th) , length = nrow(RR_test))
-ggplot(RR_test , aes(x = RR_th , y = RR_exp)) + geom_point() + geom_smooth(method = "lm" , se = F , aes(col = "Regression")) + geom_line(aes(x = abx , y = aby , col = "y=x") , linewidth = 1) + labs(x = "Repi/Rgrain theorique" , y = "Repi/Rgrain empirique" , title = "Comparaison entre l'approche théorique et la sélection in silico") + scale_colour_manual(values = c( "#619CFF","#F8766D"))
+  mod <- lm(RR_th~RR_exp , data = RR_test)
+  
+  b <- round(mod$coefficients["(Intercept)"],2)
+  a <- round(mod$coefficients["RR_exp"],2)
+  r2 <- round(summary(mod)$r.squared,2)
+  
+ggplot(RR_test , aes(x = RR_exp , y = RR_th)) + geom_point() + geom_smooth(method = "lm" , se = F , col = "#F8766D") + labs(y = "Repi / Rgrain théorique" , x = "Repi / Rgrain empirique" , title = "Comparaison entre l'approche théorique et la sélection in silico") + annotate(geom = "text" , label = paste0("y = ",b," + ",a,"x \nR² = ",r2) , x = 0.3 , y = 1 , col = "#F8766D" , size = 5) + annotate("rect", xmin = 0.02 , xmax = 0.55, ymin = 0.8, ymax = 1.2 , alpha = 0 , col = "black") + labs()
 }
+
+
 
 {
 RR_test$aby <- RR_test$abx <- seq(min(RR_test$Rlot_th) , max(RR_test$Rlot_th) , length = nrow(RR_test))
-ggplot(RR_test , aes(x = Rlot_th , y = Rlot_exp)) + geom_point() + geom_smooth(method = "lm" , se = F , aes(col = "Regression")) + geom_line(aes(x = abx , y = aby , col = "y=x") , linewidth = 1) + labs(x = "Repi theorique" , y = "Repi empirique" , title = "Comparaison entre l'approche théorique et la sélection in silico") + scale_colour_manual(values = c( "#619CFF","#F8766D"))
+ggplot(RR_test , aes(x = Rlot_th , y = Rlot_exp)) + geom_point() + geom_smooth(method = "lm" , se = F , aes(col = "Regression")) + geom_line(aes(x = abx , y = aby , col = "y=x") , linewidth = 1) + labs(x = "Repi theorique" , y = "Repi empirique" , title = "Comparaison entre l'approche théorique et la sélection in silico") + scale_colour_manual(values = c( "#619CFF","#F8766D")) 
 }
 
 {
@@ -620,5 +640,4 @@ ggplot(RR_test , aes(x = Rind_th , y = Rind_exp)) + geom_point() + geom_smooth(m
 cor(RR_test$RR_th , RR_test$RR_exp)
 cor(RR_test$RR_th , RR_test$RR_exp)^2
 
-mod <- lm(RR_th~RR_exp , data = RR_test)
-summary(mod)
+

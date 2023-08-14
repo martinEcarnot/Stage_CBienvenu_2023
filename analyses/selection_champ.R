@@ -625,7 +625,7 @@ H2 <- R/S
 
 H2 <- as.data.frame(t(H2))
 
-H2 <- H2[c("surface_recolte_moy2","surface_recolte_min2","surface_recolte_max2","PMG"),]
+H2 <- H2[c("surface_recolte_moy","surface_recolte_min","surface_recolte_max","PMG"),]
 
 rownames(H2) <- c("Taille moyenne des grains" , "Taille du plus petit grain" , "Taille du plus gros grain" ,"PMG")
 
@@ -636,3 +636,89 @@ write.table(round(H2,3) , file = "C:/Users/bienvenu/Documents/Stage_CBienvenu_20
 
 ggplot(champ , aes(x=PMG , y=prot_recolte)) + geom_point()
 ggplot(champ , aes(x=surface_recolte_moy , y=prot_recolte)) + geom_point()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# graph avec tous les R en % de la variance et les p-values et les IC
+traits <- c("hauteur" , "nb_epillets" , "surface_recolte_moy" , "surface_recolte_min" , "surface_recolte_max" , "PMG" , "GSV" , "nb_grain" , "prot_recolte" )
+# on regarde que les sd sont similaires entre les parcelles pour NT
+a <- subset(don , selection == "NT")
+ec_ty <- data.frame()
+
+for (t in traits){
+  f <- as.formula(paste(t,"~ parcelle"))
+  b <- aggregate(f , data = a , FUN = sd)
+  print(b)
+  ec_ty[t,"ecty"] <- mean(b[,t])
+}
+# ok ça passe
+
+
+res$effet3 <- ifelse(is.na(res$effet2) == T , "selection" , res$effet2)
+
+res
+
+
+resultat <- data.frame()
+i <- 1
+
+for (t in traits){
+  ef1 <- res[t , "effet1"]
+  ef2 <- res[t , "effet3"]
+  
+  f <- as.formula(paste(t,"~",ef1,"+",ef2))
+  
+  mod <- lm(f , data = don)
+  a <- summary(mod)$coefficients
+  
+  conf <- confint(mod)
+  
+  for (sel in c("gros","petit","moyen")){
+    chr <- paste0("selection",sel)
+    resultat[i,"trait"] <- t
+    resultat[i,"R"] <- mod$coefficients[chr] * 100 / ec_ty[t,1]
+    resultat[i,"selection"] <- sel 
+    resultat[i,"p_value"] <- a[chr,"Pr(>|t|)"]
+    resultat[i,"conf_bas"] <- conf[chr,1] * 100 / ec_ty[t,1]
+    resultat[i,"conf_haut"] <- conf[chr,2] * 100 / ec_ty[t,1]
+    
+    i <- i+1
+  }
+
+}
+
+resultat$lettres <- ifelse(resultat$p_value < 0.001 , "***" , 
+                           ifelse(resultat$p_value < 0.01 , "**",
+                                  ifelse(resultat$p_value < 0.05 , "*",NA)))
+
+resultat$trait2 <- ifelse(resultat$trait == "hauteur" , "Hauteur",
+                          ifelse(resultat$trait == "nb_epillets" , "Nombre d'épillets",
+                                 ifelse(resultat$trait == "nb_grain" , "Nombre de grains",
+                                        ifelse(resultat$trait == "prot_recolte" , "Taux N grains",
+                                               ifelse(resultat$trait == "surface_recolte_max" , "Taille du plus gros grain",
+                                                      ifelse(resultat$trait == "surface_recolte_min" , "Taille du plus petit grain" , 
+                                                             ifelse(resultat$trait == "surface_recolte_moy" , "Taille moyenne des grains" , resultat$trait)))))))
+
+resultat$trait3 <- factor(resultat$trait2 , levels = c("PMG" , "Taille moyenne des grains" , "Taille du plus petit grain" , "Taille du plus gros grain" , "Hauteur" , "Taux N grains" , "Nombre de grains" , "Nombre d'épillets" , "GSV"))
+
+resultat$htxt <- ifelse(resultat$R < 0 , resultat$conf_bas - 15 , resultat$conf_haut + 5)
+
+ggplot(resultat , aes(x = selection , y = R , fill = selection)) + geom_col() + geom_errorbar(aes(ymin = conf_bas , ymax = conf_haut) , width = 0.3) + geom_text(aes(label = lettres , y = htxt)) + theme(legend.position = "none") + facet_wrap(~trait3) + geom_hline(yintercept = 0) + labs(y = "Progrès estimé (en % de l'écart-type du trait)" , x = "Modalité de sélection" , title = "Progrès estimés après sélection par tamis")
