@@ -26,189 +26,6 @@ rm(opto)
 
 
 
-# traits dont on regarde l'évolution --------------------------------------
-
-
-# traits dont on regarde l'évolution
-
-# ggplot(pop , aes(sample = preco)) + geom_qq() + geom_qq_line(col = "red")
-# ggplot(popsel , aes(sample = preco)) + geom_qq() + geom_qq_line(col = "red")
-# 
-# ggplot(pop , aes(sample = hauteur)) + geom_qq() + geom_qq_line(col = "red")
-# ggplot(popsel , aes(sample = hauteur)) + geom_qq() + geom_qq_line(col = "red")
-# 
-# ggplot(pop , aes(sample = N_flag)) + geom_qq() + geom_qq_line(col = "red")
-# ggplot(popsel , aes(sample = N_flag)) + geom_qq() + geom_qq_line(col = "red")
-# 
-# ggplot(pop , aes(sample = nb_epi)) + geom_qq() + geom_qq_line(col = "red")
-# ggplot(popsel , aes(sample = nb_epi)) + geom_qq() + geom_qq_line(col = "red")
-# 
-# ggplot(pop , aes(sample = poids_epis)) + geom_qq() + geom_qq_line(col = "red")
-# ggplot(popsel , aes(sample = poids_epis)) + geom_qq() + geom_qq_line(col = "red")
-
-
-
-
-traits <- c("preco","N_flag","hauteur","nb_epi","poids_epis","surface_recolte_moy","surface_recolte_min","surface_recolte_max","PMG","PMG2","poids_moy","poids_min","poids_max")
-
-
-# Sélection light pour bonne estimation -----------------------------------
-
-don <- data.frame()
-test <- data.frame()
-nb_geno <- data.frame()
-i <- 1
-
-for (p in c(0.5,0.45,0.4,0.35,0.3,0.25,0.2)){
-  
-  a <- quantile(pop$Surface , probs = 1-p)
-  ind <- pop %>% filter(Surface > a)
-  
-  gen <- moy_geno[which(moy_geno$Surface > quantile(moy_geno$Surface , probs = 1-p)) , "geno"]
-  lot <- pop %>% filter(geno %in% gen$geno)
-  rm(gen,a)
-  
-  alea <- pop[sample(nrow(pop) , round(p*nrow(pop))),]
-  
-  par_bac <- pop %>% group_by(BAC) %>% summarise_at(.vars = traits , .funs = mean , na.rm = T)
-  
-  tmp <- ind %>% group_by(BAC) %>% summarise_at(.vars = traits , .funs = mean , na.rm = T)
-  par_bac[,paste0(traits,"_ind")] <- tmp[,traits]
-  
-  tmp <- lot %>% group_by(BAC) %>% summarise_at(.vars = traits , .funs = mean , na.rm = T)
-  par_bac[,paste0(traits,"_lot")] <- tmp[,traits]
-  
-  par_bac <- as.data.frame(par_bac)
-
-  par_bac$p <- p
-  par_bac$n_ind <- nrow(ind)
-  par_bac$n_lot <- nrow(lot)
-  par_bac$i <- i_p(p)
-
-  don <- rbind(don,par_bac)
-  
-  tmp <- data.frame(ind = length(unique(ind$geno)) , lot = length(unique(lot$geno)) , alea = length(unique(alea$geno)) , p = p , i = i_p(p))
-  
-  nb_geno <- rbind(nb_geno , tmp)
-  
-  for (t in c(traits)){
-    
-    alt <- "less"
-    if (mean(par_bac[,paste0(t,"_ind")]) > mean(par_bac[,t])){alt <- "greater"}
-    
-    test[i,"test_ind"] <- wilcox.test(par_bac[,paste0(t,"_ind")] , par_bac[,t] , paired = T , alternative = alt)$p.value
-    
-    test[i,"test_lot"] <- wilcox.test(par_bac[,paste0(t,"_lot")] , par_bac[,t] , paired = T , alternative = alt)$p.value
-    
-    
-    
-    alt <- "less"
-    if (mean(par_bac[,paste0(t,"_ind")]) > mean(par_bac[,paste0(t,"_lot")])){alt <- "greater"}
-    
-    test[i,"test_ind_lot"] <- wilcox.test(par_bac[,paste0(t,"_ind")] , par_bac[,paste0(t,"_lot")] , paired = T , alternative = alt)$p.value
-    
-    
-    test[i,"trait"] <- t
-    test[i,"p"] <- p
-    test[i,"n_ind"] <- nrow(ind)
-    test[i,"n_lot"] <- nrow(lot)
-    test[i,"nb_geno_ind"] <- length(unique(ind$geno))
-    test[i,"nb_geno_lot"] <- length(unique(lot$geno))
-    test[i,"nb_geno_alea"] <- length(unique(alea$geno))
-    test[i,"i"] <- i_p(p)
-    
-    i <- i+1
-  }
-  
-  rm(par_bac , ind , lot , alea , tmp)
-
-}
-
-
-
-# nb de geno diff?rent entre selection et alea ?
-graph <- nb_geno %>% gather(variable , value , c("ind","lot","alea"))
-ggplot(graph , aes(x = i , y = value , col = variable)) + geom_point() + geom_line()
-
-wilcox.test(nb_geno$lot , nb_geno$alea , alternative = "less")
-wilcox.test(nb_geno$ind , nb_geno$alea , alternative = "less")
-wilcox.test(nb_geno$lot , nb_geno$ind , alternative = "less")
-
-
-resultats <- function(t){
-  graph <- don %>% select(t, paste0(t,"_ind") , paste0(t,"_lot") , BAC , i) %>% gather(variable , value , c(t, paste0(t,"_ind") , paste0(t,"_lot"))) %>% mutate(group = paste0(BAC,variable))
-  
-  g <- ggplot(graph , aes(x = i , y = value , col = variable)) + geom_point() + geom_line() + labs(y = "Moyenne des populations selectionnees" , x = "Intensite de selection" , title = t) + facet_wrap(~BAC)
-  
-  print(g)
-  
-  
-  print(test %>% filter(trait == t))
-  
-  f <- as.formula(paste(t,"~ Surface + BAC + geno"))
-  
-  mod <- lm(f , data = pop)
-  drop1(mod , .~. , test = "F")
-  
-}
-
-
-
-
-
-
-# hauteur
-resultats("hauteur")
-
-
-
-# N_flag
-resultats("N_flag")
-
-
-# preco
-resultats("preco")
-
-
-# nb_epi
-resultats("nb_epi")
-
-
-# poids_epis
-resultats("poids_epis")
-
-
-
-# surface_recolte_moy
-resultats("surface_recolte_moy")
-
-
-# surface_recolte_max
-resultats("surface_recolte_max")
-
-
-# surface_recolte_min
-resultats("surface_recolte_min")
-
-
-
-# PMG
-resultats("PMG")
-
-
-# PMG2
-resultats("PMG2")
-
-
-# poids_min
-resultats("poids_min")
-
-
-# poids_max
-resultats("poids_max")
-
-
-
 
 # En selectionnant comme dans eq theorique ---------------------------------
 
@@ -226,14 +43,14 @@ test <- data.frame()
 # on fait par bac a chaque fois
 
 ngl <- 5 # nombre de grains par lot, equivalent a nb de grain par epi dans eq theorique
-traits <- c("preco","N_flag","hauteur","nb_epi","poids_epis","surface_recolte_moy","surface_recolte_min","surface_recolte_max","surface_recolte_moy2","surface_recolte_min2","surface_recolte_max2","PMG","PMG2","poids_moy","poids_min","poids_max","poids_moy2","poids_min2","poids_max2","GSV","GSV2","prot_recolte")
+traits <- c("preco","N_flag","hauteur","nb_epi","poids_epis","surface_recolte_moy","surface_recolte_min","surface_recolte_max","surface_recolte_moy2","surface_recolte_min2","surface_recolte_max2","PMG","PMG2","poids_moy","poids_min","poids_max","poids_moy2","poids_min2","poids_max2","GSV","GSV2","prot_recolte","nb_grain")
 
 n_sel <- seq(100,600,50)
 
 
 
 
-for (r in 1:3) {
+for (r in 1:100) {
 
   for (nsel in n_sel){
     
@@ -314,7 +131,7 @@ for (r in 1:3) {
         test[i,"trait"] <- t
         test[i,"i_ind"] <- i_ind
         test[i,"i_lot"] <- i_lot
-        test[i,"NEO"] <- neo/nrow(moy_geno)
+        test[i,"NEO"] <- neo
         test[i,"nsel"] <- nsel
         test[i,"rep"] <- r
         
@@ -389,6 +206,8 @@ for (r in 1:3) {
   }
   print(r)
 }
+
+
 
 
 # load("../donnees/sel_in_silico")
@@ -476,11 +295,11 @@ signif(t="poids_min2")
 signif(t="poids_max")
 signif(t="poids_max2")
 
-
+signif(t="nb_grain")
  
 
 
-
+load("../donnees/sel_in_silico")
 
 neo <- 177
 NSEL <- 400
@@ -494,7 +313,7 @@ lettres$l <- ifelse(lettres$value < 0.001 , "***" ,
 
 
 
-garde <- c("PMG","GSV","hauteur","N_flag","nb_epi","poids_epis","preco","prot_recolte","surface_recolte_moy","surface_recolte_min","surface_recolte_max")
+garde <- c("PMG","GSV","hauteur","N_flag","nb_epi","poids_epis","preco","prot_recolte","surface_recolte_moy","surface_recolte_min","surface_recolte_max","nb_grain")
 
 
 
@@ -518,9 +337,10 @@ don$trait2 <- ifelse(don$trait == "surface_recolte_moy" , "Taille moyenne des gr
                                           ifelse(don$trait == "N_flag","Taux N feuille drapeau",
                                                  ifelse(don$trait == "prot_recolte","Taux N grains",
                                                         ifelse(don$trait == "nb_epi","Nombre d'épis",
-                                                               ifelse(don$trait == "poids_epis", "Poids total d'épis" , ifelse(don$trait == "preco" , "Précocité",don$trait)))))))))
+                                                               ifelse(don$trait == "poids_epis", "Poids total d'épis" , ifelse(don$trait == "preco" , "Précocité",
+                                                                                                                               ifelse(don$trait == "nb_grain" , "Nombre de grains par épi" , don$trait))))))))))
 
-don$trait3 <- factor(don$trait2 , levels = c("PMG","Taille moyenne des grains","Taille du plus petit grain","Taille du plus gros grain","Poids total d'épis","Nombre d'épis","Taux N grains","Taux N feuille drapeau","Précocité","Hauteur","GSV"))
+don$trait3 <- factor(don$trait2 , levels = c("PMG","Taille moyenne des grains","Taille du plus petit grain","Taille du plus gros grain","Poids total d'épis","Nombre d'épis","Nombre de grains par épi","Taux N grains","Taux N feuille drapeau","Précocité","Hauteur","GSV"))
 
 ggplot(don , aes(x = variable2 , y = value , fill = variable2)) + geom_col() + facet_wrap(~trait3) + geom_text(aes(label = lettres , y = conf_haut + 1 )) + labs(y = "Progrès estimés (en % de l'écart-type du trait)" , x="" , title = "Progrès estimés par sélection in silico" , caption = paste("NEO = ",neo,"et nsel =",NSEL)) + geom_hline(yintercept = 0) + theme(legend.position = "none") + geom_errorbar(aes(ymin = conf_bas , ymax = conf_haut) , width = 0.3)
 
@@ -585,7 +405,7 @@ vintra <- 2.677^2
 ngl <- 5
 
 
-n_sel <- seq(100,600,50)
+n_sel <- unique(don$nsel)
 RR_test <- data.frame()
 i <- 1
 

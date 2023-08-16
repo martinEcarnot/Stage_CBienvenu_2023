@@ -1,8 +1,8 @@
 rm(list=ls())
 
 library(ggplot2)
-library(shiny)
 library(tidyverse)
+library(shiny)
 library(plotly)
 
 # fonctions ---------------------------------------------------------------
@@ -501,14 +501,15 @@ vpos <- 1.229^2
 vintra <- 2.677^2
 
 
+
 # on y va par tranche d'ordre de grandeur
-tot <- 70560
+tot <- 88740
 param_v_fixe <- data.frame()
 i <- 1
 for (neo in c(seq(10,100,10),seq(200,1000,100),seq(1250,3000,250),4000,5000)){
   for (ngo in c(seq(10000,100000,10000) , seq(150000,1000000,50000) , seq(1500000,4000000,500000))){
     for (nge in seq(20,100,10)){
-      for (nsel in c(100 , 200 , 300 , 400 , 1000 , 2000 , 5000 , 10000 , 50000 , 100000)){
+      for (nsel in c(200 , 300 , 400 , 1000 , 2000 , 5000 , 10000 , 25000 , 50000 , 100000)){
         
         if (nsel < neo*nge & nsel < ngo){
         param_v_fixe[i,"NEO"] <- neo
@@ -547,101 +548,6 @@ save(param_v_fixe , file = "../donnees/param_v_fixe")
 
 
 
-# ajout des NGO jusqu'à 4 000 000
-
-addi <- data.frame()
-i <- 1
-for (neo in c(4000 , 5000)){
-  for (ngo in c(seq(10000,100000,10000) , seq(150000,1000000,50000) , seq(1500000 , 4000000 , 500000))){
-    for (nge in seq(20,100,10)){
-      for (nsel in c(100 , 200 , 300 , 400 , 1000 , 2000 , 5000 , 10000 , 50000 , 100000)){
-        
-        if (nsel < neo*nge & nsel < ngo){
-          addi[i,"NEO"] <- neo
-          addi[i,"NGO"] <- ngo
-          addi[i,"NGE"] <- nge
-          addi[i,"nsel"] <- nsel
-          addi[i,"vg"] <- vg
-          addi[i,"vintra"] <- vintra
-          addi[i,"vinter"] <- vinter
-          addi[i,"vpos"] <- vpos
-          
-          i <- i+1
-        }
-        
-      }
-    }
-  }
-}
-
-
-addi$ReRg<- ReRg(NEO = addi$NEO , 
-               NGO = addi$NGO ,
-               NGE = addi$NGE , 
-               nsel = addi$nsel , 
-               vg = addi$vg , 
-               vinter = addi$vinter ,
-               vintra = addi$vintra , 
-               vpos = addi$vpos)
-
-
-
-load("../donnees/param_v_fixe")
-
-
-param_v_fixe <- rbind(param_v_fixe , addi)
-
-save(param_v_fixe , file = "../donnees/param_v_fixe")
-
-
-
-
-# ajout des NEO jusqu'à 5000
-
-addi <- data.frame()
-i <- 1
-for (neo in c(seq(10,100,10),seq(200,1000,100),seq(1250,3000,250))){
-  for (ngo in c(seq(1500000 , 4000000 , 500000))){
-    for (nge in seq(20,100,10)){
-      for (nsel in c(100 , 200 , 300 , 400 , 1000 , 2000 , 5000 , 10000 , 50000 , 100000)){
-        
-        if (nsel < neo*nge & nsel < ngo){
-          addi[i,"NEO"] <- neo
-          addi[i,"NGO"] <- ngo
-          addi[i,"NGE"] <- nge
-          addi[i,"nsel"] <- nsel
-          addi[i,"vg"] <- vg
-          addi[i,"vintra"] <- vintra
-          addi[i,"vinter"] <- vinter
-          addi[i,"vpos"] <- vpos
-          
-          i <- i+1
-        }
-        
-      }
-    }
-  }
-}
-
-
-addi$ReRg<- ReRg(NEO = addi$NEO , 
-                 NGO = addi$NGO ,
-                 NGE = addi$NGE , 
-                 nsel = addi$nsel , 
-                 vg = addi$vg , 
-                 vinter = addi$vinter ,
-                 vintra = addi$vintra , 
-                 vpos = addi$vpos)
-
-
-
-load("../donnees/param_v_fixe")
-
-
-param_v_fixe <- rbind(param_v_fixe , addi)
-
-save(param_v_fixe , file = "../donnees/param_v_fixe")
-
 
 
 
@@ -650,59 +556,12 @@ rm(list = ls())
 load("../donnees/param_v_fixe")
 
 
-# conditions du champ/bac
-
-don <- param_v_fixe %>% filter(NGE == 40)
-
-don$RgRe <- 1/don$ReRg
 
 
-# quand grain > epi
+donplot3 <- param_v_fixe %>% mutate_at(.vars = c("NEO","nsel","NGE") , .funs = as.factor) %>% mutate(RgRe = 1/ReRg) %>% filter(nsel %in% c(400,1000,10000,50000,100000)) %>% filter(NGE %in% c(40,60,80)) %>% filter(NEO %in% c(100 , 500 , 1000 , 3000 , 4000 , 5000)) %>% mutate(nsel2 = paste("nsel =",nsel) , NGE2 = paste("NGE =",NGE))
 
-dong <- don %>% filter(RgRe > 1)
+donplot3$nsel3 <- factor(donplot3$nsel2 , levels = c("nsel = 400","nsel = 1000","nsel = 10000","nsel = 50000","nsel = 1e+05"))
 
-
-summary(dong$nsel)
-
-ggplot(dong , aes(x = NEO , y = NGO)) + geom_point()
-ggplot(dong , aes(x = RgRe , y = NGO)) + geom_point()
-ggplot(dong , aes(x = NEO , y = RgRe)) + geom_point()
-
-
-# quand epi > grain
-done <- don %>% filter(ReRg > 1)
-
-
-ggplot(done , aes(x = NEO , y = NGO)) + geom_point()
-ggplot(done , aes(x = RgRe , y = NGO)) + geom_point()
-ggplot(done , aes(x = NEO , y = RgRe)) + geom_point()
-
-
-
-
-
-
-
-don$nsel <- as.factor(don$nsel)
-
-donplot <- don %>% filter(nsel %in% c(100 , 400 , 1000 , 5000 , 10000 , 50000)) %>% filter(NGO %in% c(10000 , 50000 , 100000 , 500000 , 1000000)) %>% mutate(NGO = as.factor(NGO))
-
-ggplot(donplot , aes(x = NEO , y = RgRe , col = NGO)) + geom_line() + geom_hline(yintercept = 1 , col = "red") + facet_wrap(~nsel)
-
-
-
-donplot2 <- don %>% filter(nsel %in% c(100 , 400 , 1000 , 5000 , 10000 , 50000)) %>% filter(NEO %in% c(10 , 50 , 100 , 500 , 1000 , 2000 , 3000)) %>% mutate(NEO = as.factor(NEO))
-
-ggplot(donplot2 , aes(x = NGO , y = RgRe , col = NEO)) + geom_line() + geom_hline(yintercept = 1 , col = "red") + facet_wrap(~nsel)
-
-
-
-
-
-donplot3 <- param_v_fixe %>% mutate_at(.vars = c("NEO","nsel","NGE") , .funs = as.factor) %>% mutate(RgRe = 1/ReRg) %>% filter(RgRe < 5) %>% filter(nsel %in% c(400,1000,10000,50000)) %>% filter(NGE %in% c(40,60,80)) %>% filter(NEO %in% c(100 , 500 , 1000 , 3000 , 4000 , 5000)) %>% mutate(nsel2 = paste("nsel =",nsel) , NGE2 = paste("NGE =",NGE))
-
-donplot3$nsel3 <- factor(donplot3$nsel2 , levels = c("nsel = 400","nsel = 1000","nsel = 10000","nsel = 50000"))
-
-ggplot(donplot3 , aes(x = NGO , y = RgRe , col = NEO)) + geom_line(linewidth = 1) + geom_hline(yintercept = 1 , col = "black" , size = 1) + facet_grid(NGE2~nsel3) + theme(axis.text.x = element_text(angle = 45 , hjust = 1) , panel.border = element_rect(colour = "black" , fill=NA)) + labs(y = "R_grain / R_épi" , title = "Valeurs de R_grain / R_épi pour différents jeux de paramètres")
+ggplot(donplot3 , aes(x = NGO , y = RgRe , col = NEO)) + geom_line(linewidth = 1) + geom_hline(yintercept = 1 , col = "black" , linewidth = 1) + facet_grid(NGE2~nsel3) + theme(axis.text.x = element_text(angle = 45 , hjust = 1) , panel.border = element_rect(colour = "black" , fill=NA)) + labs(y = "R_grain / R_épi" , title = "Valeurs de R_grain / R_épi pour différents jeux de paramètres" , x = "Nombre de grains observés")
 
 
