@@ -544,7 +544,7 @@ param_v_fixe$ReRg <- ReRg(NEO = param_v_fixe$NEO ,
 
 table(is.na(param_v_fixe$ReRg))
 
-save(param_v_fixe , file = "../donnees/param_v_fixe")
+#save(param_v_fixe , file = "../donnees/param_v_fixe")
 
 
 
@@ -565,3 +565,106 @@ donplot3$nsel3 <- factor(donplot3$nsel2 , levels = c("nsel = 400","nsel = 10000"
 ggplot(donplot3 , aes(x = NGO , y = RgRe , col = NEO)) + geom_line(linewidth = 1) + geom_hline(yintercept = 1 , col = "black" , linewidth = 1) + facet_grid(NGE2~nsel3) + theme(axis.text.x = element_text(angle = 45 , hjust = 1) , panel.border = element_rect(colour = "black" , fill=NA)) + labs(y = "R_grain / R_épi" , title = "Valeurs de R_grain / R_épi pour différents jeux de paramètres" , x = "Nombre de grains observés") + ylim(0,3)
 
 
+
+ggplot(donplot3 , aes(x = NGO , y = ReRg , col = NEO)) + geom_line(linewidth = 1) + geom_hline(yintercept = 1 , col = "black" , linewidth = 1) + facet_grid(NGE2~nsel3) + theme(axis.text.x = element_text(angle = 45 , hjust = 1) , panel.border = element_rect(colour = "black" , fill=NA)) + labs(y = "R_epi / R_grain" , title = "Valeurs de R_epi / R_grain pour différents jeux de paramètres" , x = "Nombre de grains observés") + ylim(0,3)
+
+
+
+
+
+
+
+# autre situation 
+
+param_v_fixe <- data.frame()
+i <- 1
+for (neo in seq(2000000,5000000,1000000)){
+  for (ngo in seq(100000000 , 3000000000 , 100000000)){
+    for (nge in seq(40,90,10)){
+      for (nsel in 50000000){
+        
+        if (nsel < neo*nge & nsel < ngo){
+          param_v_fixe[i,"NEO"] <- neo
+          param_v_fixe[i,"NGO"] <- ngo
+          param_v_fixe[i,"NGE"] <- nge
+          param_v_fixe[i,"nsel"] <- nsel
+          param_v_fixe[i,"vg"] <- vg
+          param_v_fixe[i,"vintra"] <- vintra
+          param_v_fixe[i,"vinter"] <- vinter
+          param_v_fixe[i,"vpos"] <- vpos
+          
+          i <- i+1
+        }
+        
+      }
+    }
+  }
+}
+
+param_v_fixe$ReRg <- ReRg(NEO = param_v_fixe$NEO , 
+                          NGO = param_v_fixe$NGO ,
+                          NGE = param_v_fixe$NGE , 
+                          nsel = param_v_fixe$nsel , 
+                          vg = param_v_fixe$vg , 
+                          vinter = param_v_fixe$vinter ,
+                          vintra = param_v_fixe$vintra , 
+                          vpos = param_v_fixe$vpos)
+
+
+param_v_fixe$RgRe <- 1/param_v_fixe$ReRg
+param_v_fixe$NEO <- as.factor(param_v_fixe$NEO)
+
+ggplot(param_v_fixe , aes(x = NGO , y = RgRe , col = NEO)) + geom_line(linewidth = 1) + geom_hline(yintercept = 1 , col = "black" , linewidth = 1) + facet_grid(NGE~nsel) + theme(axis.text.x = element_text(angle = 45 , hjust = 1) , panel.border = element_rect(colour = "black" , fill=NA)) + labs(y = "R_grain / R_épi" , title = "Valeurs de R_grain / R_épi pour différents jeux de paramètres" , x = "Nombre de grains observés")
+
+
+
+
+
+
+
+
+
+# test d'un graph
+
+
+param_v_fixe <- data.frame()
+i <- 1
+for (neo in seq(2000,5000,1)){
+  for (ngo in seq(200000,300000,5000)){
+    for (nge in 60){
+      for (nsel in 100000){
+        
+        if (nsel < neo*nge & nsel < ngo){
+          param_v_fixe[i,"NEO"] <- neo
+          param_v_fixe[i,"NGO"] <- ngo
+          param_v_fixe[i,"NGE"] <- nge
+          param_v_fixe[i,"nsel"] <- nsel
+          param_v_fixe[i,"vg"] <- vg
+          param_v_fixe[i,"vintra"] <- vintra
+          param_v_fixe[i,"vinter"] <- vinter
+          param_v_fixe[i,"vpos"] <- vpos
+          
+          i <- i+1
+          print(i)
+        }
+        
+      }
+    }
+  }
+}
+
+param_v_fixe$ReRg <- ReRg(NEO = param_v_fixe$NEO , 
+                          NGO = param_v_fixe$NGO ,
+                          NGE = param_v_fixe$NGE , 
+                          nsel = param_v_fixe$nsel , 
+                          vg = param_v_fixe$vg , 
+                          vinter = param_v_fixe$vinter ,
+                          vintra = param_v_fixe$vintra , 
+                          vpos = param_v_fixe$vpos)
+
+param_v_fixe$RgRe <- 1/param_v_fixe$ReRg
+
+
+
+
+ggplot(param_v_fixe , aes(x = NGO , y = RgRe , col = NEO)) + geom_point() + scale_colour_gradientn(colors=rainbow(20)) 
