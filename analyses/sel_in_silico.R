@@ -6,6 +6,7 @@ setwd("~/Stage/Analyses")
 load("../donnees/bac")
 
 library(tidyverse)
+library(ggplot2)
 #library(multcomp)
 
 i_p <- function(p){
@@ -405,7 +406,7 @@ vintra <- 2.677^2
 ngl <- 5
 
 
-n_sel <- unique(don$nsel)
+n_sel <- unique(sel_in_silico$nsel)
 RR_test <- data.frame()
 i <- 1
 

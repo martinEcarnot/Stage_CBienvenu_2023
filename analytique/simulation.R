@@ -558,10 +558,10 @@ load("../donnees/param_v_fixe")
 
 
 
-donplot3 <- param_v_fixe %>% mutate_at(.vars = c("NEO","nsel","NGE") , .funs = as.factor) %>% mutate(RgRe = 1/ReRg) %>% filter(nsel %in% c(400,1000,10000,50000,100000)) %>% filter(NGE %in% c(40,60,80)) %>% filter(NEO %in% c(100 , 500 , 1000 , 3000 , 4000 , 5000)) %>% mutate(nsel2 = paste("nsel =",nsel) , NGE2 = paste("NGE =",NGE))
+donplot3 <- param_v_fixe %>% mutate_at(.vars = c("NEO","nsel","NGE") , .funs = as.factor) %>% mutate(RgRe = 1/ReRg) %>% filter(nsel %in% c(10000,25000,50000,100000)) %>% filter(NGE %in% c(40,60,80)) %>% filter(NEO %in% c(100 , 500 , 1000 , 3000 , 4000 , 5000)) %>% mutate(nsel2 = paste("nsel =",nsel) , NGE2 = paste("NGE =",NGE))
 
-donplot3$nsel3 <- factor(donplot3$nsel2 , levels = c("nsel = 400","nsel = 1000","nsel = 10000","nsel = 50000","nsel = 1e+05"))
+donplot3$nsel3 <- factor(donplot3$nsel2 , levels = c("nsel = 400","nsel = 10000","nsel = 25000","nsel = 50000","nsel = 1e+05"))
 
-ggplot(donplot3 , aes(x = NGO , y = RgRe , col = NEO)) + geom_line(linewidth = 1) + geom_hline(yintercept = 1 , col = "black" , linewidth = 1) + facet_grid(NGE2~nsel3) + theme(axis.text.x = element_text(angle = 45 , hjust = 1) , panel.border = element_rect(colour = "black" , fill=NA)) + labs(y = "R_grain / R_épi" , title = "Valeurs de R_grain / R_épi pour différents jeux de paramètres" , x = "Nombre de grains observés")
+ggplot(donplot3 , aes(x = NGO , y = RgRe , col = NEO)) + geom_line(linewidth = 1) + geom_hline(yintercept = 1 , col = "black" , linewidth = 1) + facet_grid(NGE2~nsel3) + theme(axis.text.x = element_text(angle = 45 , hjust = 1) , panel.border = element_rect(colour = "black" , fill=NA)) + labs(y = "R_grain / R_épi" , title = "Valeurs de R_grain / R_épi pour différents jeux de paramètres" , x = "Nombre de grains observés") + ylim(0,3)
 
 
