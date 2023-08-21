@@ -1,5 +1,9 @@
 ;gros;moyen;petit
-Taille moyenne des grains;-0.023;1.095;0.207
-Taille du plus petit grain;-0.064;-0.109;-0.419
-Taille du plus gros grain;-1.744;0.287;0.12
 PMG;0.11;0.761;0.233
+PMG2;0.128;0.463;0.216
+surface_recolte_max;-1.744;0.287;0.12
+surface_recolte_max2;-1.744;0.287;0.12
+surface_recolte_min;-0.064;-0.109;-0.419
+surface_recolte_min2;0.035;-0.335;1.478
+surface_recolte_moy;-0.023;1.095;0.207
+surface_recolte_moy2;-0.023;0.431;0.188

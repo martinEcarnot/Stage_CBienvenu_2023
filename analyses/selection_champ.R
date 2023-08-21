@@ -177,17 +177,17 @@ for (t in traits){
   
   pval[t,"p-value"] <- a["selection","Pr(>F)"]
   
-  # lettres <- as.data.frame(cld(glht(model = mod , mcp(selection = "Tukey")) , level = 0.05)$mcletters$Letters)
-  # 
-  # names(lettres)[1] <- "groups"
-  # 
-  # lettres$selection <- row.names(lettres)
-  # 
-  # lettres$variable <- t
-  # 
-  # lettres$y <- max(don[,t] , na.rm = T) +1
-  # 
-  # l <- rbind(l , lettres)
+  lettres <- as.data.frame(cld(glht(model = mod , mcp(selection = "Tukey")) , level = 0.05)$mcletters$Letters)
+
+  names(lettres)[1] <- "groups"
+
+  lettres$selection <- row.names(lettres)
+
+  lettres$variable <- t
+
+  lettres$y <- max(don[,t] , na.rm = T) +1
+
+  l <- rbind(l , lettres)
   
 }
 
@@ -243,9 +243,6 @@ H2 <- R/S
 
 H2 <- as.data.frame(t(H2))
 
-H2 <- H2[c("surface_recolte_moy","surface_recolte_min","surface_recolte_max","PMG"),]
-
-rownames(H2) <- c("Taille moyenne des grains" , "Taille du plus petit grain" , "Taille du plus gros grain" ,"PMG")
 
 
 H2
@@ -276,7 +273,7 @@ ggplot(champ , aes(x=surface_recolte_moy , y=prot_recolte)) + geom_point()
 
 
 # graph avec tous les R en % de la variance et les p-values et les IC
-traits <- c("hauteur" , "nb_epillets" , "surface_recolte_moy" , "surface_recolte_min" , "surface_recolte_max" , "PMG" , "GSV" , "nb_grain" , "prot_recolte" )
+traits <- c("hauteur" , "nb_epillets" , "surface_recolte_moy2" , "surface_recolte_min2" , "surface_recolte_max" , "PMG" , "GSV" , "nb_grain" , "prot_recolte" )
 # on regarde que les sd sont similaires entre les parcelles pour NT
 a <- subset(don , selection == "NT")
 ec_ty <- data.frame()
@@ -330,11 +327,86 @@ resultat$trait2 <- ifelse(resultat$trait == "hauteur" , "Hauteur",
                                  ifelse(resultat$trait == "nb_grain" , "Nombre de grains par épi",
                                         ifelse(resultat$trait == "prot_recolte" , "Taux N grains",
                                                ifelse(resultat$trait == "surface_recolte_max" , "Taille du plus gros grain",
-                                                      ifelse(resultat$trait == "surface_recolte_min" , "Taille du plus petit grain" , 
-                                                             ifelse(resultat$trait == "surface_recolte_moy" , "Taille moyenne des grains" , resultat$trait)))))))
+                                                      ifelse(resultat$trait == "surface_recolte_min2" , "Taille du plus petit grain" , 
+                                                             ifelse(resultat$trait == "surface_recolte_moy2" , "Taille moyenne des grains" , resultat$trait)))))))
 
 resultat$trait3 <- factor(resultat$trait2 , levels = c("PMG" , "Taille moyenne des grains" , "Taille du plus petit grain" , "Taille du plus gros grain" , "Hauteur" , "Taux N grains" , "Nombre de grains par épi" , "Nombre d'épillets" , "GSV"))
 
 resultat$htxt <- ifelse(resultat$R < 0 , resultat$conf_bas - 15 , resultat$conf_haut + 5)
 
 ggplot(resultat , aes(x = selection , y = R , fill = selection)) + geom_col() + geom_errorbar(aes(ymin = conf_bas , ymax = conf_haut) , width = 0.3) + geom_text(aes(label = lettres , y = htxt)) + theme(legend.position = "none") + facet_wrap(~trait3) + geom_hline(yintercept = 0) + labs(y = "Progrès estimé (en % de l'écart-type du trait)" , x = "Modalité de sélection" , title = "Progrès estimés après sélection par tamis")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+load("../donnees/opto_recolte_champ")
+
+
+# repartition au hasard entre pas2 pl3 ou pl3 ps2 et ajout variable selection
+for (i in 1:nrow(opto_recolte_champ)){
+  p <- opto_recolte_champ$parcelle[i]
+  ch <- subset(champ , parcelle == p)
+  opto_recolte_champ[i,"selection"] <- unique(ch$selection)
+}
+
+
+
+
+row.names(opto_recolte_champ) <- paste(opto_recolte_champ$id , 1:nrow(opto_recolte_champ))
+
+
+
+
+tmp <- opto_recolte_champ %>% filter(planche == "inconnu1" | planche == "inconnu2")
+
+ps <- 2
+pl <- 3
+
+tmp[1,"passage"] <- ps
+tmp[1,"planche"] <- pl
+
+for (i in 2:nrow(tmp)){
+  
+  if (tmp[i,"id"] != tmp[i-1,"id"]){
+    a <- ps
+    ps <- pl
+    pl <- a
+  }
+  
+  tmp[i,"passage"] <- ps
+  tmp[i,"planche"] <- pl
+}
+
+
+opto_recolte_champ[row.names(tmp),] <- tmp
+
+
+
+
+
+
+
+mod <- lm(Surface ~ selection + passage + planche , data = opto_recolte_champ)
+
+step(mod , direction = "both")
+
+drop1(mod , .~. , test = "F")
+
+
+
+
+summary(mod)

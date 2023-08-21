@@ -35,7 +35,6 @@ rm(opto)
 
 
 mean(table(pop$geno))
-hist(table(pop$geno))
 
 # en moyenne, dans la pop non selectionnee un lot a ete mis en terre 5 fois
 # on prend ça comme taux de multi du coup
@@ -61,14 +60,14 @@ for (r in 1:100) {
     # caracteristiques de la population selectionnee sur grains
     ind_sel <- row.names(pop[1:nsel,])
     
-    pop_sel_ind <- opto_recolte_bac[which(opto_recolte_bac$ind %in% ind_sel),c("selection","Surface","BAC")]
+    pop_sel_ind <- opto_recolte_bac[which(opto_recolte_bac$ind %in% ind_sel),c("selection","Surface")]
     
     
     # donnees pour calculer R_grain
-    calc_rg <- pop %>% select(selection , Surface) %>% mutate(BAC = 7) %>% rbind(pop_sel_ind)
+    calc_rg <- pop %>% select(selection , Surface , BAC) %>% rbind(pop_sel_ind)
     calc_rg$selection <- relevel(as.factor(calc_rg$selection) , ref = "NON")
     
-    mod <- lm(Surface ~ selection + BAC , data = calc_rg)
+    mod <- lm(Surface ~ selection + BAC, data = calc_rg)
     
     Rg <- mod$coefficients["selectionIND"]
     t.rg <- summary(mod)$coefficients["selectionIND","Pr(>|t|)"]
@@ -86,16 +85,16 @@ for (r in 1:100) {
       sel_pop_lot <- pop_lot[1:round(nsel/ngl),]
       
       # caracteristiques de la population selectionnee par lot
-      sel_lot <- pop[which(pop$geno %in% sel_pop_lot$geno),] %>% select(surface_recolte_moy , BAC) %>% mutate(selection = "LOT") %>% na.omit()
+      sel_lot <- pop[which(pop$geno %in% sel_pop_lot$geno),] %>% select(surface_recolte_moy) %>% mutate(selection = "LOT") %>% na.omit()
       
       names(sel_lot)[1] <- "Surface"
       
       
       # donnees pour test student
-      calc_re <- moy_geno %>% select(Surface) %>% mutate(selection = "NON" , BAC = 7) %>% rbind(sel_lot)
+      calc_re <- moy_geno %>% select(Surface) %>% mutate(selection = "NON") %>% rbind(sel_lot)
       calc_re$selection <- relevel(as.factor(calc_re$selection) , ref = "NON")
       
-      mod <- lm(Surface ~ selection + BAC , data = calc_re)
+      mod <- lm(Surface ~ selection, data = calc_re)
       
       Re <- mod$coefficients["selectionLOT"]
       t.re <- summary(mod)$coefficients["selectionLOT","Pr(>|t|)"]
@@ -209,7 +208,8 @@ vintra <- 2.677^2
 ngl <- 5
 
 
-n_sel <- seq(100,600,50)
+n_sel <- unique(sel_in_silico_2$nsel)
+ne_o <- unique(sel_in_silico_2$NEO)
 RR_test <- data.frame()
 i <- 1
 
