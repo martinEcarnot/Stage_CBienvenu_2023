@@ -1943,7 +1943,7 @@ save(champ , file = "champ")
 
 
 # calcul des dif de selection
-
+library(data.table)
 rm(list = ls())
 
 file_names <- list.files(path = "./data_brute/opto_semis_champ")
@@ -2043,6 +2043,10 @@ save(opto_semis_champ , file = "opto_semis_champ")
 
 
 
+
+
+
+diff <- opto_semis_champ %>% group_by(taille) %>% summarise(surface = sd(Surface) , PMG = sd(PMG) , PMG2 = sd(PMG2))
 
 
 

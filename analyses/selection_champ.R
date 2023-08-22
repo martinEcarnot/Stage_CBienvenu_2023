@@ -249,21 +249,6 @@ H2
 
 write.table(round(H2,3) , file = "C:/Users/bienvenu/Documents/Stage_CBienvenu_2023/tables/H2_champ.csv" , sep = ";" , dec = "." , row.names = T , col.names = T)
 
-ggplot(champ , aes(x=PMG , y=prot_recolte)) + geom_point()
-ggplot(champ , aes(x=surface_recolte_moy , y=prot_recolte)) + geom_point()
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -395,7 +380,7 @@ for (i in 2:nrow(tmp)){
 opto_recolte_champ[row.names(tmp),] <- tmp
 
 
-
+opto_recolte_champ$selection <- relevel(as.factor(opto_recolte_champ$selection) , ref = "NT")
 
 
 
@@ -410,3 +395,120 @@ drop1(mod , .~. , test = "F")
 
 
 summary(mod)
+
+
+a <- subset(opto_recolte_champ , selection == "NT")
+
+b <- aggregate(Surface ~ parcelle , data = a , FUN = sd)
+print(b)
+ec_ty <- mean(b$Surface)
+
+Rpetit <- mod$coefficients["selectionpetit"]*100 / ec_ty
+Rgros <- mod$coefficients["selectiongros"]*100 / ec_ty
+Rmoyen <- mod$coefficients["selectionmoyen"]*100 / ec_ty
+
+pgros <- summary(mod)$coefficients["selectiongros","Pr(>|t|)"]
+ppetit <- summary(mod)$coefficients["selectionpetit","Pr(>|t|)"]
+pmoyen <- summary(mod)$coefficients["selectionmoyen","Pr(>|t|)"]
+
+
+conf <- confint(mod)* 100 / ec_ty
+
+
+add <- data.frame(trait = rep(NA,3),
+                  R = c(Rpetit,Rgros,Rmoyen),
+                  selection = c("petit","gros","moyen"),
+                  p_value = c(ppetit,pgros,pmoyen),
+                  conf_bas = c(conf["selectionpetit",1],conf["selectiongros",1],conf["selectionmoyen",1]),
+                  conf_haut = c(conf["selectionpetit",2],conf["selectiongros",2],conf["selectionmoyen",2]),
+                  lettres = c("***",NA,"*"),
+                  trait2 = rep(NA,3),
+                  trait3 = rep("Taille des grains",3),
+                  htxt = c(-47,0,-26))
+
+
+resultat <- rbind(resultat,add)
+
+
+
+ggplot(resultat , aes(x = selection , y = R , fill = selection)) + geom_col() + geom_errorbar(aes(ymin = conf_bas , ymax = conf_haut) , width = 0.3) + geom_text(aes(label = lettres , y = htxt)) + theme(legend.position = "none") + facet_wrap(~trait3) + geom_hline(yintercept = 0) + labs(y = "Progrès estimé (en % de l'écart-type du trait)" , x = "Modalité de sélection" , title = "Progrès estimés après sélection par tamis")
+
+
+
+
+
+
+load("../donnees/S")
+
+
+# H2 petit
+mod$coefficients["selectionpetit"] / S["petit","surface_recolte_moy"]
+
+
+
+# H2 gros
+mod$coefficients["selectiongros"] / S["gros","surface_recolte_moy"]
+
+
+# H2 moyen
+mod$coefficients["selectionmoyen"] / S["moyen","surface_recolte_moy"]
+
+
+
+# i petit
+S["petit","surface_recolte_moy"] / ec_ty
+
+# i gros
+S["gros","surface_recolte_moy"] / ec_ty
+
+# i moyen
+S["moyen","surface_recolte_moy"] / ec_ty
+
+
+
+
+
+
+
+add <- opto_recolte_champ[,c("selection" , "Surface")]
+
+add$variable <- add$variable2 <- NA
+add$variable3 <- "Taille des grains"
+add$value <- add$Surface
+add$Surface <- NULL
+
+
+don_graph <- rbind(don_graph,add)
+
+
+
+lettres <- as.data.frame(cld(glht(model = mod , mcp(selection = "Tukey")) , level = 0.05)$mcletters$Letters)
+
+names(lettres)[1] <- "groups"
+
+lettres$selection <- row.names(lettres)
+
+lettres$variable <- lettres$variable2 <- NA
+
+lettres$variable3 <- "Taille des grains"
+
+lettres$y <- 30 #aggregate(Surface ~ selection , FUN = max , na.rm = T , data = opto_recolte_champ)[,2]
+
+l_graph <- rbind(l_graph , lettres)
+
+
+ggplot(don_graph , aes(x=selection , y = value , fill = selection , col = selection)) + geom_boxplot(alpha = 0.5) + stat_mean(col = "black") + facet_wrap(~variable3 , scales = "free") + theme(legend.position = "none") + geom_text(data = l_graph , aes(label = groups, y = y )) + labs(x = "Modalité de sélection" , y = "Valeur des traits" , title = "Effet de la sélection sur différents traits")
+
+
+
+
+
+
+resultat_ind <- subset(resultat , trait3 == "Taille des grains")
+ggplot(resultat_ind , aes(x = selection , y = R , fill = selection)) + geom_col() + geom_errorbar(aes(ymin = conf_bas , ymax = conf_haut) , width = 0.3) + geom_text(aes(label = lettres , y = conf_bas - 2)) + theme(legend.position = "none") + geom_hline(yintercept = 0) + labs(y = "Progrès estimé \n(en % de l'écart-type du trait)" , x = "Modalité de sélection" , title = "Progrès estimés après sélection \nsur taille des grains")
+
+
+don_graph_ind <- subset(don_graph , variable3 == "Taille des grains")
+l_graph_ind <- subset(l_graph , variable3 == "Taille des grains")
+ggplot(don_graph_ind , aes(x=selection , y = value , fill = selection , col = selection)) + geom_boxplot(alpha = 0.5) + stat_mean(col = "black") + theme(legend.position = "none") + geom_text(data = l_graph_ind , aes(label = groups, y = 31 )) + labs(x = "Modalité de sélection" , y = "Taille des grains" , title = "Effet de la sélection sur la taille du \ngrain")
+

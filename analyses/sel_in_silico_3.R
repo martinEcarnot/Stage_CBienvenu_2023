@@ -3,7 +3,8 @@ rm(list=ls())
 setwd("~/Stage/Analyses")
 
 
-load("../donnees/bac")
+
+
 
 library(tidyverse)
 library(ggplot2)
@@ -14,14 +15,18 @@ i_p <- function(p){
 }
 
 
+load("../donnees/opto_recolte_bac")
+pop_non_sel_ind <- opto_recolte_bac[,c("Surface","BAC","ind")]
+pop_non_sel_ind$selection <- "NON"
+rm(opto_recolte_bac)
+
+load("../donnees/bac")
+pop <- bac %>% filter(geno != "INCONNU" & is.na(Surface)==F & appel == "present" & semis == "06/01") %>% mutate(selection = "NON") %>% arrange(desc(Surface)) 
+pop_non_sel_lot <- pop %>% select(BAC , surface_recolte_moy , selection , geno) %>% rename(surface_moy = surface_recolte_moy)
+
 load("../donnees/opto")
-
-pop <- bac %>% filter(geno != "INCONNU" & is.na(Surface)==F & appel == "present" & semis == "06/01") %>% mutate(selection = "NON") %>% arrange(desc(Surface))
-
 moy_geno <- opto %>% group_by(geno) %>% summarise(Surface = mean(Surface , na.rm = T))
-
-moy_geno <- moy_geno[which(moy_geno$geno %in% unique(pop$geno)),]
-
+moy_geno <- moy_geno[which(moy_geno$geno %in% unique(pop$geno)),] %>% rename(surface_moy = Surface)
 rm(opto)
 
 
@@ -42,9 +47,14 @@ test <- data.frame()
 
 # on fait par bac a chaque fois
 
-ngl <- 5 
+ngl <- 5 # nombre de grains par lot, equivalent a nb de grain par epi dans eq theorique
+
+
 n_sel <- seq(100,600,50)
 
+
+ecty_lot <- sd(pop_non_sel_lot$surface_moy , na.rm = T)
+ecty_ind <- sd(pop_non_sel_ind$Surface , na.rm = T)
 
 
 
@@ -53,12 +63,21 @@ for (r in 1:100) {
   for (nsel in n_sel){
     
     # caracteristiques de la population selectionnee sur grains
-    sel_ind <- pop[1:nsel,]
+    sel_ind <- row.names(pop)[1:nsel]
     
-    sel_ind$selection <- "IND"
+    pop_sel_ind <- pop_non_sel_ind[which(pop_non_sel_ind$ind %in% sel_ind),]
+    
+    pop_sel_ind$selection <- "IND"
     
     # intensite de selection ind
     i_ind <- i_p(nsel/nrow(pop))
+    
+    pop_sel_ind <- rbind(pop_sel_ind , pop_non_sel_ind)
+    pop_sel_ind$selection <- relevel(as.factor(pop_sel_ind$selection) , ref = "NON")
+    
+    mod <- lm(Surface ~ selection + BAC , data = pop_sel_ind)
+    conf <- confint(mod)
+    a <- summary(mod)$coefficients
     
     
     for (neo in c(seq(round(nsel/ngl) , nrow(moy_geno) , 10) , nrow(moy_geno))){
@@ -67,24 +86,29 @@ for (r in 1:100) {
       obs <- sample(row.names(moy_geno) , neo)
       
       # constitution de la population de lots observes
-      pop_lot <- moy_geno[obs,] %>% arrange(desc(Surface)) #population d'epi observe sur laquelle on selectionne
+      pop_lot <- moy_geno[obs,] %>% arrange(desc(surface_moy)) #population d'epi observe sur laquelle on selectionne
       
       # sélection des meilleurs lots dans la population de lots observes
-      sel_pop_lot <- pop_lot[1:round(nsel/ngl),]
+      sel_lot <- pop_lot[1:round(nsel/ngl),"geno"]$geno
       
       # caracteristiques de la population selectionnee par lot
-      sel_lot <- pop[which(pop$geno %in% sel_pop_lot$geno),]
+      pop_sel_lot <- pop_non_sel_lot[which(pop_non_sel_lot$geno %in% sel_lot),]
       
+      pop_sel_lot$selection <- "LOT"
+      
+      pop_sel_lot <- rbind(pop_sel_lot , pop_non_sel_lot)
+      
+      pop_sel_lot$selection <- relevel(as.factor(pop_sel_lot$selection) , ref = "NON")
       # intensite de selection lot
-      i_lot <- i_p(nrow(sel_pop_lot)/neo)
+      i_lot <- i_p(length(sel_lot)/neo)
       
       
-      # donnees pour test student
-      sel_lot$selection <- "LOT"
-      don_t <- rbind(pop,sel_ind,sel_lot)
-      don_t$selection <- relevel(as.factor(don_t$selection) , ref = "NON")
-    
+      mod <- lm(surface_moy ~ selection + BAC , data = pop_sel_lot)
+      conf2 <- confint(mod)
+      a2 <- summary(mod)$coefficients
       
+      # tests et remplissage du tableau de resultats
+        
       test[i,"i_ind"] <- i_ind
       test[i,"i_lot"] <- i_lot
       test[i,"NEO"] <- neo
@@ -92,30 +116,25 @@ for (r in 1:100) {
       test[i,"rep"] <- r
       
       
-      
-      # t.test
-      model <- lm(surface_recolte_moy ~ selection , data = don_t)
-      mod <- summary(model)$coefficients
-      conf <- confint(model)
-      
-      test[i,"t.test_ind"] <- mod["selectionIND","Pr(>|t|)"]
-      test[i,"t.test_lot"] <- mod["selectionLOT","Pr(>|t|)"]
-      test[i,"R_ind"] <- mod["selectionIND","Estimate"]
-      test[i,"R_lot"] <- mod["selectionLOT","Estimate"]
+      test[i,"t.test_ind"] <- a["selectionIND","Pr(>|t|)"]
+      test[i,"R_ind"] <- a["selectionIND","Estimate"]
+      test[i,"Rp100_ind"] <- a["selectionIND","Estimate"] * 100 / ecty_ind
       test[i,"conf_ind_bas"] <- conf["selectionIND",1]
       test[i,"conf_ind_haut"] <- conf["selectionIND",2]
-      test[i,"conf_lot_bas"] <- conf["selectionLOT",1]
-      test[i,"conf_lot_haut"] <- conf["selectionLOT",2]
-      test[i,"Rp100_ind"] <- mod["selectionIND","Estimate"] * 100 / sd(pop[,"surface_recolte_moy"] , na.rm = T)
-      test[i,"Rp100_lot"] <- mod["selectionLOT","Estimate"] * 100 / sd(pop[,"surface_recolte_moy"] , na.rm = T)
-      test[i,"confp100_ind_bas"] <- conf["selectionIND",1] * 100 / sd(pop[,"surface_recolte_moy"] , na.rm = T)
-      test[i,"confp100_ind_haut"] <- conf["selectionIND",2] * 100 / sd(pop[,"surface_recolte_moy"] , na.rm = T)
-      test[i,"confp100_lot_bas"] <- conf["selectionLOT",1] * 100 / sd(pop[,"surface_recolte_moy"] , na.rm = T)
-      test[i,"confp100_lot_haut"] <- conf["selectionLOT",2] * 100 / sd(pop[,"surface_recolte_moy"] , na.rm = T)
+      test[i,"confp100_ind_bas"] <- conf["selectionIND",1] * 100 / ecty_ind
+      test[i,"confp100_ind_haut"] <- conf["selectionIND",2] * 100 / ecty_ind
+      
+      test[i,"t.test_lot"] <- a2["selectionLOT","Pr(>|t|)"]
+      test[i,"R_lot"] <- a2["selectionLOT","Estimate"]
+      test[i,"conf_lot_bas"] <- conf2["selectionLOT",1]
+      test[i,"conf_lot_haut"] <- conf2["selectionLOT",2]
+      test[i,"Rp100_lot"] <- a2["selectionLOT","Estimate"] * 100 / ecty_lot
+      test[i,"confp100_lot_bas"] <- conf2["selectionLOT",1] * 100 / ecty_lot
+      test[i,"confp100_lot_haut"] <- conf2["selectionLOT",2] * 100 / ecty_lot
       
       i <- i+1
-      
-      
+        
+        
         
       
       
@@ -127,25 +146,24 @@ for (r in 1:100) {
 
 
 
-# load("../donnees/sel_in_silico")
-# 
-# sel_in_silico <- rbind(sel_in_silico , test)
-# 
-# 
-# sel_in_silico$NEO <- sel_in_silico$NEO * 177
-# 
-# 
-# save(sel_in_silico , file = "../donnees/sel_in_silico")
 
+sel_in_silico3 <- test
 
-
+save(sel_in_silico3 , file = "../donnees/sel_in_silico3")
 
 
 # comparaison avec la theorie ---------------------------------------------
 
-don <- test %>% mutate(RR_exp = R_lot/R_ind) %>% group_by(nsel,NEO) %>% summarise(RR_exp = mean(RR_exp) , Rlot_exp = mean(R_lot) , Rind_exp = mean(R_ind)) %>% as.data.frame()
 
-#don <- sel_in_silico %>% filter(trait == "surface_recolte_moy") %>% group_by(nsel,NEO) %>% summarise(R_ind = mean(R_ind) , R_lot = mean(R_lot)) %>% mutate(RR_exp = R_lot/R_ind , NEO = NEO*177) %>% as.data.frame()
+rm(list=setdiff(ls(), c("pop","bac","moy_geno","ngl","n_sel")))
+
+
+load("../donnees/sel_in_silico3")
+
+
+don <- sel_in_silico3  %>% mutate(RR_exp = R_lot/R_ind) %>% group_by(nsel,NEO) %>% summarise(RR_exp = mean(RR_exp) , Rlot_exp = mean(R_lot) , Rind_exp = mean(R_ind)) %>% as.data.frame()
+
+#don <- sel_in_silico3 %>% filter(trait == "surface_recolte_moy") %>% group_by(nsel,NEO) %>% summarise(R_ind = mean(R_ind) , R_lot = mean(R_lot)) %>% mutate(RR_exp = R_lot/R_ind , NEO = NEO*177) %>% as.data.frame()
 
 row.names(don) <- paste(don$NEO,don$nsel)
 
@@ -179,7 +197,7 @@ vintra <- 2.677^2
 ngl <- 5
 
 
-n_sel <- unique(don$nsel)
+n_sel <- unique(sel_in_silico3$nsel)
 RR_test <- data.frame()
 i <- 1
 
