@@ -327,7 +327,9 @@ ggplot(resultat , aes(x = selection , y = R , fill = selection)) + geom_col() + 
 
 
 
+u <- resultat %>% filter(selection == "petit" & trait %in% c("PMG" ,"surface_recolte_moy2","surface_recolte_max"))
 
+u <- resultat %>% filter(selection == "gros" & trait %in% c("prot_recolte","hauteur"))
 
 
 
@@ -454,19 +456,25 @@ mod$coefficients["selectiongros"] / S["gros","surface_recolte_moy"]
 mod$coefficients["selectionmoyen"] / S["moyen","surface_recolte_moy"]
 
 
+load("../donnees/opto_semis_champ")
+
+ec_ty2 <- sd(subset(opto_semis_champ , taille == "NonTrie")$Surface)
 
 # i petit
-S["petit","surface_recolte_moy"] / ec_ty
+S["petit","surface_recolte_moy"] / ec_ty2
 
 # i gros
-S["gros","surface_recolte_moy"] / ec_ty
+S["gros","surface_recolte_moy"] / ec_ty2
 
 # i moyen
-S["moyen","surface_recolte_moy"] / ec_ty
+S["moyen","surface_recolte_moy"] / ec_ty2
 
 
 
-
+# pour voir
+mod$coefficients["selectionpetit"]*100 / ec_ty2
+mod$coefficients["selectiongros"]*100 / ec_ty2
+mod$coefficients["selectionmoyen"]*100 / ec_ty2
 
 
 

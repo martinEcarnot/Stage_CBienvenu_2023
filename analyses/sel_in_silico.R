@@ -32,7 +32,6 @@ rm(opto)
 
 
 mean(table(pop$geno))
-hist(table(pop$geno))
 
 # en moyenne, dans la pop non selectionnee un lot a ete mis en terre 5 fois
 # on prend ça comme taux de multi du coup
@@ -224,6 +223,8 @@ for (r in 1:100) {
 
 
 
+load("../donnees/sel_in_silico")
+
 # nb genotypes selectionnes
 a <- sel_in_silico %>% filter(trait == "nb_geno") %>% gather(variable , value , c("nb_geno_lot","nb_geno_ind","nb_geno"))
 
@@ -314,7 +315,7 @@ lettres$l <- ifelse(lettres$value < 0.001 , "***" ,
 
 
 
-garde <- c("PMG","GSV","hauteur","N_flag","nb_epi","poids_epis","preco","prot_recolte","surface_recolte_moy","surface_recolte_min","surface_recolte_max","nb_grain")
+garde <- c("PMG","GSV2","hauteur","N_flag","nb_epi","poids_epis","preco","prot_recolte","surface_recolte_moy2","surface_recolte_min2","surface_recolte_max","nb_grain")
 
 
 
@@ -331,15 +332,15 @@ don$lettres <- lettres$l
 
 don$variable2 <- ifelse(don$variable == "R_ind" , "R grain" , "R epi")
 
-don$trait2 <- ifelse(don$trait == "surface_recolte_moy" , "Taille moyenne des grains",
-                     ifelse(don$trait == "surface_recolte_min","Taille du plus petit grain",
+don$trait2 <- ifelse(don$trait == "surface_recolte_moy2" , "Taille moyenne des grains",
+                     ifelse(don$trait == "surface_recolte_min2","Taille du plus petit grain",
                             ifelse(don$trait == "surface_recolte_max" , "Taille du plus gros grain",
                                    ifelse(don$trait == "hauteur","Hauteur",
                                           ifelse(don$trait == "N_flag","Taux N feuille drapeau",
                                                  ifelse(don$trait == "prot_recolte","Taux N grains",
                                                         ifelse(don$trait == "nb_epi","Nombre d'épis",
                                                                ifelse(don$trait == "poids_epis", "Poids total d'épis" , ifelse(don$trait == "preco" , "Précocité",
-                                                                                                                               ifelse(don$trait == "nb_grain" , "Nombre de grains par épi" , don$trait))))))))))
+                                                                                                                               ifelse(don$trait == "nb_grain" , "Nombre de grains par épi" , ifelse(don$trait == "GSV2" , "GSV" , don$trait)))))))))))
 
 don$trait3 <- factor(don$trait2 , levels = c("PMG","Taille moyenne des grains","Taille du plus petit grain","Taille du plus gros grain","Poids total d'épis","Nombre d'épis","Nombre de grains par épi","Taux N grains","Taux N feuille drapeau","Précocité","Hauteur","GSV"))
 

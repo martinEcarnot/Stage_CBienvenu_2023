@@ -239,6 +239,7 @@ RR_test$RgRe_exp <- RR_test$Rind_exp / RR_test$Rlot_exp
 
 
 
+
 {
   RR_test$aby <- RR_test$abx <- seq(min(RR_test$Rlot_th) , max(RR_test$Rlot_th) , length = nrow(RR_test))
   ggplot(RR_test , aes(x = Rlot_th , y = Rlot_exp)) + geom_point() + geom_smooth(method = "lm" , se = F , aes(col = "Regression")) + geom_line(aes(x = abx , y = aby , col = "y=x") , linewidth = 1) + labs(x = "Repi theorique" , y = "Repi empirique" , title = "Comparaison entre l'approche théorique et la sélection in silico") + scale_colour_manual(values = c( "#619CFF","#F8766D")) 
@@ -251,5 +252,25 @@ RR_test$RgRe_exp <- RR_test$Rind_exp / RR_test$Rlot_exp
 
 cor(RR_test$RR_th , RR_test$RR_exp)
 cor(RR_test$RR_th , RR_test$RR_exp)^2
+
+
+
+
+
+rm(list=ls())
+
+neo <- 177
+NSEL <- 400
+
+load("../donnees/sel_in_silico3")
+graph <- sel_in_silico3 %>% 
+  filter(NEO == neo & nsel == NSEL) %>% 
+  summarise_all(.funs = mean) %>% 
+  gather(variable,value,c("Rp100_ind","Rp100_lot")) %>%
+  mutate(conf_bas = ifelse(variable == "Rp100_ind" , confp100_ind_bas , confp100_lot_bas) , conf_haut = ifelse(value == "Rp100_ind" , confp100_ind_haut , confp100_lot_haut)) %>% mutate(lettres = "***")
+
+graph$variable2 <- ifelse(graph$variable == "Rp100_ind" , "R grain" , "R epi")
+
+ggplot(graph , aes(x = variable2 , y = value , fill = variable2)) + geom_col() + geom_text(aes(label = lettres , y = conf_haut + 1 )) + labs(y = "Progrès estimés \n(en % de l'écart-type du trait)" , x="" , title = "Progrès estimé pour la taille du grain \npar sélection in silico" , caption = paste("NEO = ",neo,"et nsel =",NSEL)) + geom_hline(yintercept = 0) + theme(legend.position = "none") + geom_errorbar(aes(ymin = conf_bas , ymax = conf_haut) , width = 0.3)
 
 
