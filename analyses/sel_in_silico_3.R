@@ -274,3 +274,9 @@ graph$variable2 <- ifelse(graph$variable == "Rp100_ind" , "R grain" , "R epi")
 ggplot(graph , aes(x = variable2 , y = value , fill = variable2)) + geom_col() + geom_text(aes(label = lettres , y = conf_haut + 1 )) + labs(y = "Progrès estimés \n(en % de l'écart-type du trait)" , x="" , title = "Progrès estimé pour la taille du grain \npar sélection in silico" , caption = paste("NEO = ",neo,"et nsel =",NSEL)) + geom_hline(yintercept = 0) + theme(legend.position = "none") + geom_errorbar(aes(ymin = conf_bas , ymax = conf_haut) , width = 0.3)
 
 
+
+
+
+load("../donnees/sel_in_silico")
+
+sel_in_silico %>% filter(trait == "surface_recolte_moy" & NEO == 177 & nsel == 400)
