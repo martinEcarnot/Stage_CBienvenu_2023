@@ -8,7 +8,7 @@ champ$selection <- relevel(as.factor(champ$selection) , ref = "NT")
 library(tidyverse)
 library(ggplot2)
 library(ggpubr)
-library(multcomp)
+#library(multcomp)
 library(lme4)
 library(lmerTest)
 library(pander)
@@ -177,17 +177,17 @@ for (t in traits){
   
   pval[t,"p-value"] <- a["selection","Pr(>F)"]
   
-  lettres <- as.data.frame(cld(glht(model = mod , mcp(selection = "Tukey")) , level = 0.05)$mcletters$Letters)
-
-  names(lettres)[1] <- "groups"
-
-  lettres$selection <- row.names(lettres)
-
-  lettres$variable <- t
-
-  lettres$y <- max(don[,t] , na.rm = T) +1
-
-  l <- rbind(l , lettres)
+  # lettres <- as.data.frame(cld(glht(model = mod , mcp(selection = "Tukey")) , level = 0.05)$mcletters$Letters)
+  # 
+  # names(lettres)[1] <- "groups"
+  # 
+  # lettres$selection <- row.names(lettres)
+  # 
+  # lettres$variable <- t
+  # 
+  # lettres$y <- max(don[,t] , na.rm = T) +1
+  # 
+  # l <- rbind(l , lettres)
   
 }
 
@@ -258,7 +258,7 @@ write.table(round(H2,3) , file = "C:/Users/bienvenu/Documents/Stage_CBienvenu_20
 
 
 # graph avec tous les R en % de la variance et les p-values et les IC
-traits <- c("hauteur" , "nb_epillets" , "surface_recolte_moy2" , "surface_recolte_min2" , "surface_recolte_max" , "PMG" , "GSV" , "nb_grain" , "prot_recolte" )
+traits <- c("hauteur" , "nb_epillets" , "surface_recolte_moy2" , "surface_recolte_min2" , "surface_recolte_max" , "PMG2" , "GSV2" , "nb_grain" , "prot_recolte" )
 # on regarde que les sd sont similaires entre les parcelles pour NT
 a <- subset(don , selection == "NT")
 ec_ty <- data.frame()
@@ -279,7 +279,7 @@ for (t in traits){
   
   f <- as.formula(paste(t,"~",res[t,"formule"]))
   
-  if (t == "GSV"){f <- as.formula("GSV ~ planche + selection")}
+  if (t == "GSV2"){f <- as.formula("GSV2 ~ planche + selection")}
   if (t == "nb_grain"){f <- as.formula("nb_grain ~ planche + selection")}
   
   mod <- lm(f , data = don)
@@ -313,7 +313,7 @@ resultat$trait2 <- ifelse(resultat$trait == "hauteur" , "Hauteur",
                                         ifelse(resultat$trait == "prot_recolte" , "Taux N grains",
                                                ifelse(resultat$trait == "surface_recolte_max" , "Taille du plus gros grain",
                                                       ifelse(resultat$trait == "surface_recolte_min2" , "Taille du plus petit grain" , 
-                                                             ifelse(resultat$trait == "surface_recolte_moy2" , "Taille moyenne des grains" , resultat$trait)))))))
+                                                             ifelse(resultat$trait == "surface_recolte_moy2" , "Taille moyenne des grains" , ifelse(resultat$trait == "PMG2" , "PMG" , ifelse(resultat$trait == "GSV2" , "GSV" , resultat$trait)))))))))
 
 resultat$trait3 <- factor(resultat$trait2 , levels = c("PMG" , "Taille moyenne des grains" , "Taille du plus petit grain" , "Taille du plus gros grain" , "Hauteur" , "Taux N grains" , "Nombre de grains par épi" , "Nombre d'épillets" , "GSV"))
 
