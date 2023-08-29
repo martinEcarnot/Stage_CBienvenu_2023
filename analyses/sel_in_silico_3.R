@@ -234,7 +234,7 @@ RR_test$RgRe_exp <- RR_test$Rind_exp / RR_test$Rlot_exp
   a <- round(mod$coefficients["RR_exp"],2)
   r2 <- round(summary(mod)$r.squared,2)
   
-  ggplot(RR_test , aes(x = RR_exp , y = RR_th)) + geom_point() + geom_smooth(method = "lm" , se = F , col = "#F8766D") + labs(y = "Repi / Rgrain théorique" , x = "Repi / Rgrain empirique" , title = "Comparaison entre l'approche théorique et la sélection in silico") + annotate(geom = "text" , label = paste0("y = ",b," + ",a,"x \nR² = ",r2) , x = 0.3 , y = 1 , col = "#F8766D" , size = 5) + annotate("rect", xmin = 0.02 , xmax = 0.55, ymin = 0.8, ymax = 1.2 , alpha = 0 , col = "black") + labs()
+  ggplot(RR_test , aes(x = RR_exp , y = RR_th)) + geom_point() + geom_smooth(method = "lm" , se = F , col = "#F8766D") + labs(y = "Repi / Rgrain th�orique" , x = "Repi / Rgrain empirique") + annotate(geom = "text" , label = paste0("y = ",b," + ",a,"x \nR� = ",r2) , x = 0.3 , y = 1 , col = "#F8766D" , size = 5) + annotate("rect", xmin = 0.02 , xmax = 0.55, ymin = 0.8, ymax = 1.2 , alpha = 0 , col = "black") + labs() + theme(panel.background = element_blank())
 }
 
 

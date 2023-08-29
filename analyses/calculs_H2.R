@@ -72,7 +72,7 @@ mean(don$h)
 
 # Hauteur
 # model selectionne
-f <- poids_epis ~ (1|geno) + semis + bordure + h
+f <- poids_epis ~ (1|geno) + semis + bordure
 
 mod <-lmer(f , data = don)
 
@@ -131,10 +131,9 @@ f <- GSV ~ bordure + nb_epi + (1|geno)
 H2["GSV","H2"] <- calcul_H2(f = f , don = don)
 
 
-# surface
-f <- surface_recolte_moy ~ (1|geno) + semis + BAC + bordure + nb_epi
-H2["surface","H2"] <- calcul_H2(f = f , don = don)
-
+# taille des grains
+surface_recolte_moy2 ~ (1|geno) + semis + BAC + bordure + nb_epi
+H2["taille grains","H2"] <- calcul_H2(f = f , don = don)
 
 
 # prot_recolte
@@ -191,7 +190,7 @@ ggplot(don , aes(x = X_spats , y = Y_spats , fill = BAC2 , col = luz)) + geom_ti
 # c'est good
 
 
-traits <- names(don[c(9,12,14:17,19:23,26:43)])
+traits <- c("hauteur","prot_recolte","preco","nb_epi","poids_epis","nb_grain","N_flag","surface_recolte_moy","surface_recolte_moy2","GSV","GSV2","PMG","PMG2")
 
 H2 <- data.frame()
 
@@ -204,6 +203,8 @@ for (t in traits){
   if (t == "hauteur"){don2 <- don %>% filter(hauteur > 50)}
   
   if (t == "prot_recolte"){don2 <- don %>% filter(prot_recolte < 20 & nb_grain > 10) }
+  
+  if (t == "nb_grain"){don2 <- don %>% filter(nb_grain > 10)}
   
   model_spat <-SpATS(response = t , 
                       genotype = "geno",

@@ -290,11 +290,11 @@ for (t in traits){
   for (sel in c("gros","petit","moyen")){
     chr <- paste0("selection",sel)
     resultat[i,"trait"] <- t
-    resultat[i,"R"] <- mod$coefficients[chr] * 100 / ec_ty[t,1]
+    resultat[i,"R"] <- mod$coefficients[chr] # * 100 / ec_ty[t,1]
     resultat[i,"selection"] <- sel 
     resultat[i,"p_value"] <- a[chr,"Pr(>|t|)"]
-    resultat[i,"conf_bas"] <- conf[chr,1] * 100 / ec_ty[t,1]
-    resultat[i,"conf_haut"] <- conf[chr,2] * 100 / ec_ty[t,1]
+    resultat[i,"conf_bas"] <- conf[chr,1] # * 100 / ec_ty[t,1]
+    resultat[i,"conf_haut"] <- conf[chr,2] # * 100 / ec_ty[t,1]
     
     i <- i+1
   }
@@ -307,19 +307,30 @@ resultat$lettres <- ifelse(resultat$p_value < 0.001 , "***" ,
                            ifelse(resultat$p_value < 0.01 , "**",
                                   ifelse(resultat$p_value < 0.05 , "*",NA)))
 
-resultat$trait2 <- ifelse(resultat$trait == "hauteur" , "Hauteur",
-                          ifelse(resultat$trait == "nb_epillets" , "Nombre d'épillets",
-                                 ifelse(resultat$trait == "nb_grain" , "Nombre de grains par épi",
-                                        ifelse(resultat$trait == "prot_recolte" , "Taux N grains",
+resultat$trait2 <- ifelse(resultat$trait == "hauteur" , "H",
+                          ifelse(resultat$trait == "nb_epillets" , "NbE",
+                                 ifelse(resultat$trait == "nb_grain" , "NGE",
+                                        ifelse(resultat$trait == "prot_recolte" , "TPG",
                                                ifelse(resultat$trait == "surface_recolte_max" , "Taille du plus gros grain",
                                                       ifelse(resultat$trait == "surface_recolte_min2" , "Taille du plus petit grain" , 
-                                                             ifelse(resultat$trait == "surface_recolte_moy2" , "Taille moyenne des grains" , ifelse(resultat$trait == "PMG2" , "PMG" , ifelse(resultat$trait == "GSV2" , "GSV" , resultat$trait)))))))))
+                                                             ifelse(resultat$trait == "surface_recolte_moy2" , "TMG" , ifelse(resultat$trait == "PMG2" , "PMG" , ifelse(resultat$trait == "GSV2" , "GSV" , resultat$trait)))))))))
 
-resultat$trait3 <- factor(resultat$trait2 , levels = c("PMG" , "Taille moyenne des grains" , "Taille du plus petit grain" , "Taille du plus gros grain" , "Hauteur" , "Taux N grains" , "Nombre de grains par épi" , "Nombre d'épillets" , "GSV"))
+resultat$trait3 <- factor(resultat$trait2 , levels = c("PMG" , "TMG" , "Taille du plus petit grain" , "Taille du plus gros grain" , "H" , "TPG" , "NGE" , "NbE" , "GSV"))
 
-resultat$htxt <- ifelse(resultat$R < 0 , resultat$conf_bas - 15 , resultat$conf_haut + 5)
+for (i in 1:nrow(resultat)){
+  t <- resultat[i,"trait"]
+  
+  resultat[i,"htxt"] <- resultat[i,"conf_bas"] - 0.15*ec_ty[t,"ecty"]
+  
+  if (resultat[i,"R"] > 0){
+    resultat[i,"htxt"] <- resultat[i,"conf_haut"] + 0.1*ec_ty[t,"ecty"]
+  }
+  
+}
 
-ggplot(resultat , aes(x = selection , y = R , fill = selection)) + geom_col() + geom_errorbar(aes(ymin = conf_bas , ymax = conf_haut) , width = 0.3) + geom_text(aes(label = lettres , y = htxt)) + theme(legend.position = "none") + facet_wrap(~trait3) + geom_hline(yintercept = 0) + labs(y = "Progrès estimé (en % de l'écart-type du trait)" , x = "Modalité de sélection" , title = "Progrès estimés après sélection par tamis")
+
+graph <- resultat %>% filter(trait3 %in% c("PMG","TMG","H","TPG","NGE","NbE","GSV"))
+ggplot(graph , aes(x = selection , y = R , fill = selection)) + geom_col() + geom_errorbar(aes(ymin = conf_bas , ymax = conf_haut) , width = 0.3) + geom_text(aes(label = lettres , y = htxt)) + theme(legend.position = "none") + facet_wrap(~trait3 , scales = "free") + geom_hline(yintercept = 0) + labs(y = "Progr�s estim�s" , x = "Modalit� de s�lection") + theme(panel.background = element_blank())
 
 
 

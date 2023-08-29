@@ -555,7 +555,7 @@ rm(list = ls())
 
 load("../donnees/param_v_fixe")
 
-
+library(scales)
 
 
 donplot3 <- param_v_fixe %>% mutate_at(.vars = c("NEO","nsel","NGE") , .funs = as.factor) %>% mutate(RgRe = 1/ReRg) %>% filter(nsel %in% c(10000,25000,50000,100000)) %>% filter(NGE %in% c(40,60,80)) %>% filter(NEO %in% c(100 , 500 , 1000 , 3000 , 4000 , 5000)) %>% mutate(nsel2 = paste("nsel =",nsel) , NGE2 = paste("NGE =",NGE))
@@ -566,7 +566,9 @@ ggplot(donplot3 , aes(x = NGO , y = RgRe , col = NEO)) + geom_line(linewidth = 1
 
 
 
-ggplot(donplot3 , aes(x = NGO , y = ReRg , col = NEO)) + geom_line(linewidth = 1) + geom_hline(yintercept = 1 , col = "black" , linewidth = 1) + facet_grid(NGE2~nsel3) + theme(axis.text.x = element_text(angle = 45 , hjust = 1) , panel.border = element_rect(colour = "black" , fill=NA)) + labs(y = "R_epi / R_grain" , title = "Valeurs de R_epi / R_grain pour différents jeux de paramètres" , x = "Nombre de grains observés") + ylim(0,3)
+ggplot(donplot3 , aes(x = NGO , y = RgRe , col = NEO)) + geom_line(linewidth = 1) + geom_hline(yintercept = 1 , col = "black" , linewidth = 1) + facet_grid(NGE2~nsel3) + theme(axis.text.x = element_text(angle = 45 , hjust = 1) , panel.border = element_rect(colour = "black" , fill=NA) , panel.background = element_blank()) + labs(y = "R_grain / R_epi" , x = "Nombre de grains observ�s") + ylim(0,3) + scale_x_continuous(trans = 'log10')
+
+#+ scale_x_log10(breaks = trans_breaks("log10", function(x) 10^x) , labels = trans_format("log10", math_format(10^.x)))
 
 
 

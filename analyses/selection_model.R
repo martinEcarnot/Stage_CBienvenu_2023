@@ -169,8 +169,8 @@ step(lm(formule1 , data=don), direction="both")
 
 
 
-# surface_recolte_moy
-formule1 <- surface_recolte_moy ~ geno + semis + BAC + luz + bordure + luz:BAC + BAC:bordure + nb_epi
+# surface_recolte_moy2
+formule1 <- surface_recolte_moy2 ~ geno + semis + BAC + luz + bordure + luz:BAC + BAC:bordure + nb_epi
 step(lm(formule1 , data=don), direction="both")
 # surface_recolte_moy ~ geno + semis + BAC + bordure + nb_epi  AIC=4217
 

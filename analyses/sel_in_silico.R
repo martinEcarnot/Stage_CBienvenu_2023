@@ -322,7 +322,7 @@ garde <- c("PMG","GSV2","hauteur","N_flag","nb_epi","poids_epis","preco","prot_r
 don <- sel_in_silico %>% 
   filter(nsel == NSEL & NEO == neo & trait %in% garde) %>% 
   group_by(trait) %>% 
-  summarise(R_ind = mean(Rp100_ind, na.rm = T) , R_lot = mean(Rp100_lot , na.rm = T) , conf_ind_bas = mean(confp100_ind_bas) , conf_ind_haut = mean(confp100_ind_haut) , conf_lot_bas = mean(confp100_lot_bas) , conf_lot_haut = mean(confp100_lot_haut) , sd_ind = sd(Rp100_ind , na.rm = T) , sd_lot = sd(Rp100_lot , na.rm = T)) %>% 
+  summarise(R_ind = mean(R_ind, na.rm = T) , R_lot = mean(R_lot , na.rm = T) , conf_ind_bas = mean(conf_ind_bas) , conf_ind_haut = mean(conf_ind_haut) , conf_lot_bas = mean(conf_lot_bas) , conf_lot_haut = mean(conf_lot_haut) , sd_ind = sd(R_ind , na.rm = T) , sd_lot = sd(R_lot , na.rm = T)) %>% 
 gather(variable,value,c("R_ind","R_lot")) %>%
   mutate(conf_bas = ifelse(variable == "R_ind" , conf_ind_bas , conf_lot_bas) , conf_haut = ifelse(value == "R_ind" , conf_ind_haut , conf_lot_haut) , conf_sd = ifelse(variable == "R_ind" , sd_ind , sd_lot))
 
@@ -332,19 +332,29 @@ don$lettres <- lettres$l
 
 don$variable2 <- ifelse(don$variable == "R_ind" , "R grain" , "R epi")
 
-don$trait2 <- ifelse(don$trait == "surface_recolte_moy2" , "Taille moyenne des grains",
+don$trait2 <- ifelse(don$trait == "surface_recolte_moy2" , "TMG",
                      ifelse(don$trait == "surface_recolte_min2","Taille du plus petit grain",
                             ifelse(don$trait == "surface_recolte_max" , "Taille du plus gros grain",
-                                   ifelse(don$trait == "hauteur","Hauteur",
-                                          ifelse(don$trait == "N_flag","Taux N feuille drapeau",
-                                                 ifelse(don$trait == "prot_recolte","Taux N grains",
-                                                        ifelse(don$trait == "nb_epi","Nombre d'épis",
-                                                               ifelse(don$trait == "poids_epis", "Poids total d'épis" , ifelse(don$trait == "preco" , "Précocité",
-                                                                                                                               ifelse(don$trait == "nb_grain" , "Nombre de grains par épi" , ifelse(don$trait == "GSV2" , "GSV" , don$trait)))))))))))
+                                   ifelse(don$trait == "hauteur","H",
+                                          ifelse(don$trait == "N_flag","TPF",
+                                                 ifelse(don$trait == "prot_recolte","TPG",
+                                                        ifelse(don$trait == "nb_epi","NbEP",
+                                                               ifelse(don$trait == "poids_epis", "PTE" , ifelse(don$trait == "preco" , "PRE",
+                                                                                                                               ifelse(don$trait == "nb_grain" , "NGE" , ifelse(don$trait == "GSV2" , "GSV" , don$trait)))))))))))
 
-don$trait3 <- factor(don$trait2 , levels = c("PMG","Taille moyenne des grains","Taille du plus petit grain","Taille du plus gros grain","Poids total d'épis","Nombre d'épis","Nombre de grains par épi","Taux N grains","Taux N feuille drapeau","Précocité","Hauteur","GSV"))
+don$trait3 <- factor(don$trait2 , levels = c("PMG","TMG","Taille du plus petit grain","Taille du plus gros grain","PTE","NbEP","NGE","TPG","TPF","PRE","H","GSV"))
 
-ggplot(don , aes(x = variable2 , y = value , fill = variable2)) + geom_col() + facet_wrap(~trait3) + geom_text(aes(label = lettres , y = conf_haut + 1 )) + labs(y = "Progrès estimés (en % de l'écart-type du trait)" , x="" , title = "Progrès estimés par sélection in silico" , caption = paste("NEO = ",neo,"et nsel =",NSEL)) + geom_hline(yintercept = 0) + theme(legend.position = "none") + geom_errorbar(aes(ymin = conf_bas , ymax = conf_haut) , width = 0.3)
+for (i in 1:nrow(don)){
+  t <- don[i,"trait"]
+  v <- don[i,"variable"]
+  
+  don[i,"htxt"] <- don[i,"conf_haut"] + 0.02 * don[i,"conf_haut"]
+}
+
+graph <- don %>% filter(trait3 %in% c("PMG","TMG","PTE","NbEP","NGE","TPG","TPF","PRE","PRE","H","GSV"))
+graph$htxt <- graph$conf_haut + 0.02 * graph$conf_haut
+graph$fakepoint <- graph$conf_haut + 0.1 * graph$conf_haut
+ggplot(graph , aes(x = variable2 , y = value , fill = variable2)) + geom_col() + facet_wrap(~trait3 , scales = "free") + geom_text(aes(label = lettres , y = htxt ) , size = 6) + labs(y = "Progr�s estim�s" , x="" , caption = paste("NEO = ",neo,"et nsel =",NSEL)) + geom_hline(yintercept = 0) + theme(legend.position = "none") + geom_errorbar(aes(ymin = conf_bas , ymax = conf_haut) , width = 0.3) + theme(panel.background = element_blank()) + geom_point(aes(x = variable2 , y = fakepoint) , col = "white" , alpha = 0)
 
 
 
