@@ -203,7 +203,10 @@ step(lm(formule1 , data=don), direction="both")
 
 
 
-
+# nb_grains
+formule1 <- nb_grain ~ geno + semis + BAC + luz + bordure + luz:BAC + BAC:bordure + nb_epi
+step(lm(formule1 , data=don), direction="both")
+# prot_recolte ~ bordure + nb_epi  AIC=4217
 
 
 

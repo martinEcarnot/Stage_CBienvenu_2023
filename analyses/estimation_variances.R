@@ -2,6 +2,7 @@ rm(list=ls())
 
 setwd("~/Stage/Analyses")
 
+library(tidyverse)
 library(lme4)
 library(lmerTest)
 
@@ -21,6 +22,13 @@ mod <- lmer(Surface ~ (1|geno) + (1|geno:ind) + (1|geno:(ind:epi)) , data = don)
 mod
 
 
+
+
+
+
+mod <- lmer(Surface ~ (1|geno) + (1|BAC) + (1|geno:(ind:epi)) , data = don)
+
+mod
 
 
 

@@ -54,9 +54,8 @@ rm(opto)
 calcul_H2 <- function(f,don){
   mod <- lmer(f , data = don)
   Vg <- VarCorr(mod)$geno[1]
-  Vb <- VarCorr(mod)$BAC[1]
   Vr <- (sigma(mod))^2
-  Vg/(Vg + Vr + Vb)
+  Vg/(Vg + Vr)
 }
 
 
@@ -73,7 +72,7 @@ mean(don$h)
 
 # Hauteur
 # model selectionne
-f <- poids_epis ~ (1|geno) + bordure + (1|BAC)
+f <- poids_epis ~ (1|geno) + bordure
 
 mod <-lmer(f , data = don)
 
@@ -82,7 +81,7 @@ H2["hauteur","H2"] <- calcul_H2(f = f , don = don)
 
 # preco
 # model selectionne
-f <- preco ~ (1|geno) + bordure + (1|BAC)
+f <- preco ~ (1|geno)  + BAC + bordure + nb_voisin + preco_voisin
 
 mod <- lmer(f,data=don)
 
@@ -93,7 +92,7 @@ H2["preco","H2"] <- calcul_H2(f = f , don = don)
 # model selec
 f <- N_flag ~ BAC + bordure + N_flag_voisin + nb_voisin # pas d'effet genotype, on essaye d'en mettre un quand même
 
-f <- N_flag ~ (1|geno) + bordure + (1|BAC)
+f <- N_flag ~ BAC + bordure + N_flag_voisin + (1|geno)
 
 H2["N_flag","H2"] <- calcul_H2(f = f , don = don)
 
@@ -101,7 +100,7 @@ H2["N_flag","H2"] <- calcul_H2(f = f , don = don)
 # nb_epi
 # mod sel
 f <- nb_epi ~ BAC + bordure + nb_epi_voisin # pas geno, on essaye quand même pour voir
-f <- nb_epi ~ (1|geno) + bordure + (1|BAC)
+f <- nb_epi ~ BAC + bordure + nb_epi_voisin + (1|geno) 
 
 mod <- lmer(f , data=don)
 
@@ -112,7 +111,7 @@ ggplot(bac , aes(x = X , y = Y , fill = nb_epi)) + geom_tile() + facet_wrap(~BAC
 # poids_epis
 # mod sel 
 f <- poids_epis ~ BAC + nb_epi # pas geno, on essaye quand même pour voir
-f <- poids_epis ~ (1|geno) + bordure + (1|BAC)
+f <- poids_epis ~ BAC + (1|geno)
 
 mod <- lmer(f,data=don)
 
@@ -122,39 +121,39 @@ H2["poids_epis","H2"] <- calcul_H2(f = f , don = don)
 
 
 # PMG
-f <- PMG ~ (1|geno) + bordure + (1|BAC)
+f <- PMG ~ BAC + bordure + nb_epi + (1|geno)
 H2["PMG","H2"] <- calcul_H2(f = f , don = don)
 
 
 
 # GSV
-f <- GSV ~ (1|geno) + bordure + (1|BAC)
+f <- GSV ~ bordure + nb_epi + (1|geno)
 H2["GSV","H2"] <- calcul_H2(f = f , don = don)
 
 
 # PMG2
-f <- PMG2 ~ (1|geno) + bordure + (1|BAC)
+f <- PMG2 ~ BAC + bordure + nb_epi + (1|geno)
 H2["PMG2","H2"] <- calcul_H2(f = f , don = don)
 
 
 
 # GSV2
-f <- GSV2 ~ (1|geno) + bordure + (1|BAC)
+f <- GSV2 ~ bordure + nb_epi + (1|geno)
 H2["GSV2","H2"] <- calcul_H2(f = f , don = don)
 
 
 # taille des grains
-surface_recolte_moy2 ~ (1|geno) + bordure + (1|BAC)
+surface_recolte_moy2 ~ (1|geno)  + BAC + bordure + nb_epi
 H2["taille grains","H2"] <- calcul_H2(f = f , don = don)
 
 
 # prot_recolte
-f <- prot_recolte ~ (1|geno) + bordure + (1|BAC)
+f <- prot_recolte ~ BAC  + N_flag_voisin + nb_epi_voisin + poids_epis_voisin + nb_voisin + (1|geno)
 H2["prot_recolte","H2"] <- calcul_H2(f = f , don = don)
 
 
 # nb_grain
-f <- nb_grain ~ (1|geno) + bordure + (1|BAC)
+f <- nb_grain ~ BAC + (1|geno)
 H2["nb_grain","H2"] <- calcul_H2(f = f , don = don)
 
 
