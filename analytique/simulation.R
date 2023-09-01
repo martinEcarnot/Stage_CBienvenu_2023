@@ -414,26 +414,37 @@ points(trans3d(xy[,1], xy[,2], 1, pmat = g), col = 2, pch = 16)
 library(plotly)
 
 # en fonction de nge et neo
-ngo <- seq(3000,200000,length=100)
-neo <- seq(100 , 2000 , length=100)
+ngo <- seq(10000,5000000,length=100)
+neo <- seq(500 , 5000 , length=100)
 
-z <- outer(X = ngo , Y = neo , FUN = invisuri , NG_E = 70 , nsel = 3000)
-zvalue <- t(z*sqrt(5+5/70)/sqrt(10))
+vg <- 1.303^2
+vinter <- 1.423^2
+vpos <- 1.229^2
+vintra <- 2.677^2
+
+
+z <- outer(X = ngo , Y = neo , FUN = invisuri , NG_E = 60 , nsel = 10000)
+zvalue <- t(z*sqrt(vg+vpos+vinter+vintra/70)/sqrt(vg+vpos+vinter+vintra))
 
 axy <- list(
-  title = "Nombre d'?pis observ?s")
+  title = "Nombre d'épis observés")
 
 axx <- list(
-  title = "Nombre grains observ?s")
+  title = "Nombre grains observés")
 
 axz <- list(
   title = "Rgrain/Repi")
 
 fig <- plot_ly(colors = c('green', 'blue') , showscale = FALSE , x = ~ngo , y = ~neo , z = ~zvalue) %>%
-  add_surface() %>% add_surface(z = matrix(1 , ncol = 2 , nrow = 2) , y = c(0,2000) , x = c(0,200000), opacity = 0.5) %>% 
+  add_surface() %>% add_surface(z = matrix(1 , ncol = 2 , nrow = 2) , y = c(500,5000) , x = c(10000,5000000), opacity = 0.8) %>% 
   layout(scene = list(xaxis=axx,yaxis=axy,zaxis=axz))
   
 fig
+
+
+
+
+
 
 
 
@@ -562,11 +573,11 @@ donplot3 <- param_v_fixe %>% mutate_at(.vars = c("NEO","nsel","NGE") , .funs = a
 
 donplot3$nsel3 <- factor(donplot3$nsel2 , levels = c("nsel = 400","nsel = 10000","nsel = 25000","nsel = 50000","nsel = 1e+05"))
 
-ggplot(donplot3 , aes(x = NGO , y = RgRe , col = NEO)) + geom_line(linewidth = 1) + geom_hline(yintercept = 1 , col = "black" , linewidth = 1) + facet_grid(NGE2~nsel3) + theme(axis.text.x = element_text(angle = 45 , hjust = 1) , panel.border = element_rect(colour = "black" , fill=NA)) + labs(y = "R_grain / R_Ã©pi" , title = "Valeurs de R_grain / R_Ã©pi pour diffÃ©rents jeux de paramÃ¨tres" , x = "Nombre de grains observÃ©s") + ylim(0,3)
+ggplot(donplot3 , aes(x = NGO , y = RgRe , col = NEO)) + geom_line(linewidth = 1) + geom_hline(yintercept = 1 , col = "black" , linewidth = 1) + facet_grid(NGE2~nsel3) + theme(axis.text.x = element_text(angle = 45 , hjust = 1) , panel.border = element_rect(colour = "black" , fill=NA)) + labs(y = "R_grain / R_epi", x = "Nombre de grains observés") + ylim(0,3)
 
 
 
-ggplot(donplot3 , aes(x = NGO , y = RgRe , col = NEO)) + geom_line(linewidth = 1) + geom_hline(yintercept = 1 , col = "black" , linewidth = 1) + facet_grid(NGE2~nsel3) + theme(axis.text.x = element_text(angle = 45 , hjust = 1) , panel.border = element_rect(colour = "black" , fill=NA) , panel.background = element_blank()) + labs(y = "R_grain / R_epi" , x = "Nombre de grains observés") + ylim(0,3) + scale_x_continuous(trans = 'log10')
+ggplot(donplot3 , aes(x = NGO , y = RgRe , col = NEO)) + geom_line(linewidth = 1) + geom_hline(yintercept = 1 , col = "black" , linewidth = 1) + facet_grid(NGE2~nsel3) + theme(axis.text.x = element_text(angle = 50 , hjust = 1) , panel.border = element_rect(colour = "black" , fill=NA) , panel.background = element_blank()) + labs(y = "R_grain / R_epi" , x = "Nombre de grains observés") + ylim(0,3) + scale_x_continuous(trans = 'log10' , breaks = c(10000,100000,500000,1000000,2000000,4000000))
 
 #+ scale_x_log10(breaks = trans_breaks("log10", function(x) 10^x) , labels = trans_format("log10", math_format(10^.x)))
 

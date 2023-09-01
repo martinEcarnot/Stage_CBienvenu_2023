@@ -197,6 +197,12 @@ vintra <- 2.677^2
 ngl <- 5
 
 
+vg2 <- 1.56^2
+vinter2 <- 1.679^2
+vpos2 <- 0.398^2
+vintra2 <- 2.676^2
+
+
 n_sel <- unique(sel_in_silico3$nsel)
 RR_test <- data.frame()
 i <- 1
@@ -205,6 +211,8 @@ for (nsel in n_sel){
   for (neo in c(seq(round(nsel/ngl) , nrow(moy_geno) , 10) , nrow(moy_geno))){
     
     RR_test[i,"RR_th"] <- RR(NEO=neo , NGO=NG_O , vg=vg , vinter=vinter , vintra=vintra , vpos=vpos , NGE=ngl , nsel=nsel)
+    
+    RR_test[i,"RR_th2"] <- RR(NEO=neo , NGO=NG_O , vg=vg2 , vinter=vinter2 , vintra=vintra2 , vpos=vpos2 , NGE=ngl , nsel=nsel)
     
     RR_test[i,"Rlot_th"] <- Re(NEO=neo , vg=vg , vinter=vinter , vintra=vintra , vpos=vpos , NGE=ngl , nsel=nsel)
     
@@ -234,8 +242,29 @@ RR_test$RgRe_exp <- RR_test$Rind_exp / RR_test$Rlot_exp
   a <- round(mod$coefficients["RR_exp"],2)
   r2 <- round(summary(mod)$r.squared,2)
   
-  ggplot(RR_test , aes(x = RR_exp , y = RR_th)) + geom_point() + geom_smooth(method = "lm" , se = F , col = "#F8766D") + labs(y = "Repi / Rgrain théorique" , x = "Repi / Rgrain empirique") + annotate(geom = "text" , label = paste0("y = ",b," + ",a,"x \nR² = ",r2) , x = 0.3 , y = 1 , col = "#F8766D" , size = 5) + annotate("rect", xmin = 0.02 , xmax = 0.55, ymin = 0.8, ymax = 1.2 , alpha = 0 , col = "black") + labs() + theme(panel.background = element_blank())
+  ggplot(RR_test , aes(x = RR_exp , y = RR_th)) + geom_point() + geom_smooth(method = "lm" , se = F , col = "#F8766D") + labs(y = "Repi / Rgrain th?orique" , x = "Repi / Rgrain empirique") + annotate(geom = "text" , label = paste0("y = ",b," + ",a,"x \nR? = ",r2) , x = 0.3 , y = 1 , col = "#F8766D" , size = 5) + annotate("rect", xmin = 0.02 , xmax = 0.55, ymin = 0.8, ymax = 1.2 , alpha = 0 , col = "black") + labs() + theme(panel.background = element_blank())
 }
+
+
+
+{
+  mod <- lm(RR_th2~RR_exp , data = RR_test)
+  
+  b <- round(mod$coefficients["(Intercept)"],2)
+  a <- round(mod$coefficients["RR_exp"],2)
+  r2 <- round(summary(mod)$r.squared,2)
+  
+  ggplot(RR_test , aes(x = RR_exp , y = RR_th2)) + geom_point() + geom_smooth(method = "lm" , se = F , col = "#F8766D") + labs(y = "Repi / Rgrain th?orique" , x = "Repi / Rgrain empirique") + annotate(geom = "text" , label = paste0("y = ",b," + ",a,"x \nR? = ",r2) , x = 0.3 , y = 1 , col = "#F8766D" , size = 5) + annotate("rect", xmin = 0.02 , xmax = 0.55, ymin = 0.8, ymax = 1.2 , alpha = 0 , col = "black") + labs() + theme(panel.background = element_blank())
+}
+
+
+
+
+
+vg/(vg+vinter+vintra+vpos)
+
+vg2/(vg2+vinter2+vintra2+vpos2)
+
 
 
 

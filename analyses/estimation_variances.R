@@ -17,6 +17,9 @@ unique(estim_var$semis)
 
 don <- estim_var %>% filter(semis == "06/01")
 
+
+
+
 mod <- lmer(Surface ~ (1|geno) + (1|geno:ind) + (1|geno:(ind:epi)) , data = don)
 
 mod
