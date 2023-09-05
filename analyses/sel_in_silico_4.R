@@ -54,6 +54,11 @@ for (r in 1:100) {
 
   for (nsel in n_sel){
     
+    
+    #population non sélectionnée
+    non_sel <- pop[sample(1:nrow(pop) , nsel) , ]
+    
+    
     # caracteristiques de la population selectionnee sur grains
     sel_ind <- pop[1:nsel,]
     
@@ -84,7 +89,7 @@ for (r in 1:100) {
       
       # donnees pour test student
       sel_lot$selection <- "LOT"
-      don_t <- rbind(pop,sel_ind,sel_lot)
+      don_t <- rbind(non_sel,sel_ind,sel_lot)
       don_t$selection <- relevel(as.factor(don_t$selection) , ref = "NON")
       
       
@@ -101,7 +106,7 @@ for (r in 1:100) {
         
       
       # t.test
-      f <- as.formula(paste(t,"~ BAC + selection + bordure"))
+      f <- as.formula(paste(t,"~ BAC + selection"))
       model <- lm(f , data = don_t)
       mod <- summary(model)$coefficients
       conf <- confint(model)
@@ -191,7 +196,7 @@ signif(t="nb_grain")
 load("../donnees/sel_in_silico_4")
 
 neo <- 177
-NSEL <- 400
+NSEL <- 250
 
 
 lettres <- sel_in_silico_4 %>% filter(nsel == NSEL & NEO == neo & !trait %in% c("nb_geno",'rdt')) %>% group_by(trait) %>% summarise(pval_ind = mean(t.test_ind, na.rm = T) , pval_lot = mean(t.test_lot , na.rm = T)) %>% gather(variable,value,c("pval_ind","pval_lot"))
@@ -241,7 +246,7 @@ for (i in 1:nrow(don)){
 graph <- don %>% filter(trait3 %in% c("PMG","TMG","PTE","NbEP","NGE","TPG","TPF","PRE","PRE","H","GSV"))
 graph$htxt <- graph$conf_haut + 0.02 * graph$conf_haut
 graph$fakepoint <- graph$conf_haut + 0.1 * graph$conf_haut
-ggplot(graph , aes(x = variable2 , y = value , fill = variable2)) + geom_col() + facet_wrap(~trait3 , scales = "free") + geom_text(aes(label = lettres , y = htxt ) , size = 6) + labs(y = "Progr?s estim?s" , x="" , caption = paste("NEO = ",neo,"et nsel =",NSEL)) + geom_hline(yintercept = 0) + theme(legend.position = "none") + geom_errorbar(aes(ymin = conf_bas , ymax = conf_haut) , width = 0.3) + theme(panel.background = element_blank()) + geom_point(aes(x = variable2 , y = fakepoint) , col = "white" , alpha = 0)
+ggplot(graph , aes(x = variable2 , y = value , fill = variable2)) + geom_col() + facet_wrap(~trait3 , scales = "free") + geom_text(aes(label = lettres , y = htxt ) , size = 6) + labs(y = "Progrès estimés" , x="" , caption = paste("NEO = ",neo,"et nsel =",NSEL)) + geom_hline(yintercept = 0) + theme(legend.position = "none") + geom_errorbar(aes(ymin = conf_bas , ymax = conf_haut) , width = 0.3) + theme(panel.background = element_blank()) + geom_point(aes(x = variable2 , y = fakepoint) , col = "white" , alpha = 0)
 
 
 
@@ -331,7 +336,7 @@ RR_test$RgRe_exp <- RR_test$Rind_exp / RR_test$Rlot_exp
   a <- round(mod$coefficients["RR_exp"],2)
   r2 <- round(summary(mod)$r.squared,2)
   
-ggplot(RR_test , aes(x = RR_exp , y = RR_th)) + geom_point() + geom_smooth(method = "lm" , se = F , col = "#F8766D") + labs(y = "Repi / Rgrain théorique" , x = "Repi / Rgrain empirique" , title = "Comparaison entre l'approche théorique et la sélection in silico") + annotate(geom = "text" , label = paste0("y = ",b," + ",a,"x \nR² = ",r2) , x = 0.3 , y = 1 , col = "#F8766D" , size = 5) + annotate("rect", xmin = 0.02 , xmax = 0.55, ymin = 0.8, ymax = 1.2 , alpha = 0 , col = "black") + labs()
+ggplot(RR_test , aes(x = RR_exp , y = RR_th)) + geom_point() + geom_smooth(method = "lm" , se = F , col = "#F8766D") + labs(y = "Repi / Rgrain théorique" , x = "Repi / Rgrain empirique") + annotate(geom = "text" , label = paste0("y = ",b," + ",a,"x \nR² = ",r2) , x = 0.3 , y = 1.3 , col = "#F8766D" , size = 5) + annotate("rect", xmin = -0.02 , xmax = 0.6, ymin = 1.1, ymax = 1.5 , alpha = 0 , col = "black") + theme(panel.background = element_blank())
 }
 
 

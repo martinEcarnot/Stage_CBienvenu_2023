@@ -2042,7 +2042,7 @@ save(S , file = "S")
 save(opto_semis_champ , file = "opto_semis_champ")
 
 
-
+ecty <- sd(subset(opto_semis_champ , Classe == 1 & taille == "NonTrie")$Surface)
 
 
 

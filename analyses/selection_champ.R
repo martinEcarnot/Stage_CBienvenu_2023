@@ -330,7 +330,7 @@ for (i in 1:nrow(resultat)){
 
 
 graph <- resultat %>% filter(trait3 %in% c("PMG","TMG","H","TPG","NGE","NbE","GSV"))
-ggplot(graph , aes(x = selection , y = R , fill = selection)) + geom_col() + geom_errorbar(aes(ymin = conf_bas , ymax = conf_haut) , width = 0.3) + geom_text(aes(label = lettres , y = htxt)) + theme(legend.position = "none") + facet_wrap(~trait3 , scales = "free") + geom_hline(yintercept = 0) + labs(y = "Progrès estimés" , x = "Modalité de sélection") + theme(panel.background = element_blank())
+ggplot(graph , aes(x = selection , y = R , fill = selection)) + geom_col() + geom_errorbar(aes(ymin = conf_bas , ymax = conf_haut) , width = 0.3) + geom_text(aes(label = lettres , y = htxt)) + theme(legend.position = "none") + facet_wrap(~trait3 , scales = "free") + geom_hline(yintercept = 0) + labs(y = "Progr?s estim?s" , x = "Modalit? de s?lection") + theme(panel.background = element_blank())
 
 
 
