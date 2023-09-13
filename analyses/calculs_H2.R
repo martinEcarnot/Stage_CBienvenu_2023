@@ -349,7 +349,7 @@ ggplot(don , aes(x = X_spats , y = Y_spats , fill = BAC2 , col = luz)) + geom_ti
 # c'est good
 
 
-traits <- names(don[c(9,12,14:17,19:23,26:43)])
+traits <- c("hauteur","prot_recolte","preco","nb_epi","poids_epis","nb_grain","N_flag","surface_recolte_moy","surface_recolte_moy2","GSV","GSV2","PMG","PMG2")
 
 
 BLUP_spats <- data.frame(row.names = unique(don$geno))

@@ -249,7 +249,9 @@ graph$fakepoint <- graph$conf_haut + 0.1 * graph$conf_haut
 ggplot(graph , aes(x = variable2 , y = value , fill = variable2)) + geom_col() + facet_wrap(~trait3 , scales = "free") + geom_text(aes(label = lettres , y = htxt ) , size = 6) + labs(y = "Progrès estimés" , x="" , caption = paste("NEO = ",neo,"et nsel =",NSEL)) + geom_hline(yintercept = 0) + theme(legend.position = "none") + geom_errorbar(aes(ymin = conf_bas , ymax = conf_haut) , width = 0.3) + theme(panel.background = element_blank()) + geom_point(aes(x = variable2 , y = fakepoint) , col = "white" , alpha = 0)
 
 
-
+graph <- don %>% filter(trait3 == "TMG")
+graph$fakepoint <- graph$conf_haut + 0.1 * graph$conf_haut
+ggplot(graph , aes(x = variable2 , y = value , fill = variable2)) + geom_col() + geom_text(aes(label = lettres , y = htxt ) , size = 6) + labs(y = "Progrès estimés (mm²)" , x="" , caption = paste("NEO = ",neo,"et nsel =",NSEL) , title = "Progrès estimé pour la taille des grains") + geom_hline(yintercept = 0) + theme(legend.position = "none") + geom_errorbar(aes(ymin = conf_bas , ymax = conf_haut) , width = 0.3) + theme(panel.background = element_blank()) + geom_point(aes(x = variable2 , y = fakepoint) , col = "white" , alpha = 0)
 
 
 # comparaison avec la theorie ---------------------------------------------
@@ -329,6 +331,11 @@ RR_test <- merge(RR_test, don , by = "row.names") %>% mutate(nsel = as.factor(ns
 RR_test$RgRe_th <- RR_test$Rind_th / RR_test$Rlot_th
 RR_test$RgRe_exp <- RR_test$Rind_exp / RR_test$Rlot_exp
 
+
+
+RR_test$one <- ifelse(RR_test$NEO == 177 & RR_test$nsel == 250 , "OUI" , "NON")
+
+
 {
   mod <- lm(RR_th~RR_exp , data = RR_test)
   
@@ -341,9 +348,26 @@ ggplot(RR_test , aes(x = RR_exp , y = RR_th)) + geom_point() + geom_smooth(metho
 
 
 
+
+
+{
+  mod <- lm(RR_th~RR_exp , data = RR_test)
+  
+  b <- round(mod$coefficients["(Intercept)"],2)
+  a <- round(mod$coefficients["RR_exp"],2)
+  r2 <- round(summary(mod)$r.squared,2)
+  
+  ggplot(RR_test , aes(x = RR_exp , y = RR_th , col = one , shape = one , size = one)) + geom_point() + geom_smooth(method = "lm" , se = F , col = "#F8766D" , linewidth = 1) + labs(y = "Repi / Rgrain théorique" , x = "Repi / Rgrain empirique") + annotate(geom = "text" , label = paste0("y = ",b," + ",a,"x \nR² = ",r2) , x = 0.3 , y = 1.3 , col = "#F8766D" , size = 5) + annotate("rect", xmin = -0.02 , xmax = 0.6, ymin = 1.1, ymax = 1.5 , alpha = 0 , col = "black") + theme(panel.background = element_blank() , legend.position = "none") + scale_colour_manual(values = c("#000000", "green")) + scale_shape_manual(values = c(16,17)) + scale_size_manual(values = c(1.5,4))
+}
+
+
+
+
+
+
 {
 RR_test$aby <- RR_test$abx <- seq(min(RR_test$Rlot_th) , max(RR_test$Rlot_th) , length = nrow(RR_test))
-ggplot(RR_test , aes(x = Rlot_th , y = Rlot_exp)) + geom_point() + geom_smooth(method = "lm" , se = F , aes(col = "Regression")) + geom_line(aes(x = abx , y = aby , col = "y=x") , linewidth = 1) + labs(x = "Repi theorique" , y = "Repi empirique" , title = "Comparaison entre l'approche théorique et la sélection in silico") + scale_colour_manual(values = c( "#619CFF","#F8766D")) 
+ggplot(RR_test , aes(x = Rlot_th , y = Rlot_exp)) + geom_point() + geom_smooth(method = "lm" , se = F , aes(col = "Regression")) + geom_line(aes(x = abx , y = aby , col = "y=x") , linewidth = 1) + labs(x = "Repi theorique" , y = "Repi empirique" , title = "Comparaison entre l'approche théorique et la sélection in silico") + scale_colour_manual(values = c( "#619CFF","#F8766D"))
 }
 
 {

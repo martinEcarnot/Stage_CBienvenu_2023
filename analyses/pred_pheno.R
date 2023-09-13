@@ -4,7 +4,7 @@ setwd("C:/Users/bienvenu/Documents/Stage/Analyses")
 load("../donnees/spectres")
 load("../donnees/spectres_moyens")
 load("../donnees/bac")
-load("../donnees/BLUP")
+load("../donnees/BLUP_spats")
 load("../donnees/opto")
 
 library(prospectr)
@@ -94,7 +94,7 @@ boss <- function(X,Y,nrep,nout){
 
 # pour donnees bac  -------------------------------------------------------
 
-don <- bac %>% filter(geno != "INCONNU" & appel == "present")
+don <- subset(bac , geno != "INCONNU" & appel == "present" & semis == "06/01" & hauteur > 25)
 
 traits <- c("hauteur" , "preco" , "N_flag" , "poids_epis")
 
@@ -129,9 +129,9 @@ rm(phen)
 
 nrep <- 10
 nout <- 40
-traits <- c("preco" , "hauteur" , "N_flag" , "poids_epis" , "Surface" , "prot_semis")
+traits <- names(BLUP_spats)
 
-boss(X = spectres_moy , Y = BLUP , nrep=nrep , nout=nout)
+boss(X = spectres_moy , Y = BLUP_spats , nrep=nrep , nout=nout)
 
 
 ggplot(res , aes(x = pretraitement , y = accuracy^2)) + geom_boxplot() + facet_wrap(~trait)
@@ -141,9 +141,9 @@ blup_sp_moy <- res
 blup_sp_moy$donnees <- "blup_sp_moy"
 
 
+graph <- subset(res , trait == "prot_recolte")
 
-
-
+ggplot(graph , aes(x = pretraitement , y = accuracy^2 , col = pretraitement , fill = pretraitement)) + geom_boxplot(alpha = 0.4) + theme(legend.position = "none" , panel.background = element_blank()) + labs(x = "prétraitement" , y = "Accuracy de prédiction") + ylim(c(0,0.25))
 
 
 

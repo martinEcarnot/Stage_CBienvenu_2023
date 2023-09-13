@@ -21,11 +21,10 @@ don$count <- 1
 tmp <- don %>% group_by(ind) %>% summarise(NGE = sum(count))
 
 
-mod <- lmer(Surface ~ (1|geno) + (1|BAC), data = don)
+mod <- lmer(Surface ~ (1|geno) + BAC, data = don)
 Vg <- VarCorr(mod)$geno[1]
-Vb <- VarCorr(mod)$BAC[1]
 Vr <- (sigma(mod))^2
-Vg/(Vg + Vr + Vb)
+Vg/(Vg + Vr)
 
 
 
@@ -33,11 +32,11 @@ don_epi <- don %>% mutate(BAC = as.numeric(BAC) , geno = as.numeric(geno)) %>% g
 
 
 
-mod <- lmer(Surface ~ (1|geno) + (1|BAC), data = don_epi)
+mod <- lmer(Surface ~ (1|geno) + BAC, data = don_epi)
 Vg <- VarCorr(mod)$geno[1]
-Vb <- VarCorr(mod)$BAC[1]
+#Vb <- VarCorr(mod)$BAC[1]
 Vr <- (sigma(mod))^2
-Vg/(Vg + Vr + Vb)
+Vg/(Vg + Vr)
 
 
 
@@ -50,9 +49,9 @@ Vg/(Vg + Vr + Vb)
 
 load("opto")
 
-mod <- lmer(Surface ~ (1|geno) , data = opto)
+mod <- lmer(prot_semis ~ (1|geno) , data = opto)
 Vg <- VarCorr(mod)$geno[1]
 Vr <- (sigma(mod))^2
-Vg/(Vg + Vr)
+Vg/(Vg + Vr/12)
 
 
