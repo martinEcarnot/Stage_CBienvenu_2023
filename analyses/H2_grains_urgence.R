@@ -52,6 +52,11 @@ load("opto")
 mod <- lmer(prot_semis ~ (1|geno) , data = opto)
 Vg <- VarCorr(mod)$geno[1]
 Vr <- (sigma(mod))^2
-Vg/(Vg + Vr/12)
+Vg/(Vg + Vr)
 
 
+
+mod <- lmer(Surface ~ (1|geno) , data = opto)
+Vg <- VarCorr(mod)$geno[1]
+Vr <- (sigma(mod))^2
+Vg/(Vg + Vr)
