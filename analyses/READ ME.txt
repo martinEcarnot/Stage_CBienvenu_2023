@@ -1,0 +1,18 @@
+selection_model.R contient des explorations sur les variables à prendre en compte dans les modèles et à choisir les meilleurs modèles pour estimer les héritabilités
+
+calculs H2.R contient des calculs d'héritabilité pour les traits mesurés, en utilisant les modèles sélectionnés dans le script selection_modele.R 
+(les H2 utilisés dans le rapport de stage ont été obtenus avec des modeles simples genre trait ~ (1|geno) + BAC en ne prenant en compte que les données du premier semis)
+
+selection_champ.R est le script qui permet d'estimer les effets de la sélection avec les données récoltées au champ
+
+sel_in_silico_4 est le script qui permet d'estimer les effets de la sélection avec les données des bacs
+
+repetabilite_NIRS est le script qui permet de vérifier que les NIRS des grains récoltés permettent de faire des prédictions valides du taux de protéines
+
+pred_pheno.R est le script qui contient toutes les prédictions phénomiques réalisées pendant le stage
+
+phenomique_f(sp_moy).R est le script qui permet de comparer la prédiction phénomique avec soit des spectres de grains individuels soit des moyennes de spectres de grains de mêmes génotypes
+
+quels_ech.R est le script avec lequel on a échantillonné les 35 individus par bac pour estimer les composantes de la variance
+
+estimation_variances.R est le script qui permet d'estimer les composantes de la variance (vg, ve, vinter, vintra)

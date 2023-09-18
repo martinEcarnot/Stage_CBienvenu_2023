@@ -1,0 +1,11 @@
+Le dossier donnees contient un script qui sert à formater les jeux de données utilisés dans les analyses à partir des données récoltées brutes
+
+Le dossier analyses contient les scripts utilisés pour faire les analyses du stage
+
+Le dossier analystique contient les scripts R et mathematica qui ont servi pour la partie développement analytique du stage
+
+le dossier graph contient tous les graphs utilisés dans les diapo et rapport
+
+2023 APIMET BIENVENU est le rapport de stage
+
+Stage_CBienvenu_2023.Rproj est le projet R lié au github pour tout versionner

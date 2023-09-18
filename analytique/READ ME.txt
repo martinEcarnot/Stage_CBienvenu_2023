@@ -1,0 +1,7 @@
+simulation.R contient le script avec les exploration des espaces paramétriques de l'équation développée pendant le stage
+
+essais_tradeoff.R est un script où on essaie de voir si les trade off entre traits du grain ont vraiment une influence sur le rapport Rgrain/Repi par une approche de simulation
+
+simulation_selection contient des app shiny qui permettent de visualiser l'effet de la sélection sur grain et sur épi par des simulations
+
+le dossier mathematica contient les scripts mathematica qui ont servi à vérifier les calculs et 'équation développée.
