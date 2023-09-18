@@ -582,7 +582,10 @@ ggplot(donplot3 , aes(x = NGO , y = RgRe , col = NEO)) + geom_line(linewidth = 1
 #+ scale_x_log10(breaks = trans_breaks("log10", function(x) 10^x) , labels = trans_format("log10", math_format(10^.x)))
 
 
-donplot4 <- donplot3 %>% filter(nsel == 50000 & NGE == 60)
+
+param_v_fixe %>% mutate_at(.vars = c("NEO","nsel","NGE") , .funs = as.factor) %>% mutate(RgRe = 1/ReRg) %>% filter(nsel == 50000) %>% filter(NGE == 60) %>% filter(NEO %in% c(1000 , 1500 , 2000 , 3000 , 4000 , 5000)) %>% mutate(nsel2 = paste("nsel =",nsel) , NGE2 = paste("NGE =",NGE))
+
+donplot4 <- param_v_fixe %>% mutate_at(.vars = c("NEO","nsel","NGE") , .funs = as.factor) %>% mutate(RgRe = 1/ReRg) %>% filter(nsel == 50000) %>% filter(NGE == 60) %>% filter(NEO %in% c(1000 , 1500 , 2000 , 3000 , 4000 , 5000)) %>% mutate(nsel2 = paste("nsel =",nsel) , NGE2 = paste("NGE =",NGE))
 
 
 ggplot(donplot4 , aes(x = NGO , y = RgRe , col = NEO)) + geom_line(linewidth = 1.5) + geom_hline(yintercept = 1 , col = "black" , linewidth = 1) + theme(axis.text.x = element_text(angle = 50 , hjust = 1) , panel.border = element_rect(colour = "black" , fill=NA) , panel.background = element_blank()) + labs(y = "R_grain / R_epi" , x = "Nombre de grains observés" , caption = "NGE = 60 et nsel = 50 000")  + scale_x_continuous(trans = 'log10' , breaks = c(10000,100000,500000,1000000,2000000,4000000))

@@ -549,11 +549,12 @@ save(phenomique_grain_lot_2 , file = "phenomique_grain_lot_2")
 
 
 
+load("phenomique_grain_lot_2")
 
 graph <- subset(phenomique_grain_lot_2 , (nb_sp == 12 | nb_sp == 1) & pretraitement == "dev2")
 graph$nb_sp <- as.factor(graph$nb_sp)
 
-ggplot(graph , aes(x = nb_sp , y = accuracy^2 , col = nb_sp , fill = nb_sp)) + geom_boxplot(alpha = 0.4) + ylim(c(0,0.25))
+ggplot(graph , aes(x = nb_sp , y = accuracy^2 , col = nb_sp , fill = nb_sp)) + geom_boxplot(alpha = 0.4) + ylim(c(0,0.25)) + scale_x_discrete(labels = c("grain","épi")) + labs(x = "" , y = "Predictive ability") + theme(legend.position = "none" , panel.background = element_blank())
 
 
 
